@@ -11,7 +11,7 @@ A preprint of the method will be published soon. If you use our library in your 
 Introductory notebooks with precise use case are provided.
 The algorithm takes as input segmentation masks and return multimaterial triangle meshes (3D).
 
-This method is used as a backend for [forceviewer3d](https://www.todo), our 3D tension inference library.
+This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo/foambryo), our 3D tension inference library.
 
 
 ### Example 
@@ -101,7 +101,9 @@ Data from [Stardist](https://github.com/stardist/stardist)
 
 
 ### Credits, contact, citations
-If you use this tool, please cite the associated preprint: 
+If you use this tool, please cite the associated preprint.
 Do not hesitate to contact Sacha Ichbiah and Hervé Turlier for practical questions and applications. 
 We hope that **Delaunay-Watershed** could help biologists and physicists to shed light on the mechanical aspects of early development.
+
+
 
