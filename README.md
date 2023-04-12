@@ -1,6 +1,6 @@
 # Delaunay-Watershed 3D
 
-<img src="Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
+<img src="https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
 
 
 **Delaunay-Watershed-3D** is an algorithm designed to reconstruct a sparse representation of the geometry of tissues and cell nuclei from instance segmentations, in 3D. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualisation of data**. We provide high level APIs to extract geometrical features from the meshes, as well as visualisation tools based on [polyscope](https://polyscope.run) and [napari](https://napari.org).
@@ -39,8 +39,9 @@ v = DW.plot_in_napari(add_mesh=True)
 Mesh=DW.return_dcel()
 Mesh.compute_curvatures_interfaces()
 Mesh.compute_areas_interfaces()
-Mesh.compute_volume_cells()
+Mesh.compute_volumes_cells()
 Mesh.compute_length_trijunctions()
+Mesh.compute_angles_junctions()
 
 ```
 
@@ -80,9 +81,9 @@ Once a `DW` object is generated, we can use its methods the visualize and export
 A `DCEL_Data` object can be used to analyze the geometry:
 
 - `DCEL_Data:`
-    - `self.compute_angles_tri()` returns a dictionnary with the values of every angles formed by the cells (in rad)
+    - `self.compute_angles_junctions()` returns a dictionnary with the values of every angles formed by the cells (in rad)
     - `self.compute_compute_curvatures(laplacian = "robust",weighted = True)` returns a dictionnary with the values of the mean curvature averaged on all the vertices of all the interfaces. `laplacian` can be either "cotan" or "robust". If `weighted`, the sum is scaled with vertices areas.
-    - `self.compute_length_halfedges(), self.compute_areas_faces(), self.compute_centroids_cells(), self.compute_areas_cells(), self.compute_areas_interfaces(), self.compute_volume_cells(), compute_length_trijunctions()
+    - `self.compute_length_halfedges(), self.compute_areas_faces(), self.compute_centroids_cells(), self.compute_areas_cells(), self.compute_areas_interfaces(), self.compute_volumes_cells(), compute_length_trijunctions()
 
 ---
 ### Biological use-cases
@@ -90,12 +91,12 @@ A `DCEL_Data` object can be used to analyze the geometry:
 #### Geometrical reconstruction of P.Mammilata Embryo
 Data from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
 
-![](Figures_readme/DW_3d.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Title")
 
 #### Geometrical reconstruction of Cell Nuclei
 Data from [Stardist](https://github.com/stardist/stardist)
 
-![](Figures_readme/DW_3d_nuclei.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Title")
 
 ---
 
@@ -104,6 +105,4 @@ Data from [Stardist](https://github.com/stardist/stardist)
 If you use this tool, please cite the associated preprint.
 Do not hesitate to contact Sacha Ichbiah and Hervé Turlier for practical questions and applications. 
 We hope that **Delaunay-Watershed** could help biologists and physicists to shed light on the mechanical aspects of early development.
-
-
 

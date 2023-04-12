@@ -278,6 +278,7 @@ def compute_scattered_arrays(Mesh,coeff):
     All_verts=[]
     All_faces=[]
     All_idx=[]
+    All_faces_cluster_idx=[]
     offset = 0 
     embryo_centroid = np.mean(Verts,axis=0)
     clusters_displacements = {}
@@ -289,7 +290,7 @@ def compute_scattered_arrays(Mesh,coeff):
 
         vn,fn = renormalize_verts(Verts,faces)
         
-        #to change with a formula from ddg
+        #to change with a formula from DDG
         array_centroid = np.mean(vn,axis=0)
         vn = vn + coeff * (array_centroid - embryo_centroid)
         clusters_displacements[key]=(coeff * (array_centroid - embryo_centroid)).copy()
@@ -297,16 +298,18 @@ def compute_scattered_arrays(Mesh,coeff):
         All_verts.append(vn.copy())
         All_faces.append(fn.copy()+offset)
         All_idx.append(Clusters_idx[key])
-        
+        All_faces_cluster_idx.append(np.ones(len(fn))*key)
+
         offset+=len(vn)
     All_verts = np.vstack(All_verts)
     All_faces = np.vstack(All_faces)
+    All_faces_cluster_idx = np.hstack(All_faces_cluster_idx)
     All_idx = np.hstack(All_idx)
     Mesh.v_scattered = All_verts
     Mesh.f_scattered = All_faces
     Mesh.idx_scattered = All_idx
     Mesh.clusters_displacements = clusters_displacements
-        
+    Mesh.cluster_idx_scattered = All_faces_cluster_idx
 
 class DCEL_Data:
     """DCEL Graph containing faces, half-edges and vertices."""
@@ -379,6 +382,9 @@ class DCEL_Data:
     
     def compute_volume_derivatives(self):
         return(compute_volume_derivative_dict(self))
+
+    def compute_angles_junctions(self,unique=True):
+        return(compute_angles_tri(self,unique=unique)[0])
 
     def compute_angles_tri(self,unique=True):
         return(compute_angles_tri(self,unique=unique))
