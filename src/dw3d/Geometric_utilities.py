@@ -133,6 +133,7 @@ def build_triangulation_torch(labels,min_distance=5,prints=False):#,size_shell=2
     
     t3 = time()
     if prints : print("Searching local extremas ...")
+    np.random.seed(42)
     EDT =Total_EDT + np.random.rand(nx,ny,nz)*1e-5
     T = torch.tensor(EDT).unsqueeze(0)
     kernel_size = min_distance
@@ -204,6 +205,7 @@ def build_triangulation_skimage(labels,min_distance=5,prints=False):
     
     t3 = time()
     if prints : print("Searching local extremas ...")
+    np.random.seed(42)
     EDT = Total_EDT + np.random.rand(nx,ny,nz)*1e-5
     
     local_mins = peak_local_max(-EDT,min_distance=min_distance,exclude_border=False)
