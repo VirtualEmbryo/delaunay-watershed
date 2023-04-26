@@ -375,19 +375,19 @@ class DCEL_Data:
     def compute_areas_interfaces(self): 
         return(compute_areas_interfaces(self))
     
-    def compute_area_derivatives(self): 
+    def compute_area_derivatives_slow(self): 
         return(compute_area_derivative_dict(self))
 
-    def compute_area_derivatives_fast(self): 
+    def compute_area_derivatives(self): 
         return(compute_area_derivative_autodiff(self))
 
     def compute_volumes_cells(self): 
         return(compute_volume_cells(self))
     
-    def compute_volume_derivatives(self):
+    def compute_volume_derivatives_slow(self):
         return(compute_volume_derivative_dict(self))
     
-    def compute_volume_derivatives_fast(self):
+    def compute_volume_derivatives(self):
         return(compute_volume_derivative_autodiff_dict(self))
     
     def compute_length_derivatives(self):
