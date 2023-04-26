@@ -7,6 +7,7 @@ import pickle
 import numpy as np 
 from dw3d.Curvature import compute_curvature_interfaces
 from dw3d.Geometry import compute_areas_faces,compute_areas_cells,compute_angles_tri,compute_volume_cells, compute_volume_derivative_dict, compute_areas_interfaces,compute_area_derivative_dict, compute_length_trijunctions
+from dw3d.Geometry import compute_area_derivative_autodiff, compute_volume_derivative_autodiff_dict, compute_length_derivative_autodiff
 import networkx
 
 
@@ -377,11 +378,20 @@ class DCEL_Data:
     def compute_area_derivatives(self): 
         return(compute_area_derivative_dict(self))
 
+    def compute_area_derivatives_fast(self): 
+        return(compute_area_derivative_autodiff(self))
+
     def compute_volumes_cells(self): 
         return(compute_volume_cells(self))
     
     def compute_volume_derivatives(self):
         return(compute_volume_derivative_dict(self))
+    
+    def compute_volume_derivatives_fast(self):
+        return(compute_volume_derivative_autodiff_dict(self))
+    
+    def compute_length_derivatives(self):
+        return(compute_length_derivative_autodiff(self))
 
     def compute_angles_junctions(self,unique=True):
         return(compute_angles_tri(self,unique=unique)[0])

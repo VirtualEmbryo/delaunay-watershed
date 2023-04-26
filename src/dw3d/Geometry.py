@@ -1,5 +1,7 @@
 #Sacha Ichbiah, Sept 2021
 import numpy as np 
+from tqdm import tqdm
+import torch
 
 def find_key_multiplier(num_points): 
     key_multiplier = 1
@@ -8,6 +10,77 @@ def find_key_multiplier(num_points):
     return(key_multiplier)    
 
 ## LENGTHS AND DERIVATIVES
+
+def compute_area_derivative_autodiff(Mesh,device = 'cpu'):
+
+    #Faces_membranes = extract_faces_membranes(Mesh)
+    key_mult = np.amax(Mesh.f[:,3:])+1
+    keys = Mesh.f[:,3]+key_mult*Mesh.f[:,4]
+    Faces_membranes = {}
+    for key in np.unique(keys):
+        tup = (key%key_mult,key//key_mult)
+        Faces_membranes[tup]=Mesh.f[:,:3][np.arange(len(keys))[keys==key]]
+
+    verts = torch.tensor(Mesh.v,dtype=torch.float,requires_grad=True).to(device)
+    optimizer = torch.optim.SGD([verts],lr=1) # Useless, here just to reset the grad
+
+    Areas_derivatives = {}
+    for tup in sorted(Faces_membranes.keys()):
+
+        loss_area = (Compute_Area_Faces_torch(verts,torch.tensor(Faces_membranes[tup]))).sum()
+        loss_area.backward()
+        Areas_derivatives[tup] = (verts.grad).numpy().copy()
+        optimizer.zero_grad()
+
+    return(Areas_derivatives)
+
+
+
+
+def compute_volume_derivative_autodiff_dict(Mesh,device='cpu'):
+    
+    #Faces_manifolds = extract_faces_manifolds(Mesh)
+    Faces_manifolds = {key:[] for key in Mesh.materials}
+    for face in Mesh.f :
+        a,b,c,m1,m2 = face
+        Faces_manifolds[m1].append([a,b,c])
+        Faces_manifolds[m2].append([a,c,b])
+    
+    verts = torch.tensor(Mesh.v,dtype=torch.float,requires_grad=True).to(device)
+    optimizer = torch.optim.SGD([verts],lr=1) # Useless, here just to reset the grad
+
+    Volumes_derivatives = {}
+    for key in Mesh.materials:#1:] :
+        faces = Faces_manifolds[key]
+        assert len(faces)>0
+        loss_volume = -Compute_Volume_manifold_torch(verts,torch.tensor(faces))
+        loss_volume.backward()
+        Volumes_derivatives[key]=(verts.grad.numpy().copy())
+        optimizer.zero_grad()
+    
+    return(Volumes_derivatives)
+
+def compute_length_derivative_autodiff(Mesh,device = 'cpu'):
+
+    Edges_trijunctions = extract_edges_trijunctions(Mesh)
+
+    verts = torch.tensor(Mesh.v,dtype=torch.float,requires_grad=True).to(device)
+    optimizer = torch.optim.SGD([verts],lr=1) # Useless, here just to reset the grad
+
+    Length_derivatives = {}
+    for tup in sorted(Edges_trijunctions.keys()):
+        loss_length = (Compute_length_edges_trijunctions_torch(verts,torch.tensor(Edges_trijunctions[tup]))).sum()
+        loss_length.backward()
+        Length_derivatives[tup] = (verts.grad).numpy().copy()
+        optimizer.zero_grad()
+
+    return(Length_derivatives)
+def Compute_length_edges_trijunctions_torch(verts,Edges_trijunctions):
+    Pos = verts[Edges_trijunctions]
+    Lengths = torch.norm(Pos[:,0]-Pos[:,1],dim=1)
+    return(Lengths)
+
+
 
 def compute_length_trijunctions(Mesh,prints=False): 
     Length_trijunctions = {}
@@ -20,7 +93,7 @@ def Compute_length_edges_trijunctions(verts,Edges_trijunctions):
     Pos = verts[Edges_trijunctions]
     Lengths = np.linalg.norm(Pos[:,0]-Pos[:,1],axis=1)
     return(Lengths)
-
+"""
     F = Mesh.f
     E = np.vstack((F[:,[0,1]],F[:,[0,2]],F[:,[1,2]]))
     E = np.sort(E,axis=1)
@@ -61,7 +134,7 @@ def Compute_length_edges_trijunctions(verts,Edges_trijunctions):
         Output_dict[key] = np.vstack(Trijunctional_line[key])
     return(Output_dict)
 
-
+"""
 def extract_edges_trijunctions(Mesh,prints=False):
     F = Mesh.f
     E = np.vstack((F[:,[0,1]],F[:,[0,2]],F[:,[1,2]]))
@@ -112,6 +185,19 @@ def Compute_Area_Faces(Verts,Faces):
     Lengths_sides =np.norm(Sides,dim=2)
     Half_perimeters = np.sum(Lengths_sides,axis=1)/2
     Diffs = np.zeros(Lengths_sides.shape)
+    Diffs[:,0] = Half_perimeters - Lengths_sides[:,0]
+    Diffs[:,1] = Half_perimeters - Lengths_sides[:,1]
+    Diffs[:,2] = Half_perimeters - Lengths_sides[:,2]
+    Areas = (Half_perimeters*Diffs[:,0]*Diffs[:,1]*Diffs[:,2])**(0.5)
+    return(Areas)
+
+def Compute_Area_Faces_torch(Verts,Faces):
+    Pos = Verts[Faces]
+    Sides = Pos-Pos[:,[2,0,1]]
+
+    Lengths_sides =torch.norm(Sides,dim=2)
+    Half_perimeters = torch.sum(Lengths_sides,axis=1)/2
+    Diffs = torch.zeros(Lengths_sides.shape)
     Diffs[:,0] = Half_perimeters - Lengths_sides[:,0]
     Diffs[:,1] = Half_perimeters - Lengths_sides[:,1]
     Diffs[:,2] = Half_perimeters - Lengths_sides[:,2]
@@ -172,7 +258,7 @@ def compute_area_derivative_dict(Mesh):
         List_indices_faces_per_vertices_y[(a,b)][i_y].append(i)
         List_indices_faces_per_vertices_z[(a,b)][i_z].append(i)
 
-    for key in DA.keys():
+    for key in tqdm(DA.keys()):
         for iv in range(len(Verts)):
             DA[key][iv] = np.vstack((cross_e3_x[List_indices_faces_per_vertices_x[key][iv]],
                                      cross_e3_y[List_indices_faces_per_vertices_y[key][iv]],
@@ -187,6 +273,13 @@ def Compute_Volume_manifold(Verts,Faces):
     cross_prods = np.cross(Coords[:,1],Coords[:,2],axis=1)
     dots = np.sum(cross_prods*Coords[:,0],axis=1)
     Vol = -np.sum(dots)/6
+    return(Vol)
+
+def Compute_Volume_manifold_torch(Verts,Faces):
+    Coords = Verts[Faces]
+    cross_prods = torch.cross(Coords[:,1],Coords[:,2],axis=1)
+    dots = torch.sum(cross_prods*Coords[:,0],axis=1)
+    Vol = -torch.sum(dots)/6
     return(Vol)
 
 def Compute_Volume_manifold_sequential(Verts,Faces):
@@ -223,7 +316,7 @@ def compute_volume_derivative_dict(Mesh):
     Cross_XY = np.cross(X,Y)/6
     Cross_YZ = np.cross(Y,Z)/6
     Cross_ZX = np.cross(Z,X)/6
-    Faces_material = np.zeros((len(materials),len(Faces)))
+    Faces_material = {mat:np.zeros(len(Faces)) for mat in materials}
     for n in materials:
         Faces_material[n][Faces_label[:,0]==1]=1
         Faces_material[n][Faces_label[:,1]==1]=-1
@@ -247,7 +340,7 @@ def compute_volume_derivative_dict(Mesh):
         List_indices_faces_per_vertices_neg_y[b][i_y].append(i)
         List_indices_faces_per_vertices_neg_z[b][i_z].append(i)
     
-    for n in materials:
+    for n in tqdm(materials):
         for iv in range(len(Verts)):
             DV[n][iv] = np.vstack((Cross_YZ[List_indices_faces_per_vertices_pos_x[n][iv]],
                                       Cross_ZX[List_indices_faces_per_vertices_pos_y[n][iv]],
