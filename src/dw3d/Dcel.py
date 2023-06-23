@@ -399,9 +399,9 @@ class DCEL_Data:
     def compute_angles_tri(self,unique=True):
         return(compute_angles_tri(self,unique=unique))
 
-    def compute_curvatures_interfaces(self,laplacian="robust",weighted=True):
+    def compute_curvatures_interfaces(self,weighted=True):
         #"robust" or "cotan"
-        return(compute_curvature_interfaces(self,laplacian=laplacian,weighted=weighted))
+        return(compute_curvature_interfaces(self,weighted=weighted))
 
 
     def save(self, filename):

@@ -1,10 +1,9 @@
 #Sacha Ichbiah, Sept 2021
 import numpy as np 
 import scipy.sparse as sp
-import robust_laplacian
 import trimesh
 
-#TODO: IMPLEMENT THE EDGE_BASED CURVATURE FORMULA
+#TODO: IMPLEMENT THE EDGE_BASED CURVATURE FORMULA (Paper from Julicher)
 
 def find_key_multiplier(num_points): 
     key_multiplier = 1
@@ -78,20 +77,6 @@ def compute_laplacian_cotan(Mesh):
     norm = (0.75*inv_areas).reshape(-1,1)
     return(Laplacian*norm,inv_areas)
 
-def compute_laplacian_robust(Mesh): 
-    ### Robust Laplacian using implicit triangulations : 
-    # from "A Laplacian for Nonmanifold Triangle Meshes", N.Sharp, K.Crane, 2020
-    verts = Mesh.v
-    faces = Mesh.f[:,[0,1,2]]
-    L, M=robust_laplacian.mesh_laplacian(Mesh.v,Mesh.f[:,[0,1,2]])
-    inv_areas = 1/M.diagonal().reshape(-1)/3
-    Sum_cols = np.array(L.sum(axis=1)) #Useless as it is already 0 (sum comprised in the central term) see http://rodolphe-vaillant.fr/entry/101/definition-laplacian-matrix-for-triangle-meshes
-    first_term = np.dot(L.toarray(),verts)
-    second_term = verts*Sum_cols
-    Laplacian = (first_term-second_term)
-    norm = (1.5*inv_areas).reshape(-1,1)
-    return(-Laplacian*norm,inv_areas)
-
 def compute_gaussian_curvature_vertices(Mesh):
     mesh_trimesh =trimesh.Trimesh(vertices=Mesh.v,
                   faces = Mesh.f[:,:3]) 
@@ -111,26 +96,10 @@ def compute_curvature_vertices_cotan(Mesh):
     H = np.linalg.norm(Laplacian,axis=1)*3*inv_areas/2
     return(H,inv_areas,Laplacian*3*(np.array([inv_areas]*3).transpose())/2)
 
-def compute_curvature_vertices_robust_laplacian(Mesh): 
-    verts = Mesh.v
-    faces = Mesh.f[:,[0,1,2]]
-    L, M=robust_laplacian.mesh_laplacian(Mesh.v,Mesh.f[:,[0,1,2]])
-    inv_areas = 1/M.diagonal().reshape(-1)/3
-    Sum_cols = np.array(L.sum(axis=1))
-    first_term = np.dot(L.toarray(),verts)
-    second_term = verts*Sum_cols
-    Laplacian = (first_term-second_term)
-    H = np.linalg.norm(Laplacian,axis=1)*3*inv_areas/2
-    return(H,inv_areas,Laplacian*3*(np.array([inv_areas]*3).transpose())/2)
 
+def compute_curvature_interfaces(Mesh,weighted=True): 
 
-def compute_curvature_interfaces(Mesh,laplacian = "robust",weighted=True): 
-    Interfaces={}
-    Interfaces_weights={}
-    if laplacian =="robust" : 
-        L,inv_areas = compute_laplacian_robust(Mesh)
-    elif laplacian =="cotan" : 
-        L,inv_areas = compute_laplacian_cotan(Mesh)
+    L,inv_areas = compute_laplacian_cotan(Mesh)
 
     vertex_normals = Mesh.compute_vertex_normals()
     H = np.sign(np.sum(np.multiply(L,vertex_normals),axis=1))*np.linalg.norm(L,axis=1)
@@ -361,3 +330,33 @@ def compute_areas(faces,verts):
 
 
 
+"""
+import robust-laplacian
+def compute_laplacian_robust(Mesh): 
+    ### Robust Laplacian using implicit triangulations : 
+    # from "A Laplacian for Nonmanifold Triangle Meshes", N.Sharp, K.Crane, 2020
+    verts = Mesh.v
+    faces = Mesh.f[:,[0,1,2]]
+    L, M=robust_laplacian.mesh_laplacian(Mesh.v,Mesh.f[:,[0,1,2]])
+    inv_areas = 1/M.diagonal().reshape(-1)/3
+    Sum_cols = np.array(L.sum(axis=1)) #Useless as it is already 0 (sum comprised in the central term) see http://rodolphe-vaillant.fr/entry/101/definition-laplacian-matrix-for-triangle-meshes
+    first_term = np.dot(L.toarray(),verts)
+    second_term = verts*Sum_cols
+    Laplacian = (first_term-second_term)
+    norm = (1.5*inv_areas).reshape(-1,1)
+    return(-Laplacian*norm,inv_areas)
+
+
+def compute_curvature_vertices_robust_laplacian(Mesh): 
+    verts = Mesh.v
+    faces = Mesh.f[:,[0,1,2]]
+    L, M=robust_laplacian.mesh_laplacian(Mesh.v,Mesh.f[:,[0,1,2]])
+    inv_areas = 1/M.diagonal().reshape(-1)/3
+    Sum_cols = np.array(L.sum(axis=1))
+    first_term = np.dot(L.toarray(),verts)
+    second_term = verts*Sum_cols
+    Laplacian = (first_term-second_term)
+    H = np.linalg.norm(Laplacian,axis=1)*3*inv_areas/2
+    return(H,inv_areas,Laplacian*3*(np.array([inv_areas]*3).transpose())/2)
+
+"""
