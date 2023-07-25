@@ -1,6 +1,7 @@
 # Delaunay-Watershed 3D
 
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
+[![DOI](https://zenodo.org/badge/634561229.svg)](https://zenodo.org/badge/latestdoi/634561229)
 
 <img src="Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
 
