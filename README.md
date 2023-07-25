@@ -61,6 +61,7 @@ Mesh.compute_angles_junctions()
 
 ```
 
+
 ---
 
 ### API and documentation
@@ -97,22 +98,26 @@ A `DCEL_Data` object can be used to analyze the geometry:
     - `self.compute_compute_curvatures(laplacian = "robust",weighted = True)` returns a dictionnary with the values of the mean curvature averaged on all the vertices of all the interfaces. `laplacian` can be either "cotan" or "robust". If `weighted`, the sum is scaled with vertices areas.
     - `self.compute_length_halfedges(), self.compute_areas_faces(), self.compute_centroids_cells(), self.compute_areas_cells(), self.compute_areas_interfaces(), self.compute_volumes_cells(), compute_length_trijunctions()
 
+
 ---
 ### Biological examples
 
 #### Geometrical reconstruction of cell interfaces in the *P. Mammilata* embryo
-Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
+See the [Python notebook 1](./Examples/Geometry_and_mask_reconstruction_1.ipynb).
 
 ![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Title")
 
-See the [Python notebook 1](./Examples/Geometry_and_mask_reconstruction_1.ipynb).
+Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
+
 
 #### Geometrical reconstruction of cell nuclei
-Segmentation masks from [Stardist](https://github.com/stardist/stardist)
+
+See the [Python notebook 2](./Examples/Geometry_and_mask_reconstruction_2.ipynb).
 
 ![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Title")
 
-See the [Python notebook 2](./Examples/Geometry_and_mask_reconstruction_2.ipynb).
+Segmentation masks from [Stardist](https://github.com/stardist/stardist)
+
 
 ---
 
