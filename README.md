@@ -3,27 +3,41 @@
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 [![DOI](https://zenodo.org/badge/634561229.svg)](https://zenodo.org/badge/latestdoi/634561229)
 
-<img src="Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
+<img src="https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
 
 
-**Delaunay-Watershed-3D** is an algorithm designed to reconstruct a sparse representation of the geometry of tissues and cell nuclei from instance segmentations, in 3D. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualisation of data**. We provide high level APIs to extract geometrical features from the meshes, as well as visualisation tools based on [polyscope](https://polyscope.run) and [napari](https://napari.org).
+**Delaunay-Watershed-3D** is an algorithm designed to reconstruct *in 3D* a sparse surface mesh representation of the geometry of multicellular structures or nuclei from instance segmentations. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualization of data**. We provide high level APIs to extract geometrical features from the meshes, as well as visualization tools based on [polyscope](https://polyscope.run) and [napari](https://napari.org).
 
 Delaunay-Watershed was created by Sacha Ichbiah during his PhD in [Turlier Lab](https://www.turlierlab.com), and is maintained by Sacha Ichbiah, Matthieu Perez and Hervé Turlier. For support, please open an issue.
 If you use this library in your work please cite the [paper](https://doi.org/10.1101/2023.04.12.536641). 
 
-Introductory notebooks on two examples (cells in an aggregate and nuclei) are provided.
-The algorithm takes as input segmentation masks and return multimaterial triangle meshes (3D).
+If you are interested in 2D images and meshes, please look at the [foambryo-2D](https://github.com/VirtualEmbryo/foambryo2D) package instead.
 
-This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo/foambryo), our 3D tension and pressure inference library.
+Introductory notebooks are provided for two examples (cells or nuclei in multicellular aggregates).
+The algorithm takes as input 3D segmentation masks and returns multimaterial triangle meshes in 3D.
+
+This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo/foambryo), our 3D tension and pressure inference Python library.
 
 
-### Quick start example 
 
-Load an instance segmentation, construct its multimaterial mesh, and extract geometrical features of cells:
+### Installation
+
+We recommend to install delaunay-watershed from the PyPI repository directly
 
 ```shell
 pip install delaunay-watershed-3d
 ```
+
+For developers, you may also install delaunay-watershed by cloning the source code and installing from the local directory
+
+```shell
+git clone https://github.com/VirtualEmbryo/delaunay-watershed.git
+pip install pathtopackage/delaunay-watershed
+```
+
+### Quick start example 
+
+Load an instance segmentation, construct its multimaterial mesh, and extract geometrical features of cells:
 
 ```py
 from dw3d import geometry_reconstruction_3d
@@ -47,12 +61,6 @@ Mesh.compute_angles_junctions()
 
 ```
 
-### Installation
-
-```shell
-pip install delaunay-watershed-3d
-```
-
 ---
 
 ### API and documentation
@@ -61,24 +69,24 @@ pip install delaunay-watershed-3d
 The first step is to convert your instance segmentation masks into a multimaterial mesh
 
 - `geometry_reconstruction_3d(labels,min_dist = 5, expansion_labels = 0,original_image = None,print_info = False, mode='torch')`: 
-    - `Mesh` is a `DCEL_Data` object
-    - `min_dist` defines the minimal distance, in pixels, between two points used for the delaunay-triangulation
-    - `expansion_labels` can be used to expand the labels and make them touch each other.
-    - `original_image` can be used for visualization purposes in napari
-    - `print_info` measure time between several checkpoints and give usefull informations about the procedure
-    - `mode` can be `torch` or `skimage`. It is highly recommeded to use torch
-    - `return DW`, an object containing visualization and export utilities
+    - `Mesh` is a `DCEL_Data` object.
+    - `min_dist` defines the minimal distance, in pixels, between two points used for the Delaunay tesselation.
+    - `expansion_labels` can be used to expand the labels and make them contact each other.
+    - `original_image` can be used for visualization purposes in Napari.
+    - `print_info` measures time between several checkpoints and gives usefull information about the procedure.
+    - `mode` can be `torch` or `skimage`. It is highly recommended to use the mode torch (which requires PyTorch).
+    - `return DW`, an object containing visualization and export utilities.
 
 #### 2 - Visualize and export the mesh
 
 Once a `DW` object is generated, we can use its methods the visualize and export the result: 
 - `DW:`
-    - `self.plot_cells_polyscope()` plot the resulting mesh in polyscope
+    - `self.plot_cells_polyscope()` plot the resulting mesh in polyscope.
     - `self.plot_in_napari(add_mesh=True)` offers more information about the procedure.
     - `self.return_mesh()` `return` (`Verts`,`Faces_multimaterial`): 
-        - `Verts` is an V x 3 numpy array of vertex positions
-        - `Faces_multimaterial` is an F x 5 numpy array of Edges and material indices, where at each row the 3 first indices refers to a vertex and the 2 last refer to a given material, 0 being the exterior media
-    - `self.return_dcel()` return a `DCEL_Data` object, i.e a Half-edge implementation of the mesh
+        - `Verts` is an V x 3 numpy array of vertex positions, where V is the number of vertices.
+        - `Faces_multimaterial` is a F x 5 numpy array of F faces (triangles) and labels, where at each row the 3 first indices refers to the indices of the three vertices of that triangle and the 2 last refer to a given interface label. An interface label is made of two indices referring to the two materials (e.g. cells) lying on each of its side, 0 being the exterior medium by convention.
+    - `self.return_dcel()` returns a `DCEL_Data` object, i.e. a half-edge data structure implementing the mesh.
 
 #### 3 - Analyze the geometry
 
@@ -95,12 +103,16 @@ A `DCEL_Data` object can be used to analyze the geometry:
 #### Geometrical reconstruction of cell interfaces in the *P. Mammilata* embryo
 Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
 
-![](Figures_readme/DW_3d.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Title")
+
+See the [Python notebook 1](./Examples/Geometry_and_mask_reconstruction_1.ipynb).
 
 #### Geometrical reconstruction of cell nuclei
 Segmentation masks from [Stardist](https://github.com/stardist/stardist)
 
-![](Figures_readme/DW_3d_nuclei.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Title")
+
+See the [Python notebook 2](./Examples/Geometry_and_mask_reconstruction_2.ipynb).
 
 ---
 
