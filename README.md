@@ -70,7 +70,7 @@ Mesh.compute_angles_junctions()
 The first step is to convert your instance segmentation masks into a multimaterial mesh
 
 - `geometry_reconstruction_3d(labels,min_dist = 5, expansion_labels = 0,original_image = None,print_info = False, mode='torch')`: 
-    - `Mesh` is a `DCEL_Data` object.
+    - `Mesh` is a `DcelData` object.
     - `min_dist` defines the minimal distance, in pixels, between two points used for the Delaunay tesselation.
     - `expansion_labels` can be used to expand the labels and make them contact each other.
     - `original_image` can be used for visualization purposes in Napari.
@@ -87,13 +87,13 @@ Once a `DW` object is generated, we can use its methods the visualize and export
     - `self.return_mesh()` `return` (`Verts`,`Faces_multimaterial`): 
         - `Verts` is an V x 3 numpy array of vertex positions, where V is the number of vertices.
         - `Faces_multimaterial` is a F x 5 numpy array of F faces (triangles) and labels, where at each row the 3 first indices refers to the indices of the three vertices of that triangle and the 2 last refer to a given interface label. An interface label is made of two indices referring to the two materials (e.g. cells) lying on each of its side, 0 being the exterior medium by convention.
-    - `self.return_dcel()` returns a `DCEL_Data` object, i.e. a half-edge data structure implementing the mesh.
+    - `self.return_dcel()` returns a `DcelData` object, i.e. a half-edge data structure implementing the mesh.
 
 #### 3 - Analyze the geometry
 
-A `DCEL_Data` object can be used to analyze the geometry:
+A `DcelData` object can be used to analyze the geometry:
 
-- `DCEL_Data:`
+- `DcelData:`
     - `self.compute_angles_junctions()` returns a dictionnary with the values of every angles formed by the cells (in rad)
     - `self.compute_compute_curvatures(laplacian = "robust",weighted = True)` returns a dictionnary with the values of the mean curvature averaged on all the vertices of all the interfaces. `laplacian` can be either "cotan" or "robust". If `weighted`, the sum is scaled with vertices areas.
     - `self.compute_length_halfedges(), self.compute_areas_faces(), self.compute_centroids_cells(), self.compute_areas_cells(), self.compute_areas_interfaces(), self.compute_volumes_cells(), compute_length_trijunctions()

@@ -12,7 +12,7 @@ from dw3d.Mesh_utilities import (
     renormalize_verts,
 )
 from dw3d.Mask_reconstruction import reconstruct_mask_from_dict
-from dw3d.Dcel import DCEL_Data
+from dw3d.dcel import DcelData
 
 from skimage.segmentation import expand_labels
 from time import time
@@ -42,9 +42,7 @@ class geometry_reconstruction_3d:
 
         labels = interpolate_image(self.labels)
         edt = interpolate_image(self.EDT)
-        self.Delaunay_Graph = Delaunay_Graph(
-            self.tri, edt, labels, print_info=print_info
-        )
+        self.Delaunay_Graph = Delaunay_Graph(self.tri, edt, labels, print_info=print_info)
         self.build_graph()
 
         # try Matthieu Perez: use centroid & labels to create Map_end instead of watershed ?
@@ -84,23 +82,19 @@ class geometry_reconstruction_3d:
             self.EDT, self.Delaunay_Graph.compute_nodes_centroids(), self.seeds_coords
         )
         zero_nodes = self.Delaunay_Graph.compute_zero_nodes()
-        self.Map_end = seeded_watershed_map(
-            self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes
-        )
+        self.Map_end = seeded_watershed_map(self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes)
 
         t2 = time()
         if print_info:
             print("Watershed done in ", np.round(t2 - t1, 3))
 
     def retrieve_clusters(self):
-        Clusters = retrieve_border_tetra_with_index_map(
-            self.Delaunay_Graph, self.Map_end
-        )
+        Clusters = retrieve_border_tetra_with_index_map(self.Delaunay_Graph, self.Map_end)
         return Clusters
 
     def return_dcel(self):
         V, F = self.return_mesh()
-        Mesh = DCEL_Data(V, F)
+        Mesh = DcelData(V, F)
         return Mesh
 
     def return_mesh(self):
@@ -200,9 +194,7 @@ class geometry_reconstruction_3d:
                 self.seeds_coords,
                 name="Watershed seeds",
                 n_dimensional=True,
-                face_color=np.array(
-                    plt.cm.viridis(np.array(sorted(list(Clusters.keys()))) / maxkey)
-                )[:, :3],
+                face_color=np.array(plt.cm.viridis(np.array(sorted(list(Clusters.keys()))) / maxkey))[:, :3],
                 size=10,
             )
 

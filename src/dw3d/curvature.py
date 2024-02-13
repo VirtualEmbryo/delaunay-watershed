@@ -14,7 +14,7 @@ from networkx import Graph
 from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from dw3d.Dcel import DCEL_Data
+    from dw3d.dcel import DcelData
 
 # TODO: IMPLEMENT THE EDGE_BASED CURVATURE FORMULA (Paper from Julicher)
 
@@ -77,7 +77,7 @@ def compute_laplacian_cotan(
     ### Traditional cotan laplacian : from
     # from "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds", Meyer et al. 2003
 
-    # Implementation and following explanation from : pytorch3d/loss/mesh_laplacian_smoothing.py
+    # Implementation and explanation from : pytorch3d/loss/mesh_laplacian_smoothing.py
     lcot, inv_areas = laplacian_cot(points, triangles)
     inv_areas = inv_areas.reshape(-1)
     sum_cols = np.array(lcot.sum(axis=1))
@@ -86,11 +86,11 @@ def compute_laplacian_cotan(
     return (laplacian * norm, inv_areas)
 
 
-def compute_gaussian_curvature_vertices(mesh: DCEL_Data) -> NDArray[np.float64]:
+def compute_gaussian_curvature_vertices(mesh: "DcelData") -> NDArray[np.float64]:
     """Return the discrete gaussian curvarture at every vertex of the mesh.
 
     Args:
-        mesh (DCEL_Data): Mesh.
+        mesh (DcelData): Mesh.
 
     Returns:
         NDArray[np.float64]: Discrete gaussian curvature at every vertex of the mesh.
@@ -100,7 +100,7 @@ def compute_gaussian_curvature_vertices(mesh: DCEL_Data) -> NDArray[np.float64]:
 
 
 def compute_curvature_vertices_cotan(
-    mesh: DCEL_Data,
+    mesh: "DcelData",
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
     """Return the mean curvature at every vertex along with other unidentified data."""
     points: NDArray[np.float64] = mesh.v
@@ -119,7 +119,7 @@ def compute_curvature_vertices_cotan(
     )
 
 
-def compute_curvature_interfaces(mesh: DCEL_Data, weighted: bool = True) -> dict[tuple[int, int], float]:
+def compute_curvature_interfaces(mesh: "DcelData", weighted: bool = True) -> dict[tuple[int, int], float]:
     """Compute the mean curvature on the interfaces of the mesh."""
     lcot, inv_areas = compute_laplacian_cotan(points=mesh.v, triangles=mesh.f[:, :3])
 
@@ -292,7 +292,7 @@ def compute_sphere_fit_residues_dict(graph: Graph) -> dict:
     """Compute a map edge of the graph -> residue from sphere fitting.
 
     Args:
-        graph (Graph): Graph constructed from the DCEL_Data.
+        graph (Graph): Graph constructed from the DcelData.
 
     Returns:
         dict: map an edge of the graph to a fit residue.
@@ -304,11 +304,11 @@ def compute_sphere_fit_residues_dict(graph: Graph) -> dict:
     return sphere_fit_residues_faces
 
 
-def compute_areas_interfaces(mesh: DCEL_Data) -> dict[tuple[int, int], float]:
+def compute_areas_interfaces(mesh: "DcelData") -> dict[tuple[int, int], float]:
     """Compute the area of each interface.
 
     Args:
-        mesh (DCEL_Data): Mesh
+        mesh (DcelData): Mesh
 
     Returns:
         dict[tuple[int, int], float]: map interface defined by two labels -> area.
@@ -347,7 +347,7 @@ def compute_triangles_areas(points: NDArray[np.float64], triangles: NDArray[np.u
 
 
 # import robust-laplacian
-# def compute_laplacian_robust(Mesh: DCEL_Data):
+# def compute_laplacian_robust(Mesh: "DcelData" ):
 #     ### Robust Laplacian using implicit triangulations :
 #     # from "A Laplacian for Nonmanifold Triangle Meshes", N.Sharp, K.Crane, 2020
 #     verts = Mesh.v
@@ -362,7 +362,7 @@ def compute_triangles_areas(points: NDArray[np.float64], triangles: NDArray[np.u
 #     return(-Laplacian*norm,inv_areas)
 
 
-# def compute_curvature_vertices_robust_laplacian(Mesh: DCEL_Data):
+# def compute_curvature_vertices_robust_laplacian(Mesh: "DcelData" ):
 #     verts = Mesh.v
 #     faces = Mesh.f[:,[0,1,2]]
 #     L, M=robust_laplacian.mesh_laplacian(Mesh.v,Mesh.f[:,[0,1,2]])
