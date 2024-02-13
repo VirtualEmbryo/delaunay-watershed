@@ -1,4 +1,10 @@
-# Sacha Ichbiah, Sept 2021
+"""Geometry on a DCEL Mesh.
+
+computation of trijunction mean angles and lengths, interfaces/regions areas, regions volumes ; and their derivatives.
+
+Sacha Ichbiah, Sept 2021.
+Matthieu Perez, 2024.
+"""
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -10,7 +16,7 @@ if TYPE_CHECKING:
     from dw3d.dcel import DcelData
 
 
-def find_key_multiplier(num_points):
+def _find_key_multiplier(num_points: int) -> int:
     key_multiplier = 1
     while num_points // key_multiplier != 0:
         key_multiplier *= 10
@@ -21,7 +27,8 @@ def find_key_multiplier(num_points):
 
 
 def compute_area_derivative_autodiff(
-    mesh: "DcelData", device: str = "cpu"
+    mesh: "DcelData",
+    device: str = "cpu",
 ) -> dict[tuple[int, int], NDArray[np.float64]]:
     """Compute dict that maps interface (label1, label2) to array of change of area per point."""
     # Faces_membranes = extract_faces_membranes(Mesh)
@@ -37,7 +44,7 @@ def compute_area_derivative_autodiff(
 
     areas_derivatives = {}
     for tup in sorted(faces_membranes.keys()):
-        loss_area = (Compute_Area_Faces_torch(verts, torch.tensor(faces_membranes[tup]))).sum()
+        loss_area = (compute_area_faces_torch(verts, torch.tensor(faces_membranes[tup]))).sum()
         loss_area.backward()
         areas_derivatives[tup] = (verts.grad).numpy().copy()
         optimizer.zero_grad()
@@ -61,7 +68,7 @@ def compute_volume_derivative_autodiff_dict(mesh: "DcelData", device: str = "cpu
     for key in mesh.materials:  # 1:] :
         faces = faces_manifolds[key]
         assert len(faces) > 0
-        loss_volume = -Compute_Volume_manifold_torch(verts, torch.tensor(faces))
+        loss_volume = -compute_volume_manifold_torch(verts, torch.tensor(faces))
         loss_volume.backward()
         volumes_derivatives[key] = verts.grad.numpy().copy()
         optimizer.zero_grad()
@@ -70,7 +77,8 @@ def compute_volume_derivative_autodiff_dict(mesh: "DcelData", device: str = "cpu
 
 
 def compute_length_derivative_autodiff(
-    mesh: "DcelData", device: str = "cpu"
+    mesh: "DcelData",
+    device: str = "cpu",
 ) -> dict[tuple[int, int], NDArray[np.float64]]:
     """Compute map trijunction edge (V1, V2) -> change of length wrt to points."""
     edges_trijunctions = extract_edges_trijunctions(mesh)
@@ -80,7 +88,7 @@ def compute_length_derivative_autodiff(
 
     length_derivatives: dict[tuple[int, int], NDArray[np.float64]] = {}
     for tup in sorted(edges_trijunctions.keys()):
-        loss_length = (Compute_length_edges_trijunctions_torch(verts, torch.tensor(edges_trijunctions[tup]))).sum()
+        loss_length = (compute_length_edges_trijunctions_torch(verts, torch.tensor(edges_trijunctions[tup]))).sum()
         loss_length.backward()
         length_derivatives[tup] = (verts.grad).numpy().copy()
         optimizer.zero_grad()
@@ -88,162 +96,119 @@ def compute_length_derivative_autodiff(
     return length_derivatives
 
 
-def Compute_length_edges_trijunctions_torch(verts, Edges_trijunctions):
-    Pos = verts[Edges_trijunctions]
-    Lengths = torch.norm(Pos[:, 0] - Pos[:, 1], dim=1)
-    return Lengths
+def compute_length_edges_trijunctions_torch(
+    points: torch.Tensor[torch.float],
+    edges_trijunctions: torch.Tensor[torch.int],
+) -> torch.Tensor[torch.float64]:
+    """Compute the length of each edge of a trijunction using torch because why not."""
+    positions = points[edges_trijunctions]
+    return torch.norm(positions[:, 0] - positions[:, 1], dim=1)
 
 
-def compute_length_trijunctions(Mesh, prints=False):
-    Length_trijunctions = {}
-    Edges_trijunctions = extract_edges_trijunctions(Mesh, prints)
-    for key in Edges_trijunctions.keys():
-        Length_trijunctions[key] = np.sum(Compute_length_edges_trijunctions(Mesh.v, Edges_trijunctions[key]))
-    return Length_trijunctions
+def compute_length_trijunctions(mesh: "DcelData", prints: bool = False) -> dict[tuple[int, int, int], float]:
+    """Compute the total length of each trijunction of the mesh in a map (id reg 1, id reg 2, id reg 3) -> length."""
+    length_trijunctions: dict[tuple[int, int, int], float] = {}
+    edges_trijunctions = extract_edges_trijunctions(mesh, prints)
+    for key in edges_trijunctions:
+        length_trijunctions[key] = np.sum(compute_length_edges_trijunctions(mesh.v, edges_trijunctions[key]))
+    return length_trijunctions
 
 
-def Compute_length_edges_trijunctions(verts, Edges_trijunctions):
-    Pos = verts[Edges_trijunctions]
-    Lengths = np.linalg.norm(Pos[:, 0] - Pos[:, 1], axis=1)
-    return Lengths
+def compute_length_edges_trijunctions(
+    points: NDArray[np.float64],
+    edges_trijunctions: NDArray[np.uint],
+) -> NDArray[np.float64]:
+    """Compute the length of each edge of a trijunction ."""
+    positions = points[edges_trijunctions]
+    return np.linalg.norm(positions[:, 0] - positions[:, 1], axis=1)
 
 
-"""
-    F = Mesh.f
-    E = np.vstack((F[:,[0,1]],F[:,[0,2]],F[:,[1,2]]))
-    E = np.sort(E,axis=1)
-    Zones = np.vstack((F[:,[3,4]],F[:,[3,4]],F[:,[3,4]]))
-    key_mult = find_key_multiplier(len(Mesh.v)+1)
-    K = (E[:,0]+1) + (E[:,1]+1)*key_mult
-    Array,Index_first_occurence,Index_inverse,Index_counts = np.unique(K, return_index=True, return_inverse=True, return_counts=True)
-    if prints :
-        print("Number of trijunctional edges :",np.sum(Index_counts==3))
-    Edges_trijunctions = E[Index_first_occurence[Index_counts==3]]
-
-
-    Indices = np.arange(len(Index_counts))
-    Map = {key:[] for key in Indices[Index_counts==3]}
-    Table = np.zeros(len(Index_counts))
-    Table[Index_counts==3]+=1
-
-    for i in range(len(Index_inverse)):
-        inverse = Index_inverse[i]
-        if Table[inverse]==1 :
-            Map[inverse].append(i)
-
-    Trijunctional_line={}
-    for key in sorted(Map.keys()) :
-        x = Map[key]
-        regions = np.hstack((Zones[x[0]],Zones[x[1]],Zones[x[2]]))
-        u = np.unique(regions)
-        if len(u)>4 :
-            print("oui")
-            continue
-        else :
-            Trijunctional_line[tuple(u)]=Trijunctional_line.get(tuple(u),[])
-            Trijunctional_line[tuple(u)].append(E[x[0]])
-            assert(E[x[0]][0]==E[x[1]][0]==E[x[2]][0] and E[x[0]][1]==E[x[1]][1]==E[x[2]][1])
-
-    Output_dict = {}
-    for key in sorted(Trijunctional_line.keys()):
-        Output_dict[key] = np.vstack(Trijunctional_line[key])
-    return(Output_dict)
-
-"""
-
-
-def extract_edges_trijunctions(Mesh, prints=False):
-    F = Mesh.f
-    E = np.vstack((F[:, [0, 1]], F[:, [0, 2]], F[:, [1, 2]]))
-    E = np.sort(E, axis=1)
-    Zones = np.vstack((F[:, [3, 4]], F[:, [3, 4]], F[:, [3, 4]]))
-    key_mult = find_key_multiplier(len(Mesh.v) + 1)
-    K = (E[:, 0] + 1) + (E[:, 1] + 1) * key_mult
-    Array, Index_first_occurence, Index_inverse, Index_counts = np.unique(
-        K,
+def extract_edges_trijunctions(mesh: "DcelData", prints: bool = False) -> dict[tuple[int, int, int], NDArray[np.uint]]:
+    """Extract a dict that maps trijunctions (id reg 1, id reg 2, id reg 3) to a list of edges."""
+    triangles_and_labels = mesh.f
+    edges = np.vstack(
+        (triangles_and_labels[:, [0, 1]], triangles_and_labels[:, [0, 2]], triangles_and_labels[:, [1, 2]]),
+    )
+    edges = np.sort(edges, axis=1)
+    zones = np.vstack(
+        (triangles_and_labels[:, [3, 4]], triangles_and_labels[:, [3, 4]], triangles_and_labels[:, [3, 4]]),
+    )
+    key_mult = _find_key_multiplier(len(mesh.v) + 1)
+    keys = (edges[:, 0] + 1) + (edges[:, 1] + 1) * key_mult
+    _, index_first_occurence, index_inverse, index_counts = np.unique(
+        keys,
         return_index=True,
         return_inverse=True,
         return_counts=True,
     )
     if prints:
-        print("Number of trijunctional edges :", np.sum(Index_counts == 3))
-    Edges_trijunctions = E[Index_first_occurence[Index_counts == 3]]
+        print("Number of trijunctional edges :", np.sum(index_counts == 3))
 
-    Indices = np.arange(len(Index_counts))
-    Map = {key: [] for key in Indices[Index_counts == 3]}
-    Table = np.zeros(len(Index_counts))
-    Table[Index_counts == 3] += 1
+    indices = np.arange(len(index_counts))
+    trijunction_indices_to_edge_key = {key: [] for key in indices[index_counts == 3]}
+    table = np.zeros(len(index_counts))
+    table[index_counts == 3] += 1
 
-    for i in range(len(Index_inverse)):
-        inverse = Index_inverse[i]
-        if Table[inverse] == 1:
-            Map[inverse].append(i)
+    for i in range(len(index_inverse)):
+        inverse = index_inverse[i]
+        if table[inverse] == 1:
+            trijunction_indices_to_edge_key[inverse].append(i)
 
-    Trijunctional_line = {}
-    for key in sorted(Map.keys()):
-        x = Map[key]
-        regions = np.hstack((Zones[x[0]], Zones[x[1]], Zones[x[2]]))
+    trijunctional_line = {}
+    for key in sorted(trijunction_indices_to_edge_key.keys()):
+        x = trijunction_indices_to_edge_key[key]
+        regions = np.hstack((zones[x[0]], zones[x[1]], zones[x[2]]))
         u = np.unique(regions)
         if len(u) > 4:
             print("oui")
             continue
         else:
-            Trijunctional_line[tuple(u)] = Trijunctional_line.get(tuple(u), [])
-            Trijunctional_line[tuple(u)].append(E[x[0]])
-            assert E[x[0]][0] == E[x[1]][0] == E[x[2]][0] and E[x[0]][1] == E[x[1]][1] == E[x[2]][1]
+            trijunctional_line[tuple(u)] = trijunctional_line.get(tuple(u), [])
+            trijunctional_line[tuple(u)].append(edges[x[0]])
+            assert edges[x[0]][0] == edges[x[1]][0] == edges[x[2]][0]
+            assert edges[x[0]][1] == edges[x[1]][1] == edges[x[2]][1]
 
-    Output_dict = {}
-    for key in sorted(Trijunctional_line.keys()):
-        Output_dict[key] = np.vstack(Trijunctional_line[key])
-    return Output_dict
+    output_dict: dict[tuple[int, int, int], NDArray[np.uint]] = {}
+    for key in sorted(trijunctional_line.keys()):
+        output_dict[key] = np.vstack(trijunctional_line[key])
+    return output_dict
 
 
 ## AREAS AND DERIVATIVES
+def compute_area_faces_torch(
+    points: torch.Tensor[torch.float],
+    triangles: torch.Tensor[torch.int],
+) -> torch.Tensor[torch.float]:
+    """Compute area of every triangle using torch."""
+    positions = points[triangles]
+    sides = positions - positions[:, [2, 0, 1]]
+
+    lengths_sides = torch.norm(sides, dim=2)
+    half_perimeters = torch.sum(lengths_sides, axis=1) / 2
+    diffs = torch.zeros(lengths_sides.shape)
+    diffs[:, 0] = half_perimeters - lengths_sides[:, 0]
+    diffs[:, 1] = half_perimeters - lengths_sides[:, 1]
+    diffs[:, 2] = half_perimeters - lengths_sides[:, 2]
+    return (half_perimeters * diffs[:, 0] * diffs[:, 1] * diffs[:, 2]) ** (0.5)
 
 
-def Compute_Area_Faces(Verts, Faces):
-    Pos = Verts[Faces]
-    Sides = Pos - Pos[:, [2, 0, 1]]
+def compute_areas_faces(mesh: "DcelData") -> None:
+    """Compute area of every triangle in the mesh. Modify the info of the mesh."""
+    positions = mesh.v[mesh.f[:, [0, 1, 2]]]
+    sides = positions - positions[:, [2, 0, 1]]
+    lengths_sides = np.linalg.norm(sides, axis=2)
+    half_perimeters = np.sum(lengths_sides, axis=1) / 2
 
-    Lengths_sides = np.norm(Sides, dim=2)
-    Half_perimeters = np.sum(Lengths_sides, axis=1) / 2
-    Diffs = np.zeros(Lengths_sides.shape)
-    Diffs[:, 0] = Half_perimeters - Lengths_sides[:, 0]
-    Diffs[:, 1] = Half_perimeters - Lengths_sides[:, 1]
-    Diffs[:, 2] = Half_perimeters - Lengths_sides[:, 2]
-    Areas = (Half_perimeters * Diffs[:, 0] * Diffs[:, 1] * Diffs[:, 2]) ** (0.5)
-    return Areas
-
-
-def Compute_Area_Faces_torch(Verts, Faces):
-    Pos = Verts[Faces]
-    Sides = Pos - Pos[:, [2, 0, 1]]
-
-    Lengths_sides = torch.norm(Sides, dim=2)
-    Half_perimeters = torch.sum(Lengths_sides, axis=1) / 2
-    Diffs = torch.zeros(Lengths_sides.shape)
-    Diffs[:, 0] = Half_perimeters - Lengths_sides[:, 0]
-    Diffs[:, 1] = Half_perimeters - Lengths_sides[:, 1]
-    Diffs[:, 2] = Half_perimeters - Lengths_sides[:, 2]
-    Areas = (Half_perimeters * Diffs[:, 0] * Diffs[:, 1] * Diffs[:, 2]) ** (0.5)
-    return Areas
+    diffs = np.array([half_perimeters] * 3).transpose() - lengths_sides
+    areas = (half_perimeters * diffs[:, 0] * diffs[:, 1] * diffs[:, 2]) ** (0.5)
+    for i, face in enumerate(mesh.faces):
+        face.area = areas[i]
 
 
-def compute_areas_faces(Mesh):
-    Pos = Mesh.v[Mesh.f[:, [0, 1, 2]]]
-    Sides = Pos - Pos[:, [2, 0, 1]]
-    Lengths_sides = np.linalg.norm(Sides, axis=2)
-    Half_perimeters = np.sum(Lengths_sides, axis=1) / 2
-
-    Diffs = np.array([Half_perimeters] * 3).transpose() - Lengths_sides
-    Areas = (Half_perimeters * Diffs[:, 0] * Diffs[:, 1] * Diffs[:, 2]) ** (0.5)
-    for i, face in enumerate(Mesh.faces):
-        face.area = Areas[i]
-
-
-def compute_areas_cells(Mesh):
-    areas = {key: 0 for key in Mesh.materials}
-    for face in Mesh.faces:
+def compute_areas_cells(mesh: "DcelData") -> dict[int, float]:
+    """Compute area of each cells."""
+    areas: dict[int, float] = {key: 0 for key in mesh.materials}
+    for face in mesh.faces:
         areas[face.material_1] += face.area
         areas[face.material_2] += face.area
     return areas
@@ -301,31 +266,15 @@ def compute_area_derivative_dict(mesh: "DcelData") -> dict[tuple[int, int], NDAr
 ##VOLUMES AND DERIVATIVES
 
 
-def Compute_Volume_manifold(Verts, Faces):
-    Coords = Verts[Faces]
-    cross_prods = np.cross(Coords[:, 1], Coords[:, 2], axis=1)
-    dots = np.sum(cross_prods * Coords[:, 0], axis=1)
-    Vol = -np.sum(dots) / 6
-    return Vol
-
-
-def Compute_Volume_manifold_torch(Verts, Faces):
-    Coords = Verts[Faces]
-    cross_prods = torch.cross(Coords[:, 1], Coords[:, 2], axis=1)
-    dots = torch.sum(cross_prods * Coords[:, 0], axis=1)
-    Vol = -torch.sum(dots) / 6
-    return Vol
-
-
-def Compute_Volume_manifold_sequential(Verts, Faces):
-    Volume = np.zeros(len(Faces))
-    for i, face in enumerate(Faces):
-        index = Faces[i, [0, 1, 2]]
-        Coords = Verts[index]
-        inc = np.linalg.det(Coords)
-        Volume[i] -= inc
-    Volume /= 6
-    return np.sum(Volume)
+def compute_volume_manifold_torch(
+    points: torch.Tensor[torch.float],
+    triangles: torch.Tensor[torch.int],
+) -> torch.Tensor[torch.float]:
+    """Compute volume of each cell."""
+    coords = points[triangles]
+    cross_prods = torch.cross(coords[:, 1], coords[:, 2], axis=1)
+    dots = torch.sum(cross_prods * coords[:, 0], axis=1)
+    return -torch.sum(dots) / 6
 
 
 def compute_volume_cells(mesh: "DcelData") -> dict[int, float]:
