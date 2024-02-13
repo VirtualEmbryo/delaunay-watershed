@@ -1,21 +1,23 @@
-#Sacha Ichbiah, Sept 2021
-import numpy as np 
+# Sacha Ichbiah, Sept 2021
+import numpy as np
 import scipy.sparse as sp
 import trimesh
 
-#TODO: IMPLEMENT THE EDGE_BASED CURVATURE FORMULA (Paper from Julicher)
+# TODO: IMPLEMENT THE EDGE_BASED CURVATURE FORMULA (Paper from Julicher)
 
-def find_key_multiplier(num_points): 
+
+def find_key_multiplier(num_points):
     key_multiplier = 1
-    while num_points//key_multiplier != 0 : 
-        key_multiplier*=10
-    return(key_multiplier)   
+    while num_points // key_multiplier != 0:
+        key_multiplier *= 10
+    return key_multiplier
 
-def compute_laplacian_cotan(Mesh): 
+
+def compute_laplacian_cotan(Mesh):
     ### Traditional cotan laplacian : from
     # from "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds", Meyer et al. 2003
 
-    #Implementation and following explanation from : pytorch3d/loss/mesh_laplacian_smoothing.py
+    # Implementation and following explanation from : pytorch3d/loss/mesh_laplacian_smoothing.py
 
     r"""
     Consider a mesh M = (V, F), with verts of shape Nx3 and faces of shape Mx3.
@@ -69,72 +71,74 @@ def compute_laplacian_cotan(Mesh):
     """
 
     verts = Mesh.v
-    faces = Mesh.f[:,[0,1,2]]
-    L, inv_areas=laplacian_cot(verts,faces)
+    faces = Mesh.f[:, [0, 1, 2]]
+    L, inv_areas = laplacian_cot(verts, faces)
     inv_areas = inv_areas.reshape(-1)
     sum_cols = np.array(L.sum(axis=1))
-    Laplacian = L@verts - verts*sum_cols
-    norm = (0.75*inv_areas).reshape(-1,1)
-    return(Laplacian*norm,inv_areas)
+    Laplacian = L @ verts - verts * sum_cols
+    norm = (0.75 * inv_areas).reshape(-1, 1)
+    return (Laplacian * norm, inv_areas)
+
 
 def compute_gaussian_curvature_vertices(Mesh):
-    mesh_trimesh =trimesh.Trimesh(vertices=Mesh.v,
-                  faces = Mesh.f[:,:3]) 
-    G = trimesh.curvature.discrete_gaussian_curvature_measure(mesh_trimesh, Mesh.v,0.)
-    return(G)
+    mesh_trimesh = trimesh.Trimesh(vertices=Mesh.v, faces=Mesh.f[:, :3])
+    G = trimesh.curvature.discrete_gaussian_curvature_measure(mesh_trimesh, Mesh.v, 0.0)
+    return G
 
-    
-def compute_curvature_vertices_cotan(Mesh): 
+
+def compute_curvature_vertices_cotan(Mesh):
     verts = Mesh.v
-    faces = Mesh.f[:,[0,1,2]]
-    L, inv_areas=laplacian_cot(Mesh.v,Mesh.f[:,[0,1,2]])
+    faces = Mesh.f[:, [0, 1, 2]]
+    L, inv_areas = laplacian_cot(Mesh.v, Mesh.f[:, [0, 1, 2]])
     inv_areas = inv_areas.reshape(-1)
     Sum_cols = np.array(L.sum(axis=1))
-    first_term = np.dot(L.toarray(),verts)
-    second_term = verts*Sum_cols
-    Laplacian = (first_term-second_term)/2
-    H = np.linalg.norm(Laplacian,axis=1)*3*inv_areas/2
-    return(H,inv_areas,Laplacian*3*(np.array([inv_areas]*3).transpose())/2)
+    first_term = np.dot(L.toarray(), verts)
+    second_term = verts * Sum_cols
+    Laplacian = (first_term - second_term) / 2
+    H = np.linalg.norm(Laplacian, axis=1) * 3 * inv_areas / 2
+    return (H, inv_areas, Laplacian * 3 * (np.array([inv_areas] * 3).transpose()) / 2)
 
 
-def compute_curvature_interfaces(Mesh,weighted=True): 
-
-    L,inv_areas = compute_laplacian_cotan(Mesh)
+def compute_curvature_interfaces(Mesh, weighted=True):
+    L, inv_areas = compute_laplacian_cotan(Mesh)
 
     vertex_normals = Mesh.compute_vertex_normals()
-    H = np.sign(np.sum(np.multiply(L,vertex_normals),axis=1))*np.linalg.norm(L,axis=1)
-    
-    
-    Vertices_on_interfaces ={}
-    for edge in Mesh.half_edges : 
-        #pass trijunctions
-        
-        materials = (edge.incident_face.material_1,edge.incident_face.material_2)
-        interface_key = (min(materials),max(materials))
-        
-        Vertices_on_interfaces[interface_key]=Vertices_on_interfaces.get(interface_key,[])
+    H = np.sign(np.sum(np.multiply(L, vertex_normals), axis=1)) * np.linalg.norm(
+        L, axis=1
+    )
+
+    Vertices_on_interfaces = {}
+    for edge in Mesh.half_edges:
+        # pass trijunctions
+
+        materials = (edge.incident_face.material_1, edge.incident_face.material_2)
+        interface_key = (min(materials), max(materials))
+
+        Vertices_on_interfaces[interface_key] = Vertices_on_interfaces.get(
+            interface_key, []
+        )
         Vertices_on_interfaces[interface_key].append(edge.origin.key)
         Vertices_on_interfaces[interface_key].append(edge.destination.key)
-        
+
     verts_idx = {}
-    for key in Vertices_on_interfaces.keys() : 
+    for key in Vertices_on_interfaces.keys():
         verts_idx[key] = np.unique(np.array(Vertices_on_interfaces[key]))
-        
+
     Interfaces_curvatures = {}
-    for key in verts_idx.keys() : 
+    for key in verts_idx.keys():
         curvature = 0
         weights = 0
-        for vert_idx in verts_idx[key]: 
+        for vert_idx in verts_idx[key]:
             v = Mesh.vertices[vert_idx]
-            if v.on_trijunction : 
+            if v.on_trijunction:
                 continue
-            else : 
-                if weighted : 
-                    curvature += H[vert_idx]/inv_areas[vert_idx]
-                    weights += 1/inv_areas[vert_idx]
-                else : 
+            else:
+                if weighted:
+                    curvature += H[vert_idx] / inv_areas[vert_idx]
+                    weights += 1 / inv_areas[vert_idx]
+                else:
                     curvature += H[vert_idx]
-                    weights +=1
+                    weights += 1
 
         """
         TEMPORARY : 
@@ -156,22 +160,20 @@ def compute_curvature_interfaces(Mesh,weighted=True):
         
         
         """
-        if weights==0 : 
-            Interfaces_curvatures[key]=np.nan
-        else : 
-            Interfaces_curvatures[key]=curvature/weights
-    
-    return(Interfaces_curvatures)
+        if weights == 0:
+            Interfaces_curvatures[key] = np.nan
+        else:
+            Interfaces_curvatures[key] = curvature / weights
+
+    return Interfaces_curvatures
 
 
 def cot(x):
-    return(1/np.tan(x))
-  
+    return 1 / np.tan(x)
 
 
-def laplacian_cot(verts,faces):
+def laplacian_cot(verts, faces):
     ##
-
 
     """
     Returns the Laplacian matrix with cotangent weights and the inverse of the
@@ -187,22 +189,22 @@ def laplacian_cot(verts,faces):
            face areas containing each vertex
     """
 
-    V, F = len(verts),len(faces)
+    V, F = len(verts), len(faces)
 
     face_verts = verts[faces]
     v0, v1, v2 = face_verts[:, 0], face_verts[:, 1], face_verts[:, 2]
 
     # Side lengths of each triangle, of shape (sum(F_n),)
     # A is the side opposite v1, B is opposite v2, and C is opposite v3
-    A = np.linalg.norm((v1 - v2),axis=1)
-    B = np.linalg.norm((v0 - v2),axis=1)
-    C = np.linalg.norm((v0 - v1),axis=1)
-    
+    A = np.linalg.norm((v1 - v2), axis=1)
+    B = np.linalg.norm((v0 - v2), axis=1)
+    C = np.linalg.norm((v0 - v1), axis=1)
+
     # Area of each triangle (with Heron's formula); shape is (sum(F_n),)
     s = 0.5 * (A + B + C)
     # note that the area can be negative (close to 0) causing nans after sqrt()
     # we clip it to a small positive value
-    area = np.sqrt((s * (s - A) * (s - B) * (s - C)))#.clamp_(min=1e-12).sqrt()
+    area = np.sqrt((s * (s - A) * (s - B) * (s - C)))  # .clamp_(min=1e-12).sqrt()
 
     # Compute cotangents of angles, of shape (sum(F_n), 3)
     A2, B2, C2 = A * A, B * B, C * C
@@ -218,9 +220,9 @@ def laplacian_cot(verts,faces):
     # L[v0, v1] = cotc
     ii = faces[:, [1, 2, 0]]
     jj = faces[:, [2, 0, 1]]
-    idx = np.stack([ii,jj],axis=0).reshape(2, F*3)
-    
-    L = sp.coo_matrix((cot.reshape(-1),(idx[1],idx[0])), shape = (V, V))
+    idx = np.stack([ii, jj], axis=0).reshape(2, F * 3)
+
+    L = sp.coo_matrix((cot.reshape(-1), (idx[1], idx[0])), shape=(V, V))
 
     # Make it symmetric; this means we are also setting
     # L[v2, v1] = cota
@@ -228,106 +230,98 @@ def laplacian_cot(verts,faces):
     # L[v1, v0] = cotc
     L += L.transpose()
 
-   
     # For each vertex, compute the sum of areas for triangles containing it.
-    inv_areas=np.zeros(V)
+    inv_areas = np.zeros(V)
     idx = faces.reshape(-1)
     val = np.stack([area] * 3, axis=1).reshape(-1)
-    np.add.at(inv_areas,idx,val)
+    np.add.at(inv_areas, idx, val)
     idx = inv_areas > 0
     inv_areas[idx] = 1.0 / inv_areas[idx]
     inv_areas = inv_areas.reshape(-1, 1)
 
-    return L,inv_areas
+    return L, inv_areas
 
 
+# from https://jekel.me/2015/Least-Squares-Sphere-Fit/
 
-
-
-
-
-
-
-
-
-
-#from https://jekel.me/2015/Least-Squares-Sphere-Fit/
 
 def sphereFit(verts):
     #   Assemble the A matrix
-    spX = verts[:,0]
-    spY = verts[:,1]
-    spZ = verts[:,2]
-    A = np.zeros((len(spX),4))
-    A[:,0] = spX*2
-    A[:,1] = spY*2
-    A[:,2] = spZ*2
-    A[:,3] = 1
+    spX = verts[:, 0]
+    spY = verts[:, 1]
+    spZ = verts[:, 2]
+    A = np.zeros((len(spX), 4))
+    A[:, 0] = spX * 2
+    A[:, 1] = spY * 2
+    A[:, 2] = spZ * 2
+    A[:, 3] = 1
 
     #   Assemble the f matrix
-    f = np.zeros((len(spX),1))
-    f[:,0] = (spX*spX) + (spY*spY) + (spZ*spZ)
-    C, residules, rank, singval = np.linalg.lstsq(A,f)
-    print(residules/len(verts))
+    f = np.zeros((len(spX), 1))
+    f[:, 0] = (spX * spX) + (spY * spY) + (spZ * spZ)
+    C, residules, rank, singval = np.linalg.lstsq(A, f)
+    print(residules / len(verts))
     #   solve for the radius
-    t = (C[0]*C[0])+(C[1]*C[1])+(C[2]*C[2])+C[3]
+    t = (C[0] * C[0]) + (C[1] * C[1]) + (C[2] * C[2]) + C[3]
     radius = math.sqrt(t)
 
-    return radius, np.array([C[0], C[1], C[2]])[:,0]
+    return radius, np.array([C[0], C[1], C[2]])[:, 0]
+
+
 def sphereFit_residue(verts):
     #   Assemble the A matrix
-    spX = verts[:,0]
-    spY = verts[:,1]
-    spZ = verts[:,2]
-    A = np.zeros((len(spX),4))
-    A[:,0] = spX*2
-    A[:,1] = spY*2
-    A[:,2] = spZ*2
-    A[:,3] = 1
+    spX = verts[:, 0]
+    spY = verts[:, 1]
+    spZ = verts[:, 2]
+    A = np.zeros((len(spX), 4))
+    A[:, 0] = spX * 2
+    A[:, 1] = spY * 2
+    A[:, 2] = spZ * 2
+    A[:, 3] = 1
 
     #   Assemble the f matrix
-    f = np.zeros((len(spX),1))
-    f[:,0] = (spX*spX) + (spY*spY) + (spZ*spZ)
-    C, residules, rank, singval = np.linalg.lstsq(A,f)
-    if len(residules)>0: 
-        return(residules[0]/len(verts))
-    else: return(0)
-    
+    f = np.zeros((len(spX), 1))
+    f[:, 0] = (spX * spX) + (spY * spY) + (spZ * spZ)
+    C, residules, rank, singval = np.linalg.lstsq(A, f)
+    if len(residules) > 0:
+        return residules[0] / len(verts)
+    else:
+        return 0
+
+
 def compute_sphere_fit_residues_dict(G):
     Sphere_fit_residues_faces = {}
     for key in G.edges.keys():
-        vn = G.edges[key]['verts']
+        vn = G.edges[key]["verts"]
         Sphere_fit_residues_faces[key] = sphereFit_residue(vn)
-    return(Sphere_fit_residues_faces)
+    return Sphere_fit_residues_faces
 
 
-
-def compute_areas_interfaces(Mesh): 
+def compute_areas_interfaces(Mesh):
     ###
-    #Duplicate of a function present in Geometry (with the same name), but computed in a different manner
+    # Duplicate of a function present in Geometry (with the same name), but computed in a different manner
     ###
 
     f = Mesh.f
     v = Mesh.v
-    Areas = compute_areas(f[:,[0,1,2]],v)
+    Areas = compute_areas(f[:, [0, 1, 2]], v)
     Interfaces_areas = {}
-    for i, face in enumerate(f): 
-        _,_,_,a,b = face
-        Table = Interfaces_areas.get((a,b),0)
-        Interfaces_areas[(a,b)]=Table+Areas[i]
-    return(Interfaces_areas)
+    for i, face in enumerate(f):
+        _, _, _, a, b = face
+        Table = Interfaces_areas.get((a, b), 0)
+        Interfaces_areas[(a, b)] = Table + Areas[i]
+    return Interfaces_areas
 
-def compute_areas(faces,verts): 
+
+def compute_areas(faces, verts):
     Pos = verts[faces]
-    Sides = Pos-Pos[:,[2,0,1]]
-    Lengths_sides = np.linalg.norm(Sides,axis = 2)
-    Half_perimeters = np.sum(Lengths_sides,axis=1)/2
+    Sides = Pos - Pos[:, [2, 0, 1]]
+    Lengths_sides = np.linalg.norm(Sides, axis=2)
+    Half_perimeters = np.sum(Lengths_sides, axis=1) / 2
 
-    Diffs = np.array([Half_perimeters]*3).transpose() - Lengths_sides
-    Areas = (Half_perimeters*Diffs[:,0]*Diffs[:,1]*Diffs[:,2])**(0.5)
-    return(Areas)
-
-
+    Diffs = np.array([Half_perimeters] * 3).transpose() - Lengths_sides
+    Areas = (Half_perimeters * Diffs[:, 0] * Diffs[:, 1] * Diffs[:, 2]) ** (0.5)
+    return Areas
 
 
 """

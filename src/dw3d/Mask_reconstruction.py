@@ -1,7 +1,6 @@
 # from Mesh_centering import center_verts
 from scipy.spatial import cKDTree
 from scipy import ndimage as ndi
-import skimage.io as io
 from skimage.segmentation import watershed
 import trimesh
 from trimesh import remesh
