@@ -1,26 +1,26 @@
-from dw3d.Networkx_functions import seeded_watershed_map
-from dw3d.Graph_functions import Delaunay_Graph
-from dw3d.Geometric_utilities import build_triangulation, interpolate_image
-from dw3d.Mesh_utilities import (
-    write_mesh_text,
-    write_mesh_bin,
+from time import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from skimage.segmentation import expand_labels
+
+from dw3d.dcel import DcelData
+from dw3d.geometric_utilities import build_triangulation, interpolate_image
+from dw3d.graph_functions import Delaunay_Graph
+from dw3d.mesh_utilities import (
     Clean_mesh_from_seg,
-    plot_cells_polyscope,
     compute_seeds_idx_from_voxel_coords,
+    plot_cells_polyscope,
+    renormalize_verts,
     retrieve_border_tetra_with_index_map,
     separate_faces_dict,
-    renormalize_verts,
+    write_mesh_bin,
+    write_mesh_text,
 )
-from dw3d.Mask_reconstruction import reconstruct_mask_from_dict
-from dw3d.dcel import DcelData
-
-from skimage.segmentation import expand_labels
-from time import time
-import numpy as np
-import matplotlib.pyplot as plt
+from dw3d.Networkx_functions import seeded_watershed_map
 
 
-class geometry_reconstruction_3d:
+class GeometryReconstruction3D:
     def __init__(
         self,
         labels,
@@ -37,7 +37,10 @@ class geometry_reconstruction_3d:
             self.labels = labels
 
         self.seeds_coords, self.seeds_indices, self.tri, self.EDT = build_triangulation(
-            self.labels, min_distance=min_dist, prints=print_info, mode=mode
+            self.labels,
+            min_distance=min_dist,
+            prints=print_info,
+            mode=mode,
         )
 
         labels = interpolate_image(self.labels)
@@ -79,7 +82,9 @@ class geometry_reconstruction_3d:
     def watershed_seeded(self, print_info=True):
         t1 = time()
         seeds_nodes = compute_seeds_idx_from_voxel_coords(
-            self.EDT, self.Delaunay_Graph.compute_nodes_centroids(), self.seeds_coords
+            self.EDT,
+            self.Delaunay_Graph.compute_nodes_centroids(),
+            self.seeds_coords,
         )
         zero_nodes = self.Delaunay_Graph.compute_zero_nodes()
         self.Map_end = seeded_watershed_map(self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes)

@@ -16,7 +16,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from dw3d.curvature import compute_curvature_interfaces
-from dw3d.Geometry import (
+from dw3d.geometry import (
     compute_angles_tri,
     compute_area_derivative_autodiff,
     compute_area_derivative_dict,

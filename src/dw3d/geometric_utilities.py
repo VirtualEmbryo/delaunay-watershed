@@ -1,10 +1,11 @@
-from skimage.feature import peak_local_max
-import numpy as np
-from scipy.spatial import Delaunay
-from scipy.interpolate import RegularGridInterpolator
-from edt import edt as euclidean_dt
 from time import time
+
+import numpy as np
 import torch
+from edt import edt as euclidean_dt
+from scipy.interpolate import RegularGridInterpolator
+from scipy.spatial import Delaunay
+from skimage.feature import peak_local_max
 from skimage.segmentation import find_boundaries
 
 
@@ -60,7 +61,9 @@ def interpolate_image(image):
 
 def pad_mask(mask, pad_size=1):
     padded_mask = mask.copy()[
-        pad_size:-pad_size, pad_size:-pad_size, pad_size:-pad_size
+        pad_size:-pad_size,
+        pad_size:-pad_size,
+        pad_size:-pad_size,
     ]
     padded_mask = np.pad(
         padded_mask,
@@ -91,7 +94,7 @@ def create_coords(nx, ny, nz):
     xvv = np.transpose(xvv, (1, 0, 2)).flatten()
     yvv = np.transpose(yvv, (1, 0, 2)).flatten()
     zvv = zvv.flatten()
-    Points = np.vstack(([xvv, yvv, zvv])).transpose().astype(int)
+    Points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
     return Points
 
 
@@ -100,22 +103,18 @@ def compute_edt_base(labels, prints=False):
         print("Computing EDT ...")
     t1 = time()
 
-    b = StandardLabelToBoundary()(labels)[
-        0
-    ]  # "thick" boundaries are marked by 1, 0 outside
+    b = StandardLabelToBoundary()(labels)[0]  # "thick" boundaries are marked by 1, 0 outside
     mask_2 = b
     EDT_2 = euclidean_dt(mask_2)  # EDT of the thick boundaries (0 elsewhere)
     b = pad_mask(b)  # exterior bbox is marked as 1
     mask_1 = 1 - b  # 1 everywhere except bbox and boundaries
     EDT_1 = euclidean_dt(
-        mask_1
+        mask_1,
     )  # main part of the final EDT. Both inside cells and outside cells. 0 in boundaries & bbox
     inv = (
         np.amax(EDT_2) - EDT_2
     )  # max EDT2 everywhere except on thick boundaries where it decreases to 0 on the mid of boundaries
-    Total_EDT = (
-        EDT_1 + np.amax(EDT_2)
-    ) * mask_1 + inv * mask_2  # total EDT is valid also on thick boundaries
+    Total_EDT = (EDT_1 + np.amax(EDT_2)) * mask_1 + inv * mask_2  # total EDT is valid also on thick boundaries
 
     # # Matthieu Perez try 2: augment constrast in EDT
     # Total_EDT = 255 * ((Total_EDT / 255) ** 0.5)
@@ -179,7 +178,9 @@ def build_triangulation(labels, min_distance=5, mode="torch", prints=False):
 
 
 def build_triangulation_torch(
-    labels, min_distance=5, prints=False
+    labels,
+    min_distance=5,
+    prints=False,
 ):  # ,size_shell=2,dist_shell=4):
     if prints:
         print("Mode == Torch")
