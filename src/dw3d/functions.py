@@ -8,7 +8,7 @@ from dw3d.dcel import DcelData
 from dw3d.geometric_utilities import build_triangulation, interpolate_image
 from dw3d.graph_functions import Delaunay_Graph
 from dw3d.mesh_utilities import (
-    Clean_mesh_from_seg,
+    clean_mesh_from_seg,
     compute_seeds_idx_from_voxel_coords,
     plot_cells_polyscope,
     renormalize_verts,
@@ -103,7 +103,7 @@ class GeometryReconstruction3D:
         return Mesh
 
     def return_mesh(self):
-        return Clean_mesh_from_seg(self)
+        return clean_mesh_from_seg(self)
 
     def plot_cells_polyscope(self, anisotropy_factor=1.0):
         Verts, Faces = self.return_mesh()

@@ -1,7 +1,20 @@
-import numpy as np
+"""Module for Mesh writing, mesh cleaning, mesh plotting.
+
+Sacha Ichbiah 2021.
+Matthieu Perez 2024.
+"""
 import struct
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import numpy as np
 import polyscope as ps
+from numpy.typing import NDArray
 from scipy.spatial import ckdtree
+
+if TYPE_CHECKING:
+    from dw3d.functions import GeometryReconstruction3D
+    from dw3d.graph_functions import Delaunay_Graph
 #####
 #####
 # I/O TOOLS
@@ -9,118 +22,75 @@ from scipy.spatial import ckdtree
 #####
 
 
-def separate_faces_dict(Faces, n_towers=10):
-    n_towers = np.amax(Faces[:, [3, 4]]) + 1
+def separate_faces_dict(triangles_and_labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
+    """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
+    nb_regions = np.amax(triangles_and_labels[:, [3, 4]]) + 1
 
-    Occupancy = np.zeros(n_towers)
-    Dict = {}
-    for face in Faces:
-        _, _, _, num1, num2 = face
-        if num1 != -1:
-            if Occupancy[num1] == 0:
-                Dict[num1] = [face[[0, 1, 2]]]
-                Occupancy[num1] += 1
+    occupancy = np.zeros(nb_regions, dtype=np.int64)
+    triangles_of_region: dict[int, list[int]] = {}
+    for face in triangles_and_labels:
+        triangle = face[:3]
+        region1, region2 = face[3:]
+        if region1 >= 0:
+            if occupancy[region1] == 0:
+                triangles_of_region[region1] = [triangle]
+                occupancy[region1] += 1
             else:
-                Dict[num1].append(face[[0, 1, 2]])
+                triangles_of_region[region1].append(triangle)
 
-        if num2 != -1:
-            if Occupancy[num2] == 0:
-                Dict[num2] = [face[[0, 1, 2]]]
-                Occupancy[num2] += 1
+        if region2 >= 0:
+            if occupancy[region2] == 0:
+                triangles_of_region[region2] = [triangle]
+                occupancy[region2] += 1
             else:
-                Dict[num2].append(face[[0, 1, 2]])
+                triangles_of_region[region2].append(triangle)
 
-    Faces_separated = {}
-    for i in sorted(Dict.keys()):
-        Faces_separated[i] = np.array(Dict[i])
+    faces_separated: dict[int, NDArray[np.uint]] = {}
+    for i in sorted(triangles_of_region.keys()):
+        faces_separated[i] = np.array(triangles_of_region[i])
 
-    return Faces_separated
+    return faces_separated
 
 
-def write_mesh_bin(filename, Verts, Faces):
-    assert len(Faces[0]) == 5 and len(Verts[0]) == 3
-    strfile = struct.pack("Q", len(Verts))
-    strfile += Verts.flatten().astype(np.float64).tobytes()
-    strfile += struct.pack("Q", len(Faces))
+def write_mesh_bin(
+    filename: str | Path,
+    points: NDArray[np.float64],
+    triangles_and_labels: NDArray[np.ulonglong],
+) -> None:
+    """Save bin .rec mesh."""
+    assert len(triangles_and_labels[0]) == 5
+    assert len(points[0]) == 3
+    strfile = struct.pack("Q", len(points))
+    strfile += points.flatten().astype(np.float64).tobytes()
+    strfile += struct.pack("Q", len(triangles_and_labels))
     dt = np.dtype([("triangles", np.uint64, (3,)), ("labels", np.int32, (2,))])
-    F_n = Faces[:, :3].astype(np.uint64)
-    F_t = Faces[:, 3:].astype(np.int32)
-    func = lambda i: (F_n[i], F_t[i])
-    T = np.array(list(map(func, np.arange(len(Faces)))), dtype=dt)
-    strfile += T.tobytes()
-    file = open(filename, "wb")
-    file.write(strfile)
-    file.close()
+    triangles = triangles_and_labels[:, :3].astype(np.uint64)
+    labels = triangles_and_labels[:, 3:].astype(np.int32)
+
+    def func(i: int) -> tuple[int, int]:
+        return (triangles[i], labels[i])
+
+    t = np.array(list(map(func, np.arange(len(triangles_and_labels)))), dtype=dt)
+    strfile += t.tobytes()
+    with Path(filename).open("wb") as file:
+        file.write(strfile)
 
 
-def write_mesh_text(filename, Verts, Faces):
-    file = open(filename, "w")
-    file.write(str(len(Verts)) + "\n")
-    for i in range(len(Verts)):
-        file.write(f"{Verts[i][0]:.5f} {Verts[i][1]:.5f} {Verts[i][2]:.5f}" + "\n")
-    file.write(str(len(Faces)) + "\n")
-    for i in range(len(Faces)):
-        file.write(
-            f"{Faces[i][0]} {Faces[i][1]} {Faces[i][2]} {Faces[i][3]} {Faces[i][4]}"
-            + "\n"
-        )
-    file.close()
-
-
-def open_mesh_multitracker(filename):
-    try:
-        return read_rec_file_bin(filename)
-    except:
-        return read_rec_file_num(filename)
-
-
-def read_rec_file_bin(filename):
-    mesh_file = open(filename, "rb")
-
-    # Vertices
-    (num_vertices,) = struct.unpack("Q", mesh_file.read(8))
-    Verts = np.fromfile(mesh_file, count=3 * num_vertices, dtype=np.float64).reshape(
-        (num_vertices, 3)
-    )
-
-    # Triangles
-    (num_triangles,) = struct.unpack("Q", mesh_file.read(8))
-
-    # dtype # 3 unsigned integers (long long) for the triangles # 2 integers for the labels
-    dt = np.dtype([("triangles", np.uint64, (3,)), ("labels", np.int32, (2,))])
-    t = np.fromfile(mesh_file, count=num_triangles, dtype=dt)
-    mesh_file.close()
-
-    Faces_num = t["triangles"]
-    Faces_labels = t["labels"]
-    Faces = np.hstack((Faces_num, Faces_labels))
-    return (Verts, Faces.astype(int), np.array([num_vertices, num_triangles]))
-
-
-def read_rec_file_num(filename, offset=0):
-    mesh_file = open(filename, "rb")
-    Ns = []
-    Verts = []
-    Faces = []
-
-    Lines = []
-    for line in mesh_file.readlines():
-        L = line.decode("UTF8")
-        L = L[:-1].split(" ")
-        Lines.append(L)
-        if len(L) == 1:
-            Ns.append(L[0])
-        elif len(L) == 3:
-            Verts.append(L)
-        else:
-            Faces.append(L)
-    mesh_file.close()
-
-    Faces = np.array(Faces).astype(int)
-    Faces[:, [3, 4]] += offset
-    Verts = np.array(Verts).astype(float)
-    Ns = np.array(Ns).astype(int)
-    return (Verts, Faces, Ns)
+def write_mesh_text(
+    filename: str | Path,
+    points: NDArray[np.float64],
+    triangles_and_labels: NDArray[np.ulonglong],
+) -> None:
+    """Save text .rec mesh."""
+    with Path(filename).open("w") as file:
+        file.write(str(len(points)) + "\n")
+        for i in range(len(points)):
+            file.write(f"{points[i][0]:.5f} {points[i][1]:.5f} {points[i][2]:.5f}" + "\n")
+        file.write(str(len(triangles_and_labels)) + "\n")
+        for i in range(len(triangles_and_labels)):
+            content = f"{triangles_and_labels[i][0]} {triangles_and_labels[i][1]} {triangles_and_labels[i][2]} "
+            content += f"{triangles_and_labels[i][3]} {triangles_and_labels[i][4]}\n"
+            file.write(content)
 
 
 #####
@@ -130,129 +100,160 @@ def read_rec_file_num(filename, offset=0):
 #####
 
 
-def retrieve_mesh_multimaterial_multitracker_format(Graph, Map):
-    ##Must be used without any filtering operation
-    # Notes: Graph is Delaunay
-    # Map (geometry_reconstruction_3d.Map_end = seeded_watershed_map) contains a dict (I guess) region number (0=exterior) => "node id" mais qui peut aller loin: 20 329 pour un mesh final enregistré à 2700 triangles et 5000 points en gros
-    # qu'est ce que node id ? est ce un point min ? non car
-    # Number of local minimas : 4804
-    # Number of local maxes : 153
-    # index d'un tetraedre de la delaunay triangulation ? peut être bien
-    # comme c'est fait, on renvoie tous les points du graphe, mais seulement les triangles du mesh surfacique. Il y a beaucoup de points en trop. Les enlever serait compliqué (ré-indexage des points des triangles)
-    # faces = triangles ; nodes = tetras, with map linking regions to list of tetra/node ids
-    reverse_map = {}
-    for key in Map:
-        for node_idx in Map[key]:
-            reverse_map[node_idx] = key
-    # reverse map = node id -> region
-    Faces = []
-    Faces_idx = []
-    Nodes_linked = []
+def retrieve_mesh_multimaterial_multitracker_format(
+    graph: "Delaunay_Graph",
+    map_label_to_nodes: dict[int, list[int]],
+) -> tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
+    """Extract multi-material mesh from the Delaunay graph with every nodes (tetrahedrons) marked with a material.
 
-    for idx in range(len(Graph.Faces)):
-        # 37 208 faces, with Nodes linkeds = tetra ids
-        nodes_linked = Graph.Nodes_Linked_by_Faces[idx]
+    The extracted surface mesh is composed of all triangles that are faces of 2 tetrahedrons with different materials.
+    Note that there will be a lot of unused points in this mesh. A filtering step will be necessary.
+
+    Args:
+        graph (Delaunay_Graph): the Delaunay graph.
+        map_label_to_nodes (dict[int, list[int]]): The map that links materials to tetrahedrons id.
+
+    Returns:
+        tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
+            - an array of vertices of the mesh. Note that there are some unused points, to be filtered later.
+            - an array of triangles and labels (id p1, id p2, id p3, material 1, material 2)
+            - the list of ids of faces in graph.faces that made it to the array of triangles and labels.
+            - the list of ids of nodes (tetrahedrons) in graph.nodes that are linked to selected triangles.
+    """
+    # faces = triangles ; nodes = tetras, with map linking regions to list of tetra/node ids
+    map_nodes_to_labels: dict[int, int] = {}
+    for key in map_label_to_nodes:
+        for node_idx in map_label_to_nodes[key]:
+            map_nodes_to_labels[node_idx] = key
+    faces: list[list[int]] = []  # p1, p2, p3, l1, l2 of selected faces
+    faces_idx: list[int] = []  # list ids of triangles from selected graph faces.
+    nodes_linked_by_face: list[list[int]] = []  # list nodes ids linked to triangles from selected graph faces
+
+    for idx, face in enumerate(graph.Faces):
+        # faces are triangles, nodes linked are the 2 adjacent tetrahedrons (nodes).
+        nodes_linked = graph.Nodes_Linked_by_Faces[idx]
 
         # corresponding regions
-        cluster_1 = reverse_map[nodes_linked[0]]
-        cluster_2 = reverse_map[nodes_linked[1]]
+        cluster_1 = map_nodes_to_labels[nodes_linked[0]]
+        cluster_2 = map_nodes_to_labels[nodes_linked[1]]
         cells = [cluster_1, cluster_2]
-        face = Graph.Faces[idx]
 
         if cluster_1 != cluster_2:
             # some faces belong to 2 tetras of two different regions : those are the triangles in final mesh !
-            Faces.append(
-                [face[0], face[1], face[2], cells[0], cells[1]]
-            )  # tri p1, p2, p3, label l0, l1
-            Faces_idx.append(idx)  # tri id
-            Nodes_linked.append(nodes_linked)  # 2 tetras
+            faces.append([face[0], face[1], face[2], cells[0], cells[1]])  # tri p1, p2, p3, label l1, l2
+            faces_idx.append(idx)  # tri id
+            nodes_linked_by_face.append(nodes_linked)  # 2 tetras
 
-
-    # Apparently, there are triangles on only one tetra in the delaunay graph and sometimes they might belong to the mesh ?
-    # from my test, no faces are appended here
-    for idx in range(len(Graph.Lone_Faces)):
-        face = Graph.Lone_Faces[idx]
-        node_linked = Graph.Nodes_linked_by_lone_faces[idx]
-        cluster_1 = reverse_map[node_linked]
+    # Matthieu Perez:
+    # Apparently, there are triangles on only one tetra in the delaunay graph,
+    # and sometimes they might belong to the mesh ? If segmented cell touches the border of the image ?
+    for idx in range(len(graph.Lone_Faces)):
+        face = graph.Lone_Faces[idx]
+        node_linked = graph.Nodes_linked_by_lone_faces[idx]
+        cluster_1 = map_nodes_to_labels[node_linked]
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:
             cells = [0, cluster_1]
-            Faces.append([face[0], face[1], face[2], cells[0], cells[1]])
-            Faces_idx.append(idx)
-            Nodes_linked.append(nodes_linked)
+            faces.append([face[0], face[1], face[2], cells[0], cells[1]])
+            faces_idx.append(idx)
+            nodes_linked_by_face.append(nodes_linked)
 
-    # To me, if the Graph is OK (hypothesis) and triangles are unique then the extraction is ok
-    # return (Graph.Vertices, np.array(Faces), Faces_idx, np.array(Nodes_linked))
-            
-    # =========
-    # Mesh Surgery
-    
-    return (Graph.Vertices, np.array(Faces), Faces_idx, np.array(Nodes_linked))
+    # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
+    # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
+    # extracted mesh quality.
+    return (graph.Vertices, np.array(faces), faces_idx, np.array(nodes_linked_by_face))
 
 
-
-
-def Clean_mesh_from_seg(Seg):
+def clean_mesh_from_seg(
+    geometry_reconstruction: "GeometryReconstruction3D",
+) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
+    """Extract points and triangles_and_labels from a GeometryReconstruction3D object."""
     # Take a Segmentation class as entry
 
-    V, Faces, Faces_idx, Nodes_linked = retrieve_mesh_multimaterial_multitracker_format(
-        Seg.Delaunay_Graph, Seg.Map_end
+    (
+        points,
+        triangles_and_labels,
+        _,
+        nodes_idx_in_graph_linked_to_triangle,
+    ) = retrieve_mesh_multimaterial_multitracker_format(
+        geometry_reconstruction.Delaunay_Graph,
+        geometry_reconstruction.Map_end,
     )
 
-    Verts = V.copy()
+    vertices = points.copy()
 
-    for i, f in enumerate(Faces):
+    for i, f in enumerate(triangles_and_labels):
         if f[3] > f[4]:  # if label0 > label1 we swap them
-            Faces[i] = Faces[
-                i, [0, 1, 2, 4, 3]
-            ]  # Note : it happened to me that sometimes better to change point order too but that was from MultiTracker
-            Nodes_linked[i] = Nodes_linked[i][[1, 0]]
+            triangles_and_labels[i] = triangles_and_labels[
+                i,
+                [0, 1, 2, 4, 3],
+            ]
+            nodes_idx_in_graph_linked_to_triangle[i] = nodes_idx_in_graph_linked_to_triangle[i][[1, 0]]
 
-    Faces = reorient_faces(Faces, Seg, Nodes_linked)
+    triangles_and_labels = reorient_faces(
+        triangles_and_labels,
+        geometry_reconstruction,
+        nodes_idx_in_graph_linked_to_triangle,
+    )
 
     # Automatic swap of all faces after reorientation ? I guess it's not the good norm
-    for i in range(len(Faces)):
-        Faces[i] = Faces[i, [0, 2, 1, 3, 4]]
+    for i in range(len(triangles_and_labels)):
+        triangles_and_labels[i] = triangles_and_labels[i, [0, 2, 1, 3, 4]]
 
-    return (Verts, Faces)
-
-
-def compute_normal_Faces(Verts, Faces):
-    Pos = Verts[Faces[:, [0, 1, 2]]]
-    Sides_1 = Pos[:, 1] - Pos[:, 0]
-    Sides_2 = Pos[:, 2] - Pos[:, 1]
-    Normal_faces = np.cross(Sides_1, Sides_2, axis=1)
-    Norms = np.linalg.norm(Normal_faces, axis=1)  # *(1+1e-8)
-    Normal_faces /= np.array([Norms] * 3).transpose()
-    return Normal_faces
+    return (vertices, triangles_and_labels)
 
 
-def reorient_faces(Faces, Seg, Nodes_linked):
+def compute_normal_faces(
+    points: NDArray[np.float64],
+    triangles: NDArray[np.ulonglong],
+) -> NDArray[np.float64]:
+    """Return the normalized normals for each triangles."""
+    positions = points[triangles]
+    sides_1 = positions[:, 1] - positions[:, 0]
+    sides_2 = positions[:, 2] - positions[:, 1]
+    normals = np.cross(sides_1, sides_2, axis=1)
+    norms = np.linalg.norm(normals, axis=1)
+    normals /= np.array([norms] * 3).transpose()
+    return normals
+
+
+def reorient_faces(
+    triangles_and_labels: NDArray[np.uint],
+    geometry_reconstruction: "GeometryReconstruction3D",
+    nodes_linked: NDArray[np.uint],
+) -> NDArray[np.uint]:
+    """Swap point order in triangles such that all normals points in the same direction."""
     # Thumb rule for all the faces
 
-    Normals = compute_normal_Faces(Seg.Delaunay_Graph.Vertices, Faces)
+    normals = compute_normal_faces(geometry_reconstruction.Delaunay_Graph.Vertices, triangles_and_labels[:, :3])
 
-    P = Seg.Delaunay_Graph.Vertices[Faces[:, :3]]  # points
-    Centroids_faces = np.mean(P, axis=1)
-    Centroids_nodes = np.mean(
-        Seg.Delaunay_Graph.Vertices[Seg.Delaunay_Graph.Tetra[Nodes_linked[:, 0]]],
+    points = geometry_reconstruction.Delaunay_Graph.Vertices[triangles_and_labels[:, :3]]
+    centroids_faces = np.mean(points, axis=1)  # center of tirangles
+    centroids_nodes = np.mean(
+        geometry_reconstruction.Delaunay_Graph.Vertices[
+            geometry_reconstruction.Delaunay_Graph.Tetra[nodes_linked[:, 0]]
+        ],
         axis=1,
-    )
-    Vectors = Centroids_nodes - Centroids_faces
-    Norms = np.linalg.norm(Vectors, axis=1)
-    Vectors[:, 0] /= Norms
-    Vectors[:, 1] /= Norms
-    Vectors[:, 2] /= Norms
+    )  # center of "first" adjacent tetrahedron in Delaunay Graph
 
-    Dot_product = np.sum(np.multiply(Vectors, Normals), axis=1)
-    Normals_sign = np.sign(Dot_product)
+    vectors = centroids_nodes - centroids_faces
+    # Matthieu Perez : not necessary to normalize vectors
+    # norms = np.linalg.norm(vectors, axis=1)
+    # vectors[:, 0] /= norms
+    # vectors[:, 1] /= norms
+    # vectors[:, 2] /= norms
+
+    dot_product = np.sum(np.multiply(vectors, normals), axis=1)
+    normals_sign = np.sign(dot_product)
 
     # Reorientation according to the normal sign
-    reoriented_faces = Faces.copy()
-    for i, s in enumerate(Normals_sign):
-        if s < 0:
-            reoriented_faces[i] = reoriented_faces[i][[0, 2, 1, 3, 4]]
+    reoriented_faces = triangles_and_labels.copy()
+    # for i, s in enumerate(normals_sign):
+    #     if s < 0:
+    #         reoriented_faces[i] = reoriented_faces[i][[0, 2, 1, 3, 4]]
 
+    # Matthieu Perez: one liner is quicker when there's more than 100 faces (ie. always)
+    reoriented_faces[normals_sign < 0] = reoriented_faces[normals_sign < 0][:, [0, 2, 1, 3, 4]]
     return reoriented_faces
 
 
@@ -263,108 +264,123 @@ def reorient_faces(Faces, Seg, Nodes_linked):
 #####
 
 
-def retrieve_border_tetra_with_index_map(Graph, Map):
-    reverse_map = {}
-    for key in Map:
-        for node_idx in Map[key]:
-            reverse_map[node_idx] = key
+def retrieve_border_tetra_with_index_map(
+    graph: "Delaunay_Graph",
+    map_label_to_nodes: dict[int, list[int]],
+) -> list[list[list[int]]]:
+    """Give a list that maps region number to list of triangles."""
+    map_nodes_to_labels = {}
+    for key in map_label_to_nodes:
+        for node_idx in map_label_to_nodes[key]:
+            map_nodes_to_labels[node_idx] = key
 
-    Clusters = []
-    for _ in range(len(Map)):
-        Clusters.append([])
+    clusters = [[] for _ in range(len(map_label_to_nodes))]
+    # for _ in range(len(map_label_to_nodes)):
+    #     clusters.append([])
 
-    for idx in range(len(Graph.Faces)):
-        nodes_linked = Graph.Nodes_Linked_by_Faces[idx]
+    for idx in range(len(graph.Faces)):
+        nodes_linked = graph.Nodes_Linked_by_Faces[idx]
 
-        cluster_1 = reverse_map.get(nodes_linked[0], -1)
-        cluster_2 = reverse_map.get(nodes_linked[1], -2)
+        cluster_1 = map_nodes_to_labels.get(nodes_linked[0], -1)
+        cluster_2 = map_nodes_to_labels.get(nodes_linked[1], -2)
         # if the two nodes of the edges belong to the same cluster we ignore them
         # otherwise we add them to the mesh
         if cluster_1 != cluster_2:
-            face = Graph.Faces[idx]
+            face = list(graph.Faces[idx])
             if cluster_1 >= 0:
-                Clusters[cluster_1].append(face)
+                clusters[cluster_1].append(face)
             if cluster_2 >= 0:
-                Clusters[cluster_2].append(face)
+                clusters[cluster_2].append(face)
 
-    for idx in range(len(Graph.Lone_Faces)):
-        edge = Graph.Lone_Faces[idx]
-        node_linked = Graph.Nodes_linked_by_lone_faces[idx]
-        cluster_1 = reverse_map[node_linked]
+    for idx in range(len(graph.Lone_Faces)):
+        edge = graph.Lone_Faces[idx]
+        node_linked = graph.Nodes_linked_by_lone_faces[idx]
+        cluster_1 = map_nodes_to_labels[node_linked]
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:
             v1, v2, v3 = edge[0], edge[1], edge[2]
-            Clusters[cluster_1].append([v1, v2, v3])
-    return Clusters
+            clusters[cluster_1].append([v1, v2, v3])
+    return clusters
 
 
-def compute_seeds_idx_from_voxel_coords(EDT, Centroids, Coords):
-    ##########
-    ## Compute the seeds used for watershed
-    ##########
+def compute_seeds_idx_from_voxel_coords(
+    edt: NDArray,
+    centroids: NDArray[np.float64],
+    seed_pixel_coords: NDArray[np.uint],
+) -> NDArray[np.uint]:
+    """Compute the seeds used for watershed."""
+    nx, ny, nz = edt.shape
+    points = _pixels_coords(nx, ny, nz)
+    anchors = seed_pixel_coords[:, 0] * ny * nz + seed_pixel_coords[:, 1] * nz + seed_pixel_coords[:, 2]
 
-    nx, ny, nz = EDT.shape
-    Points = create_coords(nx, ny, nz)
+    p = points[anchors]
 
-    Anchors = Coords[:, 0] * ny * nz + Coords[:, 1] * nz + Coords[:, 2]
-    p = Points[Anchors]
-
-    tree = ckdtree.cKDTree(Centroids)
-    Dist, Idx_seeds = tree.query(p)
-    return Idx_seeds
-    # unique,indices = np.unique(Idx_seeds,return_index=True)
-    # return(Idx_seeds[indices])
-    # return(Idx_seeds[sorted(indices)])
+    tree = ckdtree.cKDTree(centroids)
+    _, idx_seeds = tree.query(p)
+    return idx_seeds  # "seed" nodes ids
 
 
-def create_coords(nx, ny, nz):
-    XV = np.linspace(0, nx - 1, nx)
-    YV = np.linspace(0, ny - 1, ny)
-    ZV = np.linspace(0, nz - 1, nz)
-    xvv, yvv, zvv = np.meshgrid(XV, YV, ZV)
+def _pixels_coords(nx: int, ny: int, nz: int) -> NDArray[np.int64]:
+    """Create all pixels coordinates for an image of size nx*ny*nz."""
+    xv = np.linspace(0, nx - 1, nx)
+    yv = np.linspace(0, ny - 1, ny)
+    zv = np.linspace(0, nz - 1, nz)
+    xvv, yvv, zvv = np.meshgrid(xv, yv, zv)
     xvv = np.transpose(xvv, (1, 0, 2)).flatten()
     yvv = np.transpose(yvv, (1, 0, 2)).flatten()
     zvv = zvv.flatten()
-    Points = np.vstack(([xvv, yvv, zvv])).transpose().astype(int)
-    return Points
+    points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
+    return points
 
 
 def plot_cells_polyscope(
-    Verts,
-    Faces,
-    clean_before=True,
-    clean_after=True,
-    transparency=False,
-    show=True,
-    view="Simple",
-    scattering_coeff=0.5,
-):
-    Clusters = separate_faces_dict(Faces)
-    np.random.seed(1)
-    color_cells = {key: np.random.rand(3) for key in Clusters.keys()}
+    points: NDArray[np.float64],
+    trianles_and_labels: NDArray[np.uint],
+    clean_before: bool = True,
+    clean_after: bool = True,
+    transparency: bool = False,
+    show: bool = True,
+    view: str = "Simple",
+    scattering_coeff: float = 0.5,
+) -> None:
+    """Plot separated cells of the mesh in a polyscope viewer.
+
+    Args:
+        points (NDArray[np.float64]): Points of the mesh.
+        trianles_and_labels (NDArray[np.uint]): Triangles and materials of the mesh.
+        clean_before (bool, optional): Clean viewer before the function. Defaults to True.
+        clean_after (bool, optional): Clean viewer after the function. Defaults to True.
+        transparency (bool, optional): Allow transparency in viewer. Defaults to False.
+        show (bool, optional): Show viewer. Defaults to True.
+        view (str, optional): "Simple" or "Scattered", scatter different cells or not. Defaults to "Simple".
+        scattering_coeff (float, optional): If "Scattered" mode, Coefficient of scattering. Defaults to 0.5.
+    """
+    clusters = separate_faces_dict(trianles_and_labels)
+    rng = np.random.default_rng(1)
+    color_cells = {key: rng.rand(3) for key in clusters}
     ps.init()
 
     if clean_before:
         ps.remove_all_structures()
 
     if view == "Simple":
-        for key in Clusters:
-            cluster = Clusters[key]
+        for key in clusters:
+            cluster = clusters[key]
             ps.register_surface_mesh(
                 "Cell " + str(key),
-                Verts,
+                points,
                 np.array(cluster),
                 color=color_cells[key][:3],
                 smooth_shade=False,
             )
     elif view == "Scattered":
-        Centroid_mesh = np.mean(Verts[Faces[:, :3].astype(int)].reshape(-1, 3), axis=0)
-        for key in Clusters:
-            cluster = Clusters[key]
-            centroid_vert = np.mean(Verts[cluster].reshape(-1, 3), axis=0)
-            ps_mesh = ps.register_surface_mesh(
+        centroid_mesh = np.mean(points[trianles_and_labels[:, :3].astype(int)].reshape(-1, 3), axis=0)
+        for key in clusters:
+            cluster = clusters[key]
+            centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
+            _ = ps.register_surface_mesh(
                 "Cell " + str(key),
-                Verts - (Centroid_mesh - centroid_vert) * (scattering_coeff),
+                points - (centroid_mesh - centroid_vert) * (scattering_coeff),
                 cluster,
                 color=color_cells[key][:3],
             )
@@ -382,15 +398,23 @@ def plot_cells_polyscope(
         ps.remove_all_structures()
 
 
-def renormalize_verts(Verts, Faces):
-    # When the Vertices are only a subset of the faces, we remove the useless vertices and give the new faces
-    idx_Verts_used = np.unique(Faces)
-    Verts_used = Verts[idx_Verts_used]
-    idx_mapping = np.arange(len(Verts_used))
-    mapping = dict(zip(idx_Verts_used, idx_mapping))
+def renormalize_verts(
+    points: NDArray[np.float64],
+    triangles: NDArray[np.ulonglong],
+) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:
+    """Take a mesh made from points and triangles and remove points not indexed in triangles. Re-index triangles.
 
-    def func(x):
-        return [mapping[x[0]], mapping[x[1]], mapping[x[2]]]
+    Return the filtered points and reindexed triangles.
+    """
+    used_points_id = np.unique(triangles)
+    used_points = np.copy(points[used_points_id])
+    idx_mapping = np.arange(len(used_points))
+    mapping = dict(zip(used_points_id, idx_mapping, strict=True))
 
-    New_Faces = np.array(list(map(func, Faces)))
-    return (Verts_used, New_Faces)
+    reindexed_triangles = np.fromiter(
+        (mapping[xi] for xi in triangles.reshape(-1)),
+        dtype=np.ulonglong,
+        count=3 * len(triangles),
+    ).reshape((-1, 3))
+
+    return (used_points, reindexed_triangles)

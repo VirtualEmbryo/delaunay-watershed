@@ -97,9 +97,9 @@ def compute_length_derivative_autodiff(
 
 
 def compute_length_edges_trijunctions_torch(
-    points: torch.Tensor[torch.float],
-    edges_trijunctions: torch.Tensor[torch.int],
-) -> torch.Tensor[torch.float64]:
+    points: torch.FloatTensor,
+    edges_trijunctions: torch.IntTensor,
+) -> torch.FloatTensor:
     """Compute the length of each edge of a trijunction using torch because why not."""
     positions = points[edges_trijunctions]
     return torch.norm(positions[:, 0] - positions[:, 1], dim=1)
@@ -176,9 +176,9 @@ def extract_edges_trijunctions(mesh: "DcelData", prints: bool = False) -> dict[t
 
 ## AREAS AND DERIVATIVES
 def compute_area_faces_torch(
-    points: torch.Tensor[torch.float],
-    triangles: torch.Tensor[torch.int],
-) -> torch.Tensor[torch.float]:
+    points: torch.FloatTensor,
+    triangles: torch.IntTensor,
+) -> torch.FloatTensor:
     """Compute area of every triangle using torch."""
     positions = points[triangles]
     sides = positions - positions[:, [2, 0, 1]]
@@ -267,9 +267,9 @@ def compute_area_derivative_dict(mesh: "DcelData") -> dict[tuple[int, int], NDAr
 
 
 def compute_volume_manifold_torch(
-    points: torch.Tensor[torch.float],
-    triangles: torch.Tensor[torch.int],
-) -> torch.Tensor[torch.float]:
+    points: torch.FloatTensor,
+    triangles: torch.IntTensor,
+) -> torch.FloatTensor:
     """Compute volume of each cell."""
     coords = points[triangles]
     cross_prods = torch.cross(coords[:, 1], coords[:, 2], axis=1)

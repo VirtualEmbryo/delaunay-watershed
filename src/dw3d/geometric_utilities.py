@@ -3,6 +3,7 @@ from time import time
 import numpy as np
 import torch
 from edt import edt as euclidean_dt
+from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 from scipy.spatial import Delaunay
 from skimage.feature import peak_local_max
@@ -86,16 +87,17 @@ def give_corners(img):
     return Points
 
 
-def create_coords(nx, ny, nz):
-    XV = np.linspace(0, nx - 1, nx)
-    YV = np.linspace(0, ny - 1, ny)
-    ZV = np.linspace(0, nz - 1, nz)
-    xvv, yvv, zvv = np.meshgrid(XV, YV, ZV)
+def _pixels_coords(nx: int, ny: int, nz: int) -> NDArray[np.int64]:
+    """Create all pixels coordinates for an image of size nx*ny*nz."""
+    xv = np.linspace(0, nx - 1, nx)
+    yv = np.linspace(0, ny - 1, ny)
+    zv = np.linspace(0, nz - 1, nz)
+    xvv, yvv, zvv = np.meshgrid(xv, yv, zv)
     xvv = np.transpose(xvv, (1, 0, 2)).flatten()
     yvv = np.transpose(yvv, (1, 0, 2)).flatten()
     zvv = zvv.flatten()
-    Points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
-    return Points
+    points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
+    return points
 
 
 def compute_edt_base(labels, prints=False):
@@ -192,7 +194,7 @@ def build_triangulation_torch(
     seeds_coords = []
 
     nx, ny, nz = labels.shape
-    table_coords = create_coords(nx, ny, nz)
+    table_coords = _pixels_coords(nx, ny, nz)
     values_lbls = np.unique(labels)
 
     flat_edt = Total_EDT.flatten()
@@ -265,7 +267,7 @@ def build_triangulation_skimage(labels, min_distance=5, prints=False):
     seeds_coords = []
 
     nx, ny, nz = labels.shape
-    table_coords = create_coords(nx, ny, nz)
+    table_coords = _pixels_coords(nx, ny, nz)
     values_lbls = np.unique(labels)
 
     flat_edt = Total_EDT.flatten()

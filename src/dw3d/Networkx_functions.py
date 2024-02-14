@@ -31,10 +31,7 @@ def Assemble_Edges(Graph):
 
                 for key in range(num_edges):
                     area += Graph[node][neighbor][key]["area"]
-                    weight += (
-                        Graph[node][neighbor][key]["score"]
-                        * Graph[node][neighbor][key]["area"]
-                    )
+                    weight += Graph[node][neighbor][key]["score"] * Graph[node][neighbor][key]["area"]
 
                 score = weight / area
                 Edges.append((node, neighbor, {"score": score, "area": area}))
@@ -61,9 +58,7 @@ def seeded_watershed_aggregation(Graph, seeds, indices_labels):
     num_group = 0
 
     scores = -np.array(list(Graph.edges.data("score")))[:, 2]
-    args = np.argsort(
-        scores
-    )  # Note : probably edges.data('score') gives [node edge 1, node edge 2, score data]
+    args = np.argsort(scores)  # Note : probably edges.data('score') gives [node edge 1, node edge 2, score data]
     Edges = list(Graph.edges)
     for arg in args:
         a, b = Edges[arg]
@@ -98,7 +93,7 @@ def seeded_watershed_aggregation(Graph, seeds, indices_labels):
     return Labels
 
 
-def seeded_watershed_map(Graph, seeds, indices_labels, zero_nodes=[]):
+def seeded_watershed_map(Graph, seeds, indices_labels, zero_nodes=[]) -> dict[int, list[int]]:
     Labels = seeded_watershed_aggregation(Graph, seeds, indices_labels)
 
     # Matthieu Perez: next 3 lines seems useless, test without it
@@ -110,8 +105,8 @@ def seeded_watershed_map(Graph, seeds, indices_labels, zero_nodes=[]):
     return Map_end
 
 
-def build_Map_from_labels(PHI):
-    Map_end = {}
+def build_Map_from_labels(PHI) -> dict[int, list[int]]:
+    Map_end: dict[int, list[int]] = {}
     for idx, label in enumerate(PHI):
         Map_end[label] = Map_end.get(label, [])
         Map_end[label].append(idx)
