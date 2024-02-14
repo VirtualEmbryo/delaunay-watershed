@@ -14,7 +14,7 @@ from scipy.spatial import ckdtree
 
 if TYPE_CHECKING:
     from dw3d.functions import GeometryReconstruction3D
-    from dw3d.graph_functions import Delaunay_Graph
+    from dw3d.graph_functions import DelaunayGraph
 #####
 #####
 # I/O TOOLS
@@ -101,7 +101,7 @@ def write_mesh_text(
 
 
 def retrieve_mesh_multimaterial_multitracker_format(
-    graph: "Delaunay_Graph",
+    graph: "DelaunayGraph",
     map_label_to_nodes: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
     """Extract multi-material mesh from the Delaunay graph with every nodes (tetrahedrons) marked with a material.
@@ -129,9 +129,9 @@ def retrieve_mesh_multimaterial_multitracker_format(
     faces_idx: list[int] = []  # list ids of triangles from selected graph faces.
     nodes_linked_by_face: list[list[int]] = []  # list nodes ids linked to triangles from selected graph faces
 
-    for idx, face in enumerate(graph.Faces):
+    for idx, face in enumerate(graph.triangle_faces):
         # faces are triangles, nodes linked are the 2 adjacent tetrahedrons (nodes).
-        nodes_linked = graph.Nodes_Linked_by_Faces[idx]
+        nodes_linked = graph.nodes_linked_by_faces[idx]
 
         # corresponding regions
         cluster_1 = map_nodes_to_labels[nodes_linked[0]]
@@ -147,9 +147,9 @@ def retrieve_mesh_multimaterial_multitracker_format(
     # Matthieu Perez:
     # Apparently, there are triangles on only one tetra in the delaunay graph,
     # and sometimes they might belong to the mesh ? If segmented cell touches the border of the image ?
-    for idx in range(len(graph.Lone_Faces)):
-        face = graph.Lone_Faces[idx]
-        node_linked = graph.Nodes_linked_by_lone_faces[idx]
+    for idx in range(len(graph.lone_faces)):
+        face = graph.lone_faces[idx]
+        node_linked = graph.nodes_linked_by_lone_faces[idx]
         cluster_1 = map_nodes_to_labels[node_linked]
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:
@@ -161,7 +161,7 @@ def retrieve_mesh_multimaterial_multitracker_format(
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
     # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
     # extracted mesh quality.
-    return (graph.Vertices, np.array(faces), faces_idx, np.array(nodes_linked_by_face))
+    return (graph.vertices, np.array(faces), faces_idx, np.array(nodes_linked_by_face))
 
 
 def clean_mesh_from_seg(
@@ -225,13 +225,13 @@ def reorient_faces(
     """Swap point order in triangles such that all normals points in the same direction."""
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(geometry_reconstruction.Delaunay_Graph.Vertices, triangles_and_labels[:, :3])
+    normals = compute_normal_faces(geometry_reconstruction.Delaunay_Graph.vertices, triangles_and_labels[:, :3])
 
-    points = geometry_reconstruction.Delaunay_Graph.Vertices[triangles_and_labels[:, :3]]
+    points = geometry_reconstruction.Delaunay_Graph.vertices[triangles_and_labels[:, :3]]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        geometry_reconstruction.Delaunay_Graph.Vertices[
-            geometry_reconstruction.Delaunay_Graph.Tetra[nodes_linked[:, 0]]
+        geometry_reconstruction.Delaunay_Graph.vertices[
+            geometry_reconstruction.Delaunay_Graph.tetrahedrons[nodes_linked[:, 0]]
         ],
         axis=1,
     )  # center of "first" adjacent tetrahedron in Delaunay Graph
@@ -265,7 +265,7 @@ def reorient_faces(
 
 
 def retrieve_border_tetra_with_index_map(
-    graph: "Delaunay_Graph",
+    graph: "DelaunayGraph",
     map_label_to_nodes: dict[int, list[int]],
 ) -> list[list[list[int]]]:
     """Give a list that maps region number to list of triangles."""
@@ -278,23 +278,23 @@ def retrieve_border_tetra_with_index_map(
     # for _ in range(len(map_label_to_nodes)):
     #     clusters.append([])
 
-    for idx in range(len(graph.Faces)):
-        nodes_linked = graph.Nodes_Linked_by_Faces[idx]
+    for idx in range(len(graph.triangle_faces)):
+        nodes_linked = graph.nodes_linked_by_faces[idx]
 
         cluster_1 = map_nodes_to_labels.get(nodes_linked[0], -1)
         cluster_2 = map_nodes_to_labels.get(nodes_linked[1], -2)
         # if the two nodes of the edges belong to the same cluster we ignore them
         # otherwise we add them to the mesh
         if cluster_1 != cluster_2:
-            face = list(graph.Faces[idx])
+            face = list(graph.triangle_faces[idx])
             if cluster_1 >= 0:
                 clusters[cluster_1].append(face)
             if cluster_2 >= 0:
                 clusters[cluster_2].append(face)
 
-    for idx in range(len(graph.Lone_Faces)):
-        edge = graph.Lone_Faces[idx]
-        node_linked = graph.Nodes_linked_by_lone_faces[idx]
+    for idx in range(len(graph.lone_faces)):
+        edge = graph.lone_faces[idx]
+        node_linked = graph.nodes_linked_by_lone_faces[idx]
         cluster_1 = map_nodes_to_labels[node_linked]
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:

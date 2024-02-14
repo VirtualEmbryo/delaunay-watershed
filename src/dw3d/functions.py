@@ -6,7 +6,7 @@ from skimage.segmentation import expand_labels
 
 from dw3d.dcel import DcelData
 from dw3d.geometric_utilities import build_triangulation, interpolate_image
-from dw3d.graph_functions import Delaunay_Graph
+from dw3d.graph_functions import DelaunayGraph
 from dw3d.mesh_utilities import (
     clean_mesh_from_seg,
     compute_seeds_idx_from_voxel_coords,
@@ -43,7 +43,7 @@ class GeometryReconstruction3D:
 
         labels = interpolate_image(self.labels)
         edt = interpolate_image(self.EDT)
-        self.Delaunay_Graph = Delaunay_Graph(self.tri, edt, labels, print_info=print_info)
+        self.Delaunay_Graph = DelaunayGraph(self.tri, edt, labels, print_info=print_info)
         self.build_graph()
 
         # try Matthieu Perez: use centroid & labels to create map_label_to_nodes_ids instead of watershed ?
