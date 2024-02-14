@@ -6,7 +6,6 @@ Matthieu Perez 2024
 from time import time
 
 import numpy as np
-import torch
 from edt import edt as euclidean_dt
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
@@ -213,7 +212,9 @@ def compute_edt_base(labels: NDArray[np.uint8], prints: bool = False) -> NDArray
 
 
 def build_triangulation(
-    labels: NDArray[np.uint8], min_distance: int = 5, prints: bool = False
+    labels: NDArray[np.uint8],
+    min_distance: int = 5,
+    prints: bool = False,
 ) -> tuple[NDArray[np.uint], NDArray[np.uint8], Delaunay, NDArray[np.float64]]:
     """Build a Delaunay tesselation on points at extrema of the Euclidean Distance Transform of the segmented image.
 
