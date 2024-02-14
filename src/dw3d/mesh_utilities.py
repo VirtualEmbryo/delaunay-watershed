@@ -357,7 +357,7 @@ def plot_cells_polyscope(
     """
     clusters = separate_faces_dict(trianles_and_labels)
     rng = np.random.default_rng(1)
-    color_cells = {key: rng.rand(3) for key in clusters}
+    color_cells = {key: rng.random(3) for key in clusters}
     ps.init()
 
     if clean_before:
