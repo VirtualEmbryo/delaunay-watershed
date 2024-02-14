@@ -28,7 +28,6 @@ class GeometryReconstruction3D:
         expansion_labels=0,
         original_image=None,
         print_info=False,
-        mode="torch",
     ):
         self.original_image = original_image
         if expansion_labels > 0:
@@ -40,7 +39,6 @@ class GeometryReconstruction3D:
             self.labels,
             min_distance=min_dist,
             prints=print_info,
-            mode=mode,
         )
 
         labels = interpolate_image(self.labels)
