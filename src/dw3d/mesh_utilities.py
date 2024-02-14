@@ -177,7 +177,7 @@ def clean_mesh_from_seg(
         nodes_idx_in_graph_linked_to_triangle,
     ) = retrieve_mesh_multimaterial_multitracker_format(
         geometry_reconstruction.Delaunay_Graph,
-        geometry_reconstruction.Map_end,
+        geometry_reconstruction.map_label_to_nodes_ids,
     )
 
     vertices = points.copy()

@@ -92,9 +92,7 @@ class Delaunay_Graph:
         self.Tetra = Tetra.copy()
         Tetra += 1  # We shift to get the right keys
         faces_table = np.array(give_faces_table(Tetra))
-        key_multiplier = find_key_multiplier(
-            max(len(self.tri.points), len(self.tri.simplices))
-        )
+        key_multiplier = find_key_multiplier(max(len(self.tri.points), len(self.tri.simplices)))
         Keys = (
             faces_table[:, 0] * (key_multiplier**3)
             + faces_table[:, 1] * (key_multiplier**2)
@@ -122,16 +120,10 @@ class Delaunay_Graph:
                 and edges_table[index][2] == edges_table[index + 1][2]
             ):
                 a, b = edges_table[index][3], edges_table[index + 1][3]
-                self.Faces.append(
-                    edges_table[index][:-1] - 1
-                )  # We correct the previous shift
+                self.Faces.append(edges_table[index][:-1] - 1)  # We correct the previous shift
                 self.Nodes_Linked_by_Faces.append([a, b])
-                self.Faces_of_Nodes[a] = self.Faces_of_Nodes.get(a, []) + [
-                    len(self.Faces) - 1
-                ]
-                self.Faces_of_Nodes[b] = self.Faces_of_Nodes.get(b, []) + [
-                    len(self.Faces) - 1
-                ]
+                self.Faces_of_Nodes[a] = self.Faces_of_Nodes.get(a, []) + [len(self.Faces) - 1]
+                self.Faces_of_Nodes[b] = self.Faces_of_Nodes.get(b, []) + [len(self.Faces) - 1]
                 index += 2
             else:
                 self.Nodes_on_the_border[edges_table[index][3]] = 1
@@ -190,7 +182,7 @@ class Delaunay_Graph:
         ints = np.arange(len(Centroids))[bools]
         return ints
 
-    def networkx_graph_weights_and_borders(self):
+    def networkx_graph_weights_and_borders(self) -> networkx.Graph:
         self.Volumes = self.compute_volumes()  # Number of nodes (Tetrahedras)
         self.Areas = self.compute_areas()  # Number of edges (Faces)
 

@@ -17,7 +17,7 @@ from dw3d.mesh_utilities import (
     write_mesh_bin,
     write_mesh_text,
 )
-from dw3d.Networkx_functions import seeded_watershed_map
+from dw3d.networkx_functions import seeded_watershed_map
 
 
 class GeometryReconstruction3D:
@@ -46,33 +46,26 @@ class GeometryReconstruction3D:
         self.Delaunay_Graph = Delaunay_Graph(self.tri, edt, labels, print_info=print_info)
         self.build_graph()
 
-        # try Matthieu Perez: use centroid & labels to create Map_end instead of watershed ?
+        # try Matthieu Perez: use centroid & labels to create map_label_to_nodes_ids instead of watershed ?
         # self.label_nodes()
 
         self.watershed_seeded(print_info=print_info)
 
-    def label_nodes(self):
-        centroids = self.Delaunay_Graph.compute_nodes_centroids() + 0.5
-        labels = interpolate_image(self.labels)
-        self.nodes_centroids = []
-        pixels_centroids = np.round(centroids).astype(np.int64)
-        xc = np.minimum(156, pixels_centroids[:, 0])
-        yc = np.minimum(199, pixels_centroids[:, 1])
-        zc = np.minimum(156, pixels_centroids[:, 2])
-        node_to_region = self.labels[xc, yc, zc]
-        # node_to_region = np.round(labels((centroids))).astype(np.int64)
-        values = np.unique(node_to_region)
-        self.Map_end = {}
-        for value in values:
-            self.Map_end[value] = np.argwhere(node_to_region == value).reshape(-1)
-            self.nodes_centroids.append(centroids[self.Map_end[value]])
-        print(self.Map_end)
-        print(self.labels[22, 139, 54])
-        print(self.labels[22, 139, 55])
-        print(self.labels[22, 140, 54])
-        print(self.labels[22, 140, 55])
-        print(labels((22.5, 139.5, 54.25)))
-        # print(np.argwhere(pixels_centroids == [23, 139, 54]))
+    # def label_nodes(self):
+    #     centroids = self.Delaunay_Graph.compute_nodes_centroids() + 0.5
+    #     labels = interpolate_image(self.labels)
+    #     self.nodes_centroids = []
+    #     pixels_centroids = np.round(centroids).astype(np.int64)
+    #     xc = np.minimum(156, pixels_centroids[:, 0])
+    #     yc = np.minimum(199, pixels_centroids[:, 1])
+    #     zc = np.minimum(156, pixels_centroids[:, 2])
+    #     node_to_region = self.labels[xc, yc, zc]
+    #     # node_to_region = np.round(labels((centroids))).astype(np.int64)
+    #     values = np.unique(node_to_region)
+    #     self.map_label_to_nodes_ids = {}
+    #     for value in values:
+    #         self.map_label_to_nodes_ids[value] = np.argwhere(node_to_region == value).reshape(-1)
+    #         self.nodes_centroids.append(centroids[self.map_label_to_nodes_ids[value]])
 
     def build_graph(self):
         self.Nx_Graph = self.Delaunay_Graph.networkx_graph_weights_and_borders()
@@ -85,14 +78,14 @@ class GeometryReconstruction3D:
             self.seeds_coords,
         )
         zero_nodes = self.Delaunay_Graph.compute_zero_nodes()
-        self.Map_end = seeded_watershed_map(self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes)
+        self.map_label_to_nodes_ids = seeded_watershed_map(self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes)
 
         t2 = time()
         if print_info:
             print("Watershed done in ", np.round(t2 - t1, 3))
 
     def retrieve_clusters(self):
-        Clusters = retrieve_border_tetra_with_index_map(self.Delaunay_Graph, self.Map_end)
+        Clusters = retrieve_border_tetra_with_index_map(self.Delaunay_Graph, self.map_label_to_nodes_ids)
         return Clusters
 
     def return_dcel(self):
