@@ -176,7 +176,7 @@ def clean_mesh_from_seg(
         _,
         nodes_idx_in_graph_linked_to_triangle,
     ) = retrieve_mesh_multimaterial_multitracker_format(
-        geometry_reconstruction.Delaunay_Graph,
+        geometry_reconstruction.delaunay_graph,
         geometry_reconstruction.map_label_to_nodes_ids,
     )
 
@@ -225,13 +225,13 @@ def reorient_faces(
     """Swap point order in triangles such that all normals points in the same direction."""
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(geometry_reconstruction.Delaunay_Graph.vertices, triangles_and_labels[:, :3])
+    normals = compute_normal_faces(geometry_reconstruction.delaunay_graph.vertices, triangles_and_labels[:, :3])
 
-    points = geometry_reconstruction.Delaunay_Graph.vertices[triangles_and_labels[:, :3]]
+    points = geometry_reconstruction.delaunay_graph.vertices[triangles_and_labels[:, :3]]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        geometry_reconstruction.Delaunay_Graph.vertices[
-            geometry_reconstruction.Delaunay_Graph.tetrahedrons[nodes_linked[:, 0]]
+        geometry_reconstruction.delaunay_graph.vertices[
+            geometry_reconstruction.delaunay_graph.tetrahedrons[nodes_linked[:, 0]]
         ],
         axis=1,
     )  # center of "first" adjacent tetrahedron in Delaunay Graph

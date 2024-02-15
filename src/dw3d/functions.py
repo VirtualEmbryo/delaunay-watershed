@@ -1,7 +1,18 @@
+"""Main module with GeometryReconstruction3D, the class allowing the construction of a mesh from a segmented image.
+
+Sacha Ichbiah 2021
+Matthieu Perez 2024
+"""
+from pathlib import Path
 from time import time
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import napari
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 from skimage.segmentation import expand_labels
 
 from dw3d.dcel import DcelData
@@ -21,14 +32,27 @@ from dw3d.networkx_functions import seeded_watershed_map
 
 
 class GeometryReconstruction3D:
+    """Important class which compute a mesh from a segmented image."""
+
     def __init__(
         self,
-        labels,
-        min_dist=5,
-        expansion_labels=0,
-        original_image=None,
-        print_info=False,
-    ):
+        labels: NDArray[np.uint8],
+        min_dist: int = 5,
+        expansion_labels: int = 0,
+        original_image: NDArray[np.uint8] | None = None,
+        print_info: bool = False,
+    ) -> None:
+        """Prepare the data.
+
+        Args:
+            labels (NDArray[np.uint8]): Segmented image.
+            min_dist (int, optional): Minimum distance (in pixels) between 2 points in the final mesh. Defaults to 5.
+            expansion_labels (int, optional): distance in pixel to grow each non-zero labels
+              of the segmented image. Defaults to 0.
+            original_image (NDArray[np.uint8] | None, optional): Original segmented image, kept for plotting purposes,
+                if the labels are changed by the expansion_labels argument. Defaults to None.
+            print_info (bool, optional): Verbosity flag. Defaults to False.
+        """
         self.original_image = original_image
         if expansion_labels > 0:
             self.labels = expand_labels(labels, expansion_labels)
@@ -43,13 +67,13 @@ class GeometryReconstruction3D:
 
         labels = interpolate_image(self.labels)
         edt = interpolate_image(self.EDT)
-        self.Delaunay_Graph = DelaunayGraph(self.tri, edt, labels, print_info=print_info)
-        self.build_graph()
+        self.delaunay_graph = DelaunayGraph(self.tri, edt, labels, print_info=print_info)
+        self._build_graph()
 
         # try Matthieu Perez: use centroid & labels to create map_label_to_nodes_ids instead of watershed ?
         # self.label_nodes()
 
-        self.watershed_seeded(print_info=print_info)
+        self._watershed_seeded(print_info=print_info)
 
     # def label_nodes(self):
     #     centroids = self.Delaunay_Graph.compute_nodes_centroids() + 0.5
@@ -67,62 +91,69 @@ class GeometryReconstruction3D:
     #         self.map_label_to_nodes_ids[value] = np.argwhere(node_to_region == value).reshape(-1)
     #         self.nodes_centroids.append(centroids[self.map_label_to_nodes_ids[value]])
 
-    def build_graph(self):
-        self.Nx_Graph = self.Delaunay_Graph.networkx_graph_weights_and_borders()
+    def _build_graph(self) -> None:
+        """Build the networkx graph for watershed, from a DelaunayGraph."""
+        self.nx_graph = self.delaunay_graph.networkx_graph_weights_and_borders()
 
-    def watershed_seeded(self, print_info=True):
+    def _watershed_seeded(self, print_info: bool = True) -> None:
+        """Perform watershed algorithm to label tetrahedrons of the Delaunay networkX graph."""
         t1 = time()
         seeds_nodes = compute_seeds_idx_from_voxel_coords(
             self.EDT,
-            self.Delaunay_Graph.compute_nodes_centroids(),
+            self.delaunay_graph.compute_nodes_centroids(),
             self.seeds_coords,
         )
-        zero_nodes = self.Delaunay_Graph.compute_zero_nodes()
-        self.map_label_to_nodes_ids = seeded_watershed_map(self.Nx_Graph, seeds_nodes, self.seeds_indices, zero_nodes)
+        zero_nodes = self.delaunay_graph.compute_zero_nodes()
+        self.map_label_to_nodes_ids = seeded_watershed_map(self.nx_graph, seeds_nodes, self.seeds_indices, zero_nodes)
 
         t2 = time()
         if print_info:
             print("Watershed done in ", np.round(t2 - t1, 3))
 
-    def retrieve_clusters(self):
-        Clusters = retrieve_border_tetra_with_index_map(self.Delaunay_Graph, self.map_label_to_nodes_ids)
-        return Clusters
+    def retrieve_clusters(self) -> list[list[list[int]]]:
+        """Give a list that maps region number to list of triangles."""
+        return retrieve_border_tetra_with_index_map(self.delaunay_graph, self.map_label_to_nodes_ids)
 
-    def return_dcel(self):
-        V, F = self.return_mesh()
-        Mesh = DcelData(V, F)
-        return Mesh
+    def return_dcel(self) -> DcelData:
+        """Get a DcelData mesh from segmented image."""
+        points, triangles_and_labels = self.return_mesh()
+        return DcelData(points, triangles_and_labels)
 
-    def return_mesh(self):
+    def return_mesh(self) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
+        """Get a couple of (points, triangles_and_labels) describing the mesh obtained from segmented image."""
         return clean_mesh_from_seg(self)
 
-    def plot_cells_polyscope(self, anisotropy_factor=1.0):
-        Verts, Faces = self.return_mesh()
-        Verts[:, 0] *= anisotropy_factor
-        plot_cells_polyscope(Verts, Faces)
+    def plot_cells_polyscope(self, anisotropy_factor: float = 1.0) -> None:
+        """Plot the mesh using a polyscope viewer."""
+        points, triangles_and_labels = self.return_mesh()
+        points[:, 0] *= anisotropy_factor
+        plot_cells_polyscope(points, triangles_and_labels)
 
-    def export_mesh(self, filename, mode="bin"):
-        Verts, Faces = self.return_mesh()
+    def export_mesh(self, filename: str | Path, mode: str = "bin") -> None:
+        """Save the output mesh on disk."""
+        points, triangles_and_labels = self.return_mesh()
         if mode == "txt":
-            write_mesh_text(filename, Verts, Faces)
+            write_mesh_text(filename, points, triangles_and_labels)
         elif mode == "bin":
-            write_mesh_bin(filename, Verts, Faces)
+            write_mesh_bin(filename, points, triangles_and_labels)
         else:
             print("Please choose a valid format")
 
-    def export_segmentation(self, filename):
-        Verts, Faces = self.return_mesh()
+    def export_segmentation(self, filename: str | Path) -> None:
+        """Export mesh, seeds coordinates and image shape in numpy files."""
+        points, triangles_and_labels = self.return_mesh()
         seeds = self.seeds_coords
         image_shape = np.array(self.labels.shape)
-        Mesh_dict = {
-            "Verts": Verts,
-            "Faces": Faces,
+        mesh_dict = {
+            "Verts": points,
+            "Faces": triangles_and_labels,
             "seeds": seeds,
             "image_shape": image_shape,
         }
-        np.save(filename, Mesh_dict)
+        np.save(filename, mesh_dict)
 
-    def plot_in_napari(self, add_mesh=True):
+    def plot_in_napari(self, add_mesh: bool = True) -> "napari.Viewer":
+        """Plot results in Napari."""
         import napari
 
         v = napari.view_image(self.labels, name="Labels")
@@ -130,11 +161,12 @@ class GeometryReconstruction3D:
         if self.original_image is not None:
             v.add_image(self.original_image, name="Original Image")
         if not add_mesh:
+            rng = np.random.default_rng()
             v.add_points(
                 self.seeds_coords,
                 name="Watershed seeds",
                 n_dimensional=True,
-                face_color=np.random.rand(len(self.seeds_coords), 3),
+                face_color=rng.random((len(self.seeds_coords), 3)),
                 size=10,
             )
         v.add_points(
@@ -161,39 +193,39 @@ class GeometryReconstruction3D:
         #     )
 
         if add_mesh:
-            Verts, Faces = self.return_mesh()
-            Clusters = separate_faces_dict(Faces)
-            maxkey = np.amax(Faces[:, 3:])
-            All_verts = []
-            All_faces = []
-            All_labels = []
+            points, trianges_and_labels = self.return_mesh()
+            clusters = separate_faces_dict(trianges_and_labels)
+            maxkey = np.amax(trianges_and_labels[:, 3:])
+            all_verts = []
+            all_faces = []
+            all_labels = []
             offset = 0
 
-            for key in sorted(list(Clusters.keys())):
+            for key in sorted(clusters.keys()):
                 if key == 0:
                     continue
-                faces = np.array(Clusters[key])
+                faces = np.array(clusters[key])
 
-                vn, fn = renormalize_verts(Verts, faces)
+                vn, fn = renormalize_verts(points, faces)
                 ln = np.ones(len(vn)) * key / maxkey
 
-                All_verts.append(vn.copy())
-                All_faces.append(fn.copy() + offset)
-                All_labels.append(ln.copy())
+                all_verts.append(vn.copy())
+                all_faces.append(fn.copy() + offset)
+                all_labels.append(ln.copy())
                 offset += len(vn)
-            All_verts.append(np.array([np.mean(np.vstack(All_verts), axis=0)]))
-            All_labels.append(np.array([0]))
-            All_verts = np.vstack(All_verts)
-            All_faces = np.vstack(All_faces)
-            All_labels = np.hstack(All_labels)
+            all_verts.append(np.array([np.mean(np.vstack(all_verts), axis=0)]))
+            all_labels.append(np.array([0]))
+            all_verts = np.vstack(all_verts)
+            all_faces = np.vstack(all_faces)
+            all_labels = np.hstack(all_labels)
             v.add_points(
                 self.seeds_coords,
                 name="Watershed seeds",
                 n_dimensional=True,
-                face_color=np.array(plt.cm.viridis(np.array(sorted(list(Clusters.keys()))) / maxkey))[:, :3],
+                face_color=np.array(plt.cm.viridis(np.array(sorted(clusters.keys())) / maxkey))[:, :3],
                 size=10,
             )
 
-            v.add_surface((All_verts, All_faces, All_labels), colormap="viridis")
+            v.add_surface((all_verts, all_faces, all_labels), colormap="viridis")
 
         return v
