@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 
 import networkx
 import numpy as np
+from numpy.typing import NDArray
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
     from scipy.interpolate import RegularGridInterpolator
     from scipy.spatial import Delaunay as ScipyDelaunay
 
@@ -104,12 +104,12 @@ class DelaunayGraph:
         if print_info:
             print("Graph build in ", np.round(t2 - t1, 3))
 
-    def _construct_edges_table(self) -> NDArray[np.uint]:
+    def _construct_edges_table(self) -> NDArray[np.int64]:
         """Get an ordered array of triangle faces from tetrahedrons."""
         tetrahedrons = np.sort(self.tri.simplices, axis=1)
         self.tetrahedrons = tetrahedrons.copy()
         tetrahedrons += 1  # We shift to get the right keys
-        faces_table = np.array(give_faces_table(tetrahedrons), dtype=np.uint)
+        faces_table = np.array(give_faces_table(tetrahedrons), dtype=np.int64)
         key_multiplier = _find_key_multiplier(max(len(self.tri.points), len(self.tri.simplices)))
         keys = (
             faces_table[:, 0] * (key_multiplier**3)
@@ -121,7 +121,7 @@ class DelaunayGraph:
 
         return edges_table
 
-    def _construct_edges(self, edges_table: NDArray[np.uint]) -> None:
+    def _construct_edges(self, edges_table: NDArray[np.int64]) -> None:
         """Build adjacency maps between tetrahedrons (nodes) and triangles faces ("edges")."""
         index = 0
         n = len(edges_table)

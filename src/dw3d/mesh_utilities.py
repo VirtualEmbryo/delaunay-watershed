@@ -161,7 +161,7 @@ def retrieve_mesh_multimaterial_multitracker_format(
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
     # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
     # extracted mesh quality.
-    return (graph.vertices, np.array(faces), faces_idx, np.array(nodes_linked_by_face))
+    return (graph.vertices, np.array(faces, dtype=np.uint), faces_idx, np.array(nodes_linked_by_face, dtype=np.uint))
 
 
 def clean_mesh_from_seg(
@@ -179,7 +179,6 @@ def clean_mesh_from_seg(
         geometry_reconstruction.delaunay_graph,
         geometry_reconstruction.map_label_to_nodes_ids,
     )
-
     vertices = points.copy()
 
     for i, f in enumerate(triangles_and_labels):

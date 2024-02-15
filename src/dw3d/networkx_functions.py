@@ -36,7 +36,7 @@ def _seeded_watershed_aggregation(
     num_group = 0
 
     scores = -np.array(list(nx_graph.edges.data("score")))[:, 2]
-    args = np.argsort(scores)  # Note : probably edges.data('score') gives [node edge 1, node edge 2, score data]
+    args = np.argsort(scores)  # Note : edges.data('score') gives [node edge 1, node edge 2, score data]
     edges = list(nx_graph.edges)
     for arg in args:
         a, b = edges[arg]
