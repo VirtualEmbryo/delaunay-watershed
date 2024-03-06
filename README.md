@@ -40,7 +40,8 @@ pip install pathtopackage/delaunay-watershed
 Load an instance segmentation, construct its multimaterial mesh, and extract geometrical features of cells:
 
 ```py
-from dw3d import geometry_reconstruction_3d
+from dw3d import GeometryReconstruction3D
+from dw3D.viewing import plot_in_napari
 
 ## Load the labels
 import skimage.io as io
@@ -49,7 +50,7 @@ labels = io.imread("data/Images/1.tif")
 ## Reconstruct a multimaterial mesh from the labels
 DW = geometry_reconstruction_2d(labels,(image, min_dist = 5, expansion_labels =0,print_info=True)
 DW.plot_cells_polyscope()
-v = DW.plot_in_napari(add_mesh=True)
+v = plot_in_napari(DW, add_mesh=True)
 
 ## Use the mesh to analyze the geometry:
 Mesh=DW.return_dcel()
