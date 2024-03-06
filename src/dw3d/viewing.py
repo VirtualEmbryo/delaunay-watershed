@@ -94,3 +94,73 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
         v.add_surface((all_verts, all_faces, all_labels), colormap="viridis")
 
     return v
+
+
+def plot_cells_polyscope(
+    reconstruct: "GeometryReconstruction3D",
+    anisotropy_factor: float = 1.0,
+    clean_before: bool = True,
+    clean_after: bool = True,
+    transparency: bool = False,
+    show: bool = True,
+    view: str = "Simple",
+    scattering_coeff: float = 0.5,
+) -> None:
+    """Plot separated cells of the mesh in a polyscope viewer.
+
+    Args:
+        reconstruct (GeometryReconstruction3D): geometric reconstruction object containing the mesh to show.
+        anisotropy_factor (float, optional): Multiply the x-axis of points by this factor. Defaults to 1.0.
+        clean_before (bool, optional): Clean viewer before the function. Defaults to True.
+        clean_after (bool, optional): Clean viewer after the function. Defaults to True.
+        transparency (bool, optional): Allow transparency in viewer. Defaults to False.
+        show (bool, optional): Show viewer. Defaults to True.
+        view (str, optional): "Simple" or "Scattered", scatter different cells or not. Defaults to "Simple".
+        scattering_coeff (float, optional): If "Scattered" mode, Coefficient of scattering. Defaults to 0.5.
+    """
+    import polyscope as ps
+
+    points, triangles_and_labels = reconstruct.return_mesh()
+    points[:, 0] *= anisotropy_factor
+
+    clusters = separate_faces_dict(triangles_and_labels)
+    rng = np.random.default_rng(1)
+    color_cells = {key: rng.random(3) for key in clusters}
+    ps.init()
+
+    if clean_before:
+        ps.remove_all_structures()
+
+    if view == "Simple":
+        for key in clusters:
+            cluster = clusters[key]
+            ps.register_surface_mesh(
+                "Cell " + str(key),
+                points,
+                np.array(cluster),
+                color=color_cells[key][:3],
+                smooth_shade=False,
+            )
+    elif view == "Scattered":
+        centroid_mesh = np.mean(points[triangles_and_labels[:, :3].astype(int)].reshape(-1, 3), axis=0)
+        for key in clusters:
+            cluster = clusters[key]
+            centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
+            _ = ps.register_surface_mesh(
+                "Cell " + str(key),
+                points - (centroid_mesh - centroid_vert) * (scattering_coeff),
+                cluster,
+                color=color_cells[key][:3],
+            )
+
+    ps.set_ground_plane_mode("none")
+    if transparency:
+        ps.set_transparency_mode("simple")
+    else:
+        ps.set_transparency_mode("none")
+
+    if show:
+        ps.show()
+
+    if clean_after:
+        ps.remove_all_structures()

@@ -41,7 +41,7 @@ Load an instance segmentation, construct its multimaterial mesh, and extract geo
 
 ```py
 from dw3d import GeometryReconstruction3D
-from dw3D.viewing import plot_in_napari
+from dw3D.viewing import plot_in_napari, plot_cells_polyscope
 
 ## Load the labels
 import skimage.io as io
@@ -49,7 +49,7 @@ labels = io.imread("data/Images/1.tif")
 
 ## Reconstruct a multimaterial mesh from the labels
 DW = geometry_reconstruction_2d(labels,(image, min_dist = 5, expansion_labels =0,print_info=True)
-DW.plot_cells_polyscope()
+plot_cells_polyscope(DW)
 v = plot_in_napari(DW, add_mesh=True)
 
 ## Use the mesh to analyze the geometry:
@@ -82,13 +82,14 @@ The first step is to convert your instance segmentation masks into a multimateri
 #### 2 - Visualize and export the mesh
 
 Once a `DW` object is generated, we can use its methods the visualize and export the result: 
-- `DW:`
-    - `self.plot_cells_polyscope()` plot the resulting mesh in polyscope.
-    - `self.plot_in_napari(add_mesh=True)` offers more information about the procedure.
-    - `self.return_mesh()` `return` (`Verts`,`Faces_multimaterial`): 
+- `with dw3d.viewing:`
+    - `dw3d.viewing.plot_cells_polyscope(DW)` plot the resulting mesh in polyscope.
+    - `dw3d.viewing.plot_in_napari(DW, add_mesh=True)` offers more information about the procedure.
+- `with DW:`
+    - `DW.return_mesh()` `return` (`Verts`,`Faces_multimaterial`): 
         - `Verts` is an V x 3 numpy array of vertex positions, where V is the number of vertices.
         - `Faces_multimaterial` is a F x 5 numpy array of F faces (triangles) and labels, where at each row the 3 first indices refers to the indices of the three vertices of that triangle and the 2 last refer to a given interface label. An interface label is made of two indices referring to the two materials (e.g. cells) lying on each of its side, 0 being the exterior medium by convention.
-    - `self.return_dcel()` returns a `DcelData` object, i.e. a half-edge data structure implementing the mesh.
+    - `DW.return_dcel()` returns a `DcelData` object, i.e. a half-edge data structure implementing the mesh.
 
 #### 3 - Analyze the geometry
 

@@ -16,7 +16,6 @@ from dw3d.graph_functions import DelaunayGraph
 from dw3d.mesh_utilities import (
     clean_mesh_from_seg,
     compute_seeds_idx_from_voxel_coords,
-    plot_cells_polyscope,
     retrieve_border_tetra_with_index_map,
     write_mesh_bin,
     write_mesh_text,
@@ -115,12 +114,6 @@ class GeometryReconstruction3D:
     def return_mesh(self) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
         """Get a couple of (points, triangles_and_labels) describing the mesh obtained from segmented image."""
         return clean_mesh_from_seg(self)
-
-    def plot_cells_polyscope(self, anisotropy_factor: float = 1.0) -> None:
-        """Plot the mesh using a polyscope viewer."""
-        points, triangles_and_labels = self.return_mesh()
-        points[:, 0] *= anisotropy_factor
-        plot_cells_polyscope(points, triangles_and_labels)
 
     def export_mesh(self, filename: str | Path, mode: str = "bin") -> None:
         """Save the output mesh on disk."""
