@@ -10,7 +10,6 @@ import numpy as np
 from numpy.typing import NDArray
 from skimage.segmentation import expand_labels
 
-from dw3d.dcel import DcelData
 from dw3d.geometric_utilities import build_triangulation, interpolate_image
 from dw3d.graph_functions import DelaunayGraph
 from dw3d.mesh_utilities import (
@@ -105,11 +104,6 @@ class GeometryReconstruction3D:
     def retrieve_clusters(self) -> list[list[list[int]]]:
         """Give a list that maps region number to list of triangles."""
         return retrieve_border_tetra_with_index_map(self.delaunay_graph, self.map_label_to_nodes_ids)
-
-    def return_dcel(self) -> DcelData:
-        """Get a DcelData mesh from segmented image."""
-        points, triangles_and_labels = self.return_mesh()
-        return DcelData(points, triangles_and_labels)
 
     def return_mesh(self) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
         """Get a couple of (points, triangles_and_labels) describing the mesh obtained from segmented image."""
