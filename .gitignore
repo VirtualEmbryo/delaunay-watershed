@@ -5,3 +5,4 @@ Examples/*.rec
 Examples/*.tif
 Examples/*.py
 dist/
+.ipynb_checkpoints/
