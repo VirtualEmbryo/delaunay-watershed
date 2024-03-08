@@ -124,6 +124,8 @@ def plot_cells_polyscope(
     points[:, 0] *= anisotropy_factor
 
     clusters = _separate_faces_dict(triangles, labels)
+    del clusters[0]  # we don't want to see the exterior
+
     rng = np.random.default_rng(1)
     color_cells = {key: rng.random(3) for key in clusters}
     ps.init()
@@ -133,27 +135,25 @@ def plot_cells_polyscope(
 
     if view == "Simple":
         for key in clusters:
-            if key != 0:
-                cluster = clusters[key]
-                ps.register_surface_mesh(
-                    "Cell " + str(key),
-                    points,
-                    np.array(cluster),
-                    color=color_cells[key][:3],
-                    smooth_shade=False,
-                )
+            cluster = clusters[key]
+            ps.register_surface_mesh(
+                "Cell " + str(key),
+                points,
+                np.array(cluster),
+                color=color_cells[key][:3],
+                smooth_shade=False,
+            )
     elif view == "Scattered":
         centroid_mesh = np.mean(points[triangles.astype(int)].reshape(-1, 3), axis=0)
         for key in clusters:
-            if key != 0:
-                cluster = clusters[key]
-                centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
-                _ = ps.register_surface_mesh(
-                    "Cell " + str(key),
-                    points - (centroid_mesh - centroid_vert) * (scattering_coeff),
-                    cluster,
-                    color=color_cells[key][:3],
-                )
+            cluster = clusters[key]
+            centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
+            _ = ps.register_surface_mesh(
+                "Cell " + str(key),
+                points - (centroid_mesh - centroid_vert) * (scattering_coeff),
+                cluster,
+                color=color_cells[key][:3],
+            )
 
     ps.set_ground_plane_mode("none")
     if transparency:
