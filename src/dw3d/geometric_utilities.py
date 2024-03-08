@@ -1,4 +1,4 @@
-"""Module to compute euclidean distance transforms, place points and build Delaunay tesselation from image segmentation.
+"""Module to compute euclidean distance transforms, place points and build tesselation from image segmentation.
 
 Sacha Ichbiah 2021
 Matthieu Perez 2024

@@ -1,4 +1,4 @@
-"""Module defining DelaunayGraph, a boosted Delaunay Graph preparing a NetworkX graph for the Watershed algorithm.
+"""Module defining TesselationGraph, allowing to export a NetworkX graph with scores for the Watershed algorithm.
 
 Sacha Ichbiah 2021
 Matthieu Perez 2024
@@ -85,7 +85,7 @@ class TesselationGraph:
         min_distance: int = 5,
         print_info: bool = False,
     ) -> None:
-        """Create Delaunay graph from EDT image. Compute scores on triangles for watershed."""
+        """Create Tesselation graph from EDT image. Compute scores on triangles for watershed."""
         tri = tesselation_from_edt(
             edt_image,
             min_distance=min_distance,

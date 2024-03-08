@@ -99,16 +99,16 @@ def write_mesh_text(
 
 
 def retrieve_mesh_multimaterial_multitracker_format(
-    graph: "TesselationGraph",
+    tesselation_graph: "TesselationGraph",
     map_label_to_nodes: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
-    """Extract multi-material mesh from the Delaunay graph with every nodes (tetrahedrons) marked with a material.
+    """Extract multi-material mesh from the tesselation graph with every nodes (tetrahedrons) marked with a material.
 
     The extracted surface mesh is composed of all triangles that are faces of 2 tetrahedrons with different materials.
     Note that there will be a lot of unused points in this mesh. A filtering step will be necessary.
 
     Args:
-        graph (Delaunay_Graph): the Delaunay graph.
+        tesselation_graph (TesselationGraph): the tesselation graph.
         map_label_to_nodes (dict[int, list[int]]): The map that links materials to tetrahedrons id.
 
     Returns:
@@ -127,9 +127,9 @@ def retrieve_mesh_multimaterial_multitracker_format(
     faces_idx: list[int] = []  # list ids of triangles from selected graph faces.
     nodes_linked_by_face: list[list[int]] = []  # list nodes ids linked to triangles from selected graph faces
 
-    for idx, face in enumerate(graph.triangle_faces):
+    for idx, face in enumerate(tesselation_graph.triangle_faces):
         # faces are triangles, nodes linked are the 2 adjacent tetrahedrons (nodes).
-        nodes_linked = graph.nodes_linked_by_faces[idx]
+        nodes_linked = tesselation_graph.nodes_linked_by_faces[idx]
 
         # corresponding regions
         cluster_1 = map_nodes_to_labels[nodes_linked[0]]
@@ -143,11 +143,11 @@ def retrieve_mesh_multimaterial_multitracker_format(
             nodes_linked_by_face.append(nodes_linked)  # 2 tetras
 
     # Matthieu Perez:
-    # Apparently, there are triangles on only one tetra in the delaunay graph,
+    # Apparently, there are triangles on only one tetra in the tesselation graph,
     # and sometimes they might belong to the mesh ? If segmented cell touches the border of the image ?
-    for idx in range(len(graph.lone_faces)):
-        face = graph.lone_faces[idx]
-        node_linked = graph.nodes_linked_by_lone_faces[idx]
+    for idx in range(len(tesselation_graph.lone_faces)):
+        face = tesselation_graph.lone_faces[idx]
+        node_linked = tesselation_graph.nodes_linked_by_lone_faces[idx]
         cluster_1 = map_nodes_to_labels[node_linked]
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:
@@ -159,11 +159,16 @@ def retrieve_mesh_multimaterial_multitracker_format(
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
     # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
     # extracted mesh quality.
-    return (graph.vertices, np.array(faces, dtype=np.uint), faces_idx, np.array(nodes_linked_by_face, dtype=np.uint))
+    return (
+        tesselation_graph.vertices,
+        np.array(faces, dtype=np.uint),
+        faces_idx,
+        np.array(nodes_linked_by_face, dtype=np.uint),
+    )
 
 
-def clean_mesh_from_seg(
-    delaunay_graph: "TesselationGraph",
+def labeled_mesh_from_labeled_graph(
+    tesselation_graph: "TesselationGraph",
     map_label_to_nodes_ids: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
     """Extract points and triangles_and_labels from a GeometryReconstruction3D object."""
@@ -175,7 +180,7 @@ def clean_mesh_from_seg(
         _,
         nodes_idx_in_graph_linked_to_triangle,
     ) = retrieve_mesh_multimaterial_multitracker_format(
-        delaunay_graph,
+        tesselation_graph,
         map_label_to_nodes_ids,
     )
     vertices = points.copy()
@@ -190,7 +195,7 @@ def clean_mesh_from_seg(
 
     triangles_and_labels = reorient_faces(
         triangles_and_labels,
-        delaunay_graph,
+        tesselation_graph,
         nodes_idx_in_graph_linked_to_triangle,
     )
 
@@ -217,20 +222,20 @@ def compute_normal_faces(
 
 def reorient_faces(
     triangles_and_labels: NDArray[np.uint],
-    delaunay_graph: "TesselationGraph",
+    tesselation_graph: "TesselationGraph",
     nodes_linked: NDArray[np.uint],
 ) -> NDArray[np.uint]:
     """Swap point order in triangles such that all normals points in the same direction."""
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(delaunay_graph.vertices, triangles_and_labels[:, :3])
+    normals = compute_normal_faces(tesselation_graph.vertices, triangles_and_labels[:, :3])
 
-    points = delaunay_graph.vertices[triangles_and_labels[:, :3]]
+    points = tesselation_graph.vertices[triangles_and_labels[:, :3]]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        delaunay_graph.vertices[delaunay_graph.tetrahedrons[nodes_linked[:, 0]]],
+        tesselation_graph.vertices[tesselation_graph.tetrahedrons[nodes_linked[:, 0]]],
         axis=1,
-    )  # center of "first" adjacent tetrahedron in Delaunay Graph
+    )  # center of "first" adjacent tetrahedron in Tesselation Graph
 
     vectors = centroids_nodes - centroids_faces
     # Matthieu Perez : not necessary to normalize vectors
