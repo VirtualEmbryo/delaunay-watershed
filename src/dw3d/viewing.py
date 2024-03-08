@@ -6,6 +6,8 @@ Matthieu Perez, 2024.
 """
 from typing import TYPE_CHECKING
 
+from numpy.typing import NDArray
+
 if TYPE_CHECKING:
     import napari
 
@@ -13,7 +15,56 @@ if TYPE_CHECKING:
 
 import numpy as np
 
-from dw3d.mesh_utilities import renormalize_verts, separate_faces_dict
+
+def separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
+    """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
+    nb_regions = np.amax(labels) + 1
+
+    occupancy = np.zeros(nb_regions, dtype=np.int64)
+    triangles_of_region: dict[int, list[int]] = {}
+    for triangle, label in zip(triangles, labels, strict=True):
+        region1, region2 = label
+        if region1 >= 0:
+            if occupancy[region1] == 0:
+                triangles_of_region[region1] = [triangle]
+                occupancy[region1] += 1
+            else:
+                triangles_of_region[region1].append(triangle)
+
+        if region2 >= 0:
+            if occupancy[region2] == 0:
+                triangles_of_region[region2] = [triangle]
+                occupancy[region2] += 1
+            else:
+                triangles_of_region[region2].append(triangle)
+
+    faces_separated: dict[int, NDArray[np.uint]] = {}
+    for i in sorted(triangles_of_region.keys()):
+        faces_separated[i] = np.array(triangles_of_region[i])
+
+    return faces_separated
+
+
+def renormalize_verts(
+    points: NDArray[np.float64],
+    triangles: NDArray[np.ulonglong],
+) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:
+    """Take a mesh made from points and triangles and remove points not indexed in triangles. Re-index triangles.
+
+    Return the filtered points and reindexed triangles.
+    """
+    used_points_id = np.unique(triangles)
+    used_points = np.copy(points[used_points_id])
+    idx_mapping = np.arange(len(used_points))
+    mapping = dict(zip(used_points_id, idx_mapping, strict=True))
+
+    reindexed_triangles = np.fromiter(
+        (mapping[xi] for xi in triangles.reshape(-1)),
+        dtype=np.ulonglong,
+        count=3 * len(triangles),
+    ).reshape((-1, 3))
+
+    return (used_points, reindexed_triangles)
 
 
 def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = True) -> "napari.Viewer":
@@ -58,7 +109,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
     #     )
 
     if add_mesh:
-        points, trianges, labels = reconstruct.return_mesh()
+        points, trianges, labels = reconstruct.mesh
         clusters = separate_faces_dict(trianges, labels)
         maxkey = np.amax(trianges)
         all_verts = []
@@ -120,7 +171,7 @@ def plot_cells_polyscope(
     """
     import polyscope as ps
 
-    points, triangles, labels = reconstruct.return_mesh()
+    points, triangles, labels = reconstruct.mesh
     points[:, 0] *= anisotropy_factor
 
     clusters = separate_faces_dict(triangles, labels)

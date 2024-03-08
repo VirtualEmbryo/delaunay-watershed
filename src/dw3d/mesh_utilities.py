@@ -1,103 +1,70 @@
-"""Module for Mesh writing, mesh cleaning, mesh plotting.
+"""Module for Mesh creation and cleaning.
 
 Sacha Ichbiah 2021.
 Matthieu Perez 2024.
 """
-import struct
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.spatial import ckdtree
 
 if TYPE_CHECKING:
-    from dw3d.graph_functions import TesselationGraph
-#####
-#####
-# I/O TOOLS
-#####
-#####
-
-
-def separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
-    """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
-    nb_regions = np.amax(labels) + 1
-
-    occupancy = np.zeros(nb_regions, dtype=np.int64)
-    triangles_of_region: dict[int, list[int]] = {}
-    for triangle, label in zip(triangles, labels, strict=True):
-        region1, region2 = label
-        if region1 >= 0:
-            if occupancy[region1] == 0:
-                triangles_of_region[region1] = [triangle]
-                occupancy[region1] += 1
-            else:
-                triangles_of_region[region1].append(triangle)
-
-        if region2 >= 0:
-            if occupancy[region2] == 0:
-                triangles_of_region[region2] = [triangle]
-                occupancy[region2] += 1
-            else:
-                triangles_of_region[region2].append(triangle)
-
-    faces_separated: dict[int, NDArray[np.uint]] = {}
-    for i in sorted(triangles_of_region.keys()):
-        faces_separated[i] = np.array(triangles_of_region[i])
-
-    return faces_separated
-
-
-def write_mesh_bin(
-    filename: str | Path,
-    points: NDArray[np.float64],
-    triangles_and_labels: NDArray[np.ulonglong],
-) -> None:
-    """Save bin .rec mesh."""
-    assert len(triangles_and_labels[0]) == 5
-    assert len(points[0]) == 3
-    strfile = struct.pack("Q", len(points))
-    strfile += points.flatten().astype(np.float64).tobytes()
-    strfile += struct.pack("Q", len(triangles_and_labels))
-    dt = np.dtype([("triangles", np.uint64, (3,)), ("labels", np.int32, (2,))])
-    triangles = triangles_and_labels[:, :3].astype(np.uint64)
-    labels = triangles_and_labels[:, 3:].astype(np.int32)
-
-    def func(i: int) -> tuple[int, int]:
-        return (triangles[i], labels[i])
-
-    t = np.array(list(map(func, np.arange(len(triangles_and_labels)))), dtype=dt)
-    strfile += t.tobytes()
-    with Path(filename).open("wb") as file:
-        file.write(strfile)
-
-
-def write_mesh_text(
-    filename: str | Path,
-    points: NDArray[np.float64],
-    triangles_and_labels: NDArray[np.ulonglong],
-) -> None:
-    """Save text .rec mesh."""
-    with Path(filename).open("w") as file:
-        file.write(str(len(points)) + "\n")
-        for i in range(len(points)):
-            file.write(f"{points[i][0]:.5f} {points[i][1]:.5f} {points[i][2]:.5f}" + "\n")
-        file.write(str(len(triangles_and_labels)) + "\n")
-        for i in range(len(triangles_and_labels)):
-            content = f"{triangles_and_labels[i][0]} {triangles_and_labels[i][1]} {triangles_and_labels[i][2]} "
-            content += f"{triangles_and_labels[i][3]} {triangles_and_labels[i][4]}\n"
-            file.write(content)
+    from dw3d.tesselation_graph import TesselationGraph
 
 
 #####
 #####
-# Mesh cleaning
+# Mesh creation
 #####
 #####
 
 
-def retrieve_mesh_multimaterial_multitracker_format(
+def labeled_mesh_from_labeled_graph(
+    tesselation_graph: "TesselationGraph",
+    map_label_to_nodes_ids: dict[int, list[int]],
+) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
+    """Extract a labeled mesh from a labeled tesselation graph.
+
+    Args:
+        tesselation_graph (TesselationGraph): TesselationGraph object
+        map_label_to_nodes_ids (dict[int, list[int]]): Labels on this graph.
+
+    Returns:
+        tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]: points, triangles, and labels (materials)
+    """
+    # Take a Segmentation class as entry
+
+    (
+        points,
+        triangles,
+        labels,
+        nodes_idx_in_graph_linked_to_triangle,
+    ) = _retrieve_mesh_multimaterial_multitracker_format(
+        tesselation_graph,
+        map_label_to_nodes_ids,
+    )
+
+    # sort label (and nodes)
+    for i, label in enumerate(labels):
+        if label[0] > label[1]:  # if label0 > label1 we swap them
+            labels[i] = labels[i, [1, 0]]
+            nodes_idx_in_graph_linked_to_triangle[i] = nodes_idx_in_graph_linked_to_triangle[i][[1, 0]]
+    # reorient triangles to have coherent normals (for plotting mostly)
+    triangles = _reorient_triangles(
+        triangles,
+        tesselation_graph.vertices,
+        tesselation_graph.tetrahedrons,
+        nodes_idx_in_graph_linked_to_triangle,
+    )
+    # filter unused points
+    points, triangles = _filter_unused_points(points, triangles)
+
+    #
+
+    return (points, triangles, labels)
+
+
+def _retrieve_mesh_multimaterial_multitracker_format(
     tesselation_graph: "TesselationGraph",
     map_label_to_nodes: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint], NDArray[np.uint]]:
@@ -166,62 +133,49 @@ def retrieve_mesh_multimaterial_multitracker_format(
     )
 
 
-def labeled_mesh_from_labeled_graph(
-    tesselation_graph: "TesselationGraph",
-    map_label_to_nodes_ids: dict[int, list[int]],
-) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
-    """Extract a labeled mesh from a labeled tesselation graph.
-
-    Args:
-        tesselation_graph (TesselationGraph): TesselationGraph object
-        map_label_to_nodes_ids (dict[int, list[int]]): Labels on this graph.
-
-    Returns:
-        tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]: points, triangles, and labels (materials)
-    """
-    # Take a Segmentation class as entry
-
-    (
-        points,
-        triangles,
-        labels,
-        nodes_idx_in_graph_linked_to_triangle,
-    ) = retrieve_mesh_multimaterial_multitracker_format(
-        tesselation_graph,
-        map_label_to_nodes_ids,
-    )
-    vertices = points.copy()
-
-    for i, label in enumerate(labels):
-        if label[0] > label[1]:  # if label0 > label1 we swap them
-            labels[i] = labels[i, [1, 0]]
-            nodes_idx_in_graph_linked_to_triangle[i] = nodes_idx_in_graph_linked_to_triangle[i][[1, 0]]
-
-    triangles = reorient_triangles(
-        triangles,
-        tesselation_graph.vertices,
-        tesselation_graph.tetrahedrons,
-        nodes_idx_in_graph_linked_to_triangle,
-    )
-
-    return (vertices, triangles, labels)
-
-
-def compute_normal_faces(
+###############
+# Mesh Cleaning
+###############
+def set_points_min_max(
     points: NDArray[np.float64],
-    triangles: NDArray[np.ulonglong],
+    global_min: float,
+    global_max: float,
 ) -> NDArray[np.float64]:
-    """Return the normalized normals for each triangles."""
-    positions = points[triangles]
-    sides_1 = positions[:, 1] - positions[:, 0]
-    sides_2 = positions[:, 2] - positions[:, 1]
-    normals = np.cross(sides_1, sides_2, axis=1)
-    norms = np.linalg.norm(normals, axis=1)
-    normals /= np.array([norms] * 3).transpose()
-    return normals
+    """Return a homogeneously scaled points array such that its min & max values are global_min and global_max."""
+    current_min = points.min()
+    current_max = points.max()
+    new_points = (
+        (np.copy(points) - current_min) / (current_max - current_min) * (global_max - global_min)
+    ) + global_min
+
+    return new_points
 
 
-def reorient_triangles(
+def set_pixel_size(
+    points: NDArray[np.float64],
+    xy_pixel_size: float,
+    z_pixel_size: float,
+) -> NDArray[np.float64]:
+    """Return a scaled points array from pixel coordinates space to real coordinates.
+
+    Given microscope's xy and z pixel size.
+    """
+    new_points = np.copy(points)
+    new_points[:, :2] *= xy_pixel_size
+    new_points[:, 2] *= z_pixel_size
+
+    return new_points
+
+
+def center_around_origin(points: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Return a centered points array around 0."""
+    current_min = points.min()
+    current_max = points.max()
+
+    return np.copy(points) - (current_max - current_min) / 2.0
+
+
+def _reorient_triangles(
     triangles: NDArray[np.uint],
     vertices: NDArray[np.float64],
     tetrahedrons: NDArray[np.intc],
@@ -240,7 +194,7 @@ def reorient_triangles(
     """
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(vertices, triangles)
+    normals = _compute_normal_faces(vertices, triangles)
 
     points = vertices[triangles]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
@@ -262,44 +216,21 @@ def reorient_triangles(
     return reoriented_triangles
 
 
-#####
-#####
-# MESH PLOTTING
-#####
-#####
+def _compute_normal_faces(
+    points: NDArray[np.float64],
+    triangles: NDArray[np.ulonglong],
+) -> NDArray[np.float64]:
+    """Return the normalized normals for each triangles."""
+    positions = points[triangles]
+    sides_1 = positions[:, 1] - positions[:, 0]
+    sides_2 = positions[:, 2] - positions[:, 1]
+    normals = np.cross(sides_1, sides_2, axis=1)
+    norms = np.linalg.norm(normals, axis=1)
+    normals /= np.array([norms] * 3).transpose()
+    return normals
 
 
-def compute_seeds_idx_from_voxel_coords(
-    edt: NDArray,
-    centroids: NDArray[np.float64],
-    seed_pixel_coords: NDArray[np.uint],
-) -> NDArray[np.uint]:
-    """Compute the seeds used for watershed."""
-    nx, ny, nz = edt.shape
-    points = _pixels_coords(nx, ny, nz)
-    anchors = seed_pixel_coords[:, 0] * ny * nz + seed_pixel_coords[:, 1] * nz + seed_pixel_coords[:, 2]
-
-    p = points[anchors]
-
-    tree = ckdtree.cKDTree(centroids)
-    _, idx_seeds = tree.query(p)
-    return idx_seeds  # "seed" nodes ids
-
-
-def _pixels_coords(nx: int, ny: int, nz: int) -> NDArray[np.int64]:
-    """Create all pixels coordinates for an image of size nx*ny*nz."""
-    xv = np.linspace(0, nx - 1, nx)
-    yv = np.linspace(0, ny - 1, ny)
-    zv = np.linspace(0, nz - 1, nz)
-    xvv, yvv, zvv = np.meshgrid(xv, yv, zv)
-    xvv = np.transpose(xvv, (1, 0, 2)).flatten()
-    yvv = np.transpose(yvv, (1, 0, 2)).flatten()
-    zvv = zvv.flatten()
-    points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
-    return points
-
-
-def renormalize_verts(
+def _filter_unused_points(
     points: NDArray[np.float64],
     triangles: NDArray[np.ulonglong],
 ) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:

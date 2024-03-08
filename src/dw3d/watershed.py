@@ -7,16 +7,32 @@ import networkx
 import numpy as np
 from numpy.typing import NDArray
 
-#####
-# GENERAL
-# PURPOSE
-# FUNCTIONS
-#####
-
 
 #####
 # SEEDED WATERSHED
 #####
+def seeded_watershed_map(
+    nx_graph: networkx.Graph,
+    seeds_nodes: NDArray[np.uint],
+    indices_labels: NDArray[np.uint8],
+    zero_nodes: NDArray[np.uint] | None = None,
+) -> dict[int, list[int]]:
+    """Perform Watershed algorithm on tetrahedron nodes to label them. Return the map label -> indices of nodes."""
+    # Init the map node -> label with seeds
+    map_node_id_to_label = np.zeros(len(nx_graph.nodes), dtype=int) - 1
+
+    # Seeds are expressed as labels of the nodes
+    for i, seed_node in enumerate(seeds_nodes):
+        map_node_id_to_label[seed_node] = indices_labels[i]
+
+    map_node_id_to_label = _seeded_watershed_aggregation(nx_graph, map_node_id_to_label)
+
+    # Matthieu Perez: next 2 lines seems useless, test without it
+    if zero_nodes is None:
+        map_node_id_to_label[zero_nodes] = 0
+
+    map_label_to_nodes = _build_map_label_to_node_ids(map_node_id_to_label)
+    return map_label_to_nodes
 
 
 def _seeded_watershed_aggregation(
@@ -63,30 +79,6 @@ def _seeded_watershed_aggregation(
                     groups[num_group] = [a, b]
                     num_group += 1
     return map_node_id_to_label
-
-
-def seeded_watershed_map(
-    nx_graph: networkx.Graph,
-    seeds_nodes: NDArray[np.uint],
-    indices_labels: NDArray[np.uint8],
-    zero_nodes: NDArray[np.uint] | None = None,
-) -> dict[int, list[int]]:
-    """Perform Watershed algorithm on tetrahedron nodes to label them. Return the map label -> indices of nodes."""
-    # Init the map node -> label with seeds
-    map_node_id_to_label = np.zeros(len(nx_graph.nodes), dtype=int) - 1
-
-    # Seeds are expressed as labels of the nodes
-    for i, seed_node in enumerate(seeds_nodes):
-        map_node_id_to_label[seed_node] = indices_labels[i]
-
-    map_node_id_to_label = _seeded_watershed_aggregation(nx_graph, map_node_id_to_label)
-
-    # Matthieu Perez: next 2 lines seems useless, test without it
-    if zero_nodes is None:
-        map_node_id_to_label[zero_nodes] = 0
-
-    map_label_to_nodes = _build_map_label_to_node_ids(map_node_id_to_label)
-    return map_label_to_nodes
 
 
 def _build_map_label_to_node_ids(map_node_id_to_label: NDArray[np.uint8]) -> dict[int, list[int]]:

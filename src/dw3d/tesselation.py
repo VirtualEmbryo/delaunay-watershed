@@ -11,19 +11,6 @@ from scipy.spatial import Delaunay
 from skimage.feature import peak_local_max
 
 
-def give_corners(img: NDArray) -> NDArray[np.uint]:
-    """Give the eight corners pixels coordinates of a 3D image."""
-    corners = np.zeros((8, 3), dtype=np.uint)
-    index = 0
-    a, b, c = img.shape
-    for i in [0, a - 1]:
-        for j in [0, b - 1]:
-            for k in [0, c - 1]:
-                corners[index] = np.array([i, j, k])
-                index += 1
-    return corners
-
-
 def tesselation_from_edt(
     edt_image: NDArray[np.float64],
     min_distance: int = 5,
@@ -47,7 +34,7 @@ def tesselation_from_edt(
         print("Mode == Skimage")
         print("min_distance =", min_distance)
 
-    corners = give_corners(edt_image)
+    corners = _give_corners(edt_image)
 
     t3 = time()
     if print_info:
@@ -86,3 +73,16 @@ def tesselation_from_edt(
         print("Triangulation build in ", np.round(t5 - t4, 2))
 
     return tesselation
+
+
+def _give_corners(img: NDArray) -> NDArray[np.uint]:
+    """Give the eight corners pixels coordinates of a 3D image."""
+    corners = np.zeros((8, 3), dtype=np.uint)
+    index = 0
+    a, b, c = img.shape
+    for i in [0, a - 1]:
+        for j in [0, b - 1]:
+            for k in [0, c - 1]:
+                corners[index] = np.array([i, j, k])
+                index += 1
+    return corners

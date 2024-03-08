@@ -78,7 +78,7 @@ Once a `DW` object is generated, we can use its methods the visualize and export
     - `dw3d.viewing.plot_cells_polyscope(DW)` plot the resulting mesh in polyscope.
     - `dw3d.viewing.plot_in_napari(DW, add_mesh=True)` offers more information about the procedure.
 - `with DW:`
-    - `DW.return_mesh()` `return` (`points`,`triangles`, `labels`): 
+    - `DW.mesh` `return` (`points`,`triangles`, `labels`): 
         - `points` is an V x 3 numpy array of vertex positions, where V is the number of vertices.
         - `triangles` is a T x 3 numpy array of T triangles, where at each row the 3 indices refer to the indices of the three vertices of that triangle
         - `labels` is a T x 2 numpy array of T pair of labels, where at each row the 2 indices refer to a given interface label. An interface label is made of two indices referring to the two materials (e.g. cells) lying on each of its side, 0 being the exterior medium by convention.
