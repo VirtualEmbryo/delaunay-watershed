@@ -8,13 +8,11 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-import polyscope as ps
 from numpy.typing import NDArray
 from scipy.spatial import ckdtree
 
 if TYPE_CHECKING:
-    from dw3d.functions import GeometryReconstruction3D
-    from dw3d.graph_functions import DelaunayGraph
+    from dw3d.graph_functions import TesselationGraph
 #####
 #####
 # I/O TOOLS
@@ -101,7 +99,7 @@ def write_mesh_text(
 
 
 def retrieve_mesh_multimaterial_multitracker_format(
-    graph: "DelaunayGraph",
+    graph: "TesselationGraph",
     map_label_to_nodes: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
     """Extract multi-material mesh from the Delaunay graph with every nodes (tetrahedrons) marked with a material.
@@ -165,7 +163,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
 
 
 def clean_mesh_from_seg(
-    geometry_reconstruction: "GeometryReconstruction3D",
+    delaunay_graph: "TesselationGraph",
+    map_label_to_nodes_ids: dict[int, list[int]],
 ) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
     """Extract points and triangles_and_labels from a GeometryReconstruction3D object."""
     # Take a Segmentation class as entry
@@ -176,8 +175,8 @@ def clean_mesh_from_seg(
         _,
         nodes_idx_in_graph_linked_to_triangle,
     ) = retrieve_mesh_multimaterial_multitracker_format(
-        geometry_reconstruction.delaunay_graph,
-        geometry_reconstruction.map_label_to_nodes_ids,
+        delaunay_graph,
+        map_label_to_nodes_ids,
     )
     vertices = points.copy()
 
@@ -191,7 +190,7 @@ def clean_mesh_from_seg(
 
     triangles_and_labels = reorient_faces(
         triangles_and_labels,
-        geometry_reconstruction,
+        delaunay_graph,
         nodes_idx_in_graph_linked_to_triangle,
     )
 
@@ -218,20 +217,18 @@ def compute_normal_faces(
 
 def reorient_faces(
     triangles_and_labels: NDArray[np.uint],
-    geometry_reconstruction: "GeometryReconstruction3D",
+    delaunay_graph: "TesselationGraph",
     nodes_linked: NDArray[np.uint],
 ) -> NDArray[np.uint]:
     """Swap point order in triangles such that all normals points in the same direction."""
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(geometry_reconstruction.delaunay_graph.vertices, triangles_and_labels[:, :3])
+    normals = compute_normal_faces(delaunay_graph.vertices, triangles_and_labels[:, :3])
 
-    points = geometry_reconstruction.delaunay_graph.vertices[triangles_and_labels[:, :3]]
+    points = delaunay_graph.vertices[triangles_and_labels[:, :3]]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        geometry_reconstruction.delaunay_graph.vertices[
-            geometry_reconstruction.delaunay_graph.tetrahedrons[nodes_linked[:, 0]]
-        ],
+        delaunay_graph.vertices[delaunay_graph.tetrahedrons[nodes_linked[:, 0]]],
         axis=1,
     )  # center of "first" adjacent tetrahedron in Delaunay Graph
 

@@ -4,15 +4,13 @@ Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
 from time import time
-from typing import TYPE_CHECKING
 
 import networkx
 import numpy as np
 from numpy.typing import NDArray
+from scipy.interpolate import RegularGridInterpolator
 
-if TYPE_CHECKING:
-    from scipy.interpolate import RegularGridInterpolator
-    from scipy.spatial import Delaunay as ScipyDelaunay
+from dw3d.geometric_utilities import tesselation_from_edt
 
 
 def give_faces_table(tetrahedrons: NDArray[np.uint]) -> list[list[int]]:
@@ -37,7 +35,7 @@ def _find_key_multiplier(num_points: int) -> int:
 def _faces_score_from_sampling(
     triangle_faces: NDArray[np.uint],
     vertices: NDArray[np.float64],
-    f: "RegularGridInterpolator",
+    f: RegularGridInterpolator,
 ) -> NDArray[np.float64]:
     alpha = np.linspace(0, 1, 5)[1:-1]
     beta = np.linspace(0, 1, 5)[1:-1]
@@ -78,28 +76,30 @@ def _faces_score_from_sampling(
     return score_faces
 
 
-class DelaunayGraph:
-    """Boosted Delaunay Graph to compute scores for a Watershed algorithm to label the tetrahedrons."""
+class TesselationGraph:
+    """Graph computed from a tesselation to compute scores for a Watershed algorithm to label the tetrahedrons."""
 
     def __init__(
         self,
-        tri: "ScipyDelaunay",
-        edt: "RegularGridInterpolator",
-        labels: "RegularGridInterpolator",
+        edt_image: NDArray[np.float64],
+        min_distance: int = 5,
         print_info: bool = False,
     ) -> None:
-        """Create object from scipy's Delaunay tesselation. Compute scores on triangles for watershed."""
+        """Create Delaunay graph from EDT image. Compute scores on triangles for watershed."""
+        tri = tesselation_from_edt(
+            edt_image,
+            min_distance=min_distance,
+            print_info=print_info,
+        )
         t1 = time()
         self.nodes = tri.simplices
         self.vertices = tri.points
         self.tri = tri
         self.n_simplices = len(tri.simplices)
-        self.edt = edt
-        self.labels = labels
 
         edges_table = self._construct_edges_table()
         self._construct_edges(edges_table)
-        self._compute_scores(edt)
+        self._compute_scores(edt_image)
         t2 = time()
         if print_info:
             print("Graph build in ", np.round(t2 - t1, 3))
@@ -156,8 +156,9 @@ class DelaunayGraph:
         self.lone_faces = np.array(self.lone_faces)
         self.nodes_linked_by_lone_faces = np.array(self.nodes_linked_by_lone_faces)
 
-    def _compute_scores(self, edt: "RegularGridInterpolator") -> None:
+    def _compute_scores(self, edt: NDArray[np.float64]) -> None:
         # Remember : each edge is a face !
+        edt = _interpolate_image(edt)
         self.scores = _faces_score_from_sampling(self.triangle_faces, self.vertices, edt)
 
     def compute_volumes(self) -> NDArray[np.float64]:
@@ -184,10 +185,11 @@ class DelaunayGraph:
         """Compute tesselation's tetrahedrons' centroid point."""
         return np.mean(self.vertices[self.nodes], axis=1)
 
-    def compute_zero_nodes(self) -> NDArray[np.uint]:
+    def compute_zero_nodes(self, segmented_image: NDArray[np.uint]) -> NDArray[np.uint]:
         """Get index of tetrahedrons with centroids on the part where segmented image is 0."""
         centroids = self.compute_nodes_centroids()
-        bools = self.labels(centroids) == 0
+        segmented_image = _interpolate_image(segmented_image)
+        bools = segmented_image(centroids) == 0
         ints = np.arange(len(centroids))[bools]
         return ints
 
@@ -218,3 +220,12 @@ class DelaunayGraph:
         nx_graph.add_edges_from(network_edges)
 
         return nx_graph
+
+
+def _interpolate_image(image: NDArray[np.uint8]) -> RegularGridInterpolator:
+    """Return an interpolated image, a function with values based on pixels."""
+    x = np.linspace(0, image.shape[0] - 1, image.shape[0])
+    y = np.linspace(0, image.shape[1] - 1, image.shape[1])
+    z = np.linspace(0, image.shape[2] - 1, image.shape[2])
+    image_interp = RegularGridInterpolator((x, y, z), image)
+    return image_interp

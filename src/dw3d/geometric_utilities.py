@@ -24,17 +24,17 @@ def give_corners(img: NDArray) -> NDArray[np.uint]:
     return corners
 
 
-def build_triangulation(
+def tesselation_from_edt(
     edt_image: NDArray[np.float64],
     min_distance: int = 5,
-    prints: bool = False,
-) -> tuple[NDArray[np.uint], NDArray[np.uint8], Delaunay, NDArray[np.float64]]:
+    print_info: bool = False,
+) -> Delaunay:
     """Build a Delaunay tesselation on points at extrema of the Euclidean Distance Transform of the segmented image.
 
     Args:
         edt_image (NDArray[np.uint8]): Segmented image.
         min_distance (int, optional): Minimal distance between two points of the Delaunay tesselation. Defaults to 5.
-        prints (bool, optional): Whether to print some intermediate results and details. Defaults to False.
+        print_info (bool, optional): Whether to print some intermediate results and details. Defaults to False.
 
     Returns:
         tuple[NDArray[np.uint], NDArray[np.uint8], Delaunay, NDArray[np.float64]]:
@@ -43,14 +43,14 @@ def build_triangulation(
             - Delaunay tesselation constructed
             - Euclidean Distance Transform of segmented image.
     """
-    if prints:
+    if print_info:
         print("Mode == Skimage")
         print("min_distance =", min_distance)
 
     corners = give_corners(edt_image)
 
     t3 = time()
-    if prints:
+    if print_info:
         print("Searching local extremas ...")
 
     nx, ny, nz = edt_image.shape
@@ -63,26 +63,26 @@ def build_triangulation(
     edt = edt_image + np.random.rand(nx, ny, nz) * 1e-5  # noqa: NPY002
 
     local_mins = peak_local_max(-edt, min_distance=min_distance, exclude_border=False)
-    if prints:
+    if print_info:
         print("Number of local minimas :", len(local_mins))
 
     local_maxes = peak_local_max(edt, min_distance=min_distance, exclude_border=False)
-    if prints:
+    if print_info:
         print("Number of local maxes :", len(local_maxes))
 
     t4 = time()
-    if prints:
+    if print_info:
         print("Local minimas computed in ", np.round(t4 - t3, 2))
 
     all_points = np.vstack((corners, local_maxes, local_mins))
 
-    if prints:
+    if print_info:
         print("Starting triangulation..")
 
     tesselation = Delaunay(all_points)
 
     t5 = time()
-    if prints:
+    if print_info:
         print("Triangulation build in ", np.round(t5 - t4, 2))
 
     return tesselation

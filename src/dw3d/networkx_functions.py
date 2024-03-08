@@ -21,16 +21,9 @@ from numpy.typing import NDArray
 
 def _seeded_watershed_aggregation(
     nx_graph: networkx.Graph,
-    seeds_nodes: NDArray[np.uint],
-    indices_labels: NDArray[np.uint8],
+    map_node_id_to_label: NDArray[np.uint],
 ) -> NDArray[np.uint8]:
     """Perform Watershed algorithm on tetrahedron nodes to label them. Return the labels array."""
-    map_node_id_to_label = np.zeros(len(nx_graph.nodes), dtype=int) - 1
-
-    # Seeds are expressed as labels of the nodes
-    for i, seed_node in enumerate(seeds_nodes):
-        map_node_id_to_label[seed_node] = indices_labels[i]
-
     groups = {}
     number_group = np.zeros(len(nx_graph.nodes), dtype=int) - 1
     num_group = 0
@@ -79,14 +72,18 @@ def seeded_watershed_map(
     zero_nodes: NDArray[np.uint] | None = None,
 ) -> dict[int, list[int]]:
     """Perform Watershed algorithm on tetrahedron nodes to label them. Return the map label -> indices of nodes."""
-    map_node_id_to_label = _seeded_watershed_aggregation(nx_graph, seeds_nodes, indices_labels)
+    # Init the map node -> label with seeds
+    map_node_id_to_label = np.zeros(len(nx_graph.nodes), dtype=int) - 1
 
-    # Matthieu Perez: next 5 lines seems useless, test without it
+    # Seeds are expressed as labels of the nodes
+    for i, seed_node in enumerate(seeds_nodes):
+        map_node_id_to_label[seed_node] = indices_labels[i]
+
+    map_node_id_to_label = _seeded_watershed_aggregation(nx_graph, map_node_id_to_label)
+
+    # Matthieu Perez: next 2 lines seems useless, test without it
     if zero_nodes is None:
-        zero_nodes = np.array([])
-    map_node_id_to_label[zero_nodes] = 0
-    for i, seed in enumerate(seeds_nodes):
-        map_node_id_to_label[seed] = indices_labels[i]
+        map_node_id_to_label[zero_nodes] = 0
 
     map_label_to_nodes = _build_map_label_to_node_ids(map_node_id_to_label)
     return map_label_to_nodes

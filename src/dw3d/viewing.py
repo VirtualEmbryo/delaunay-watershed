@@ -35,7 +35,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
             size=10,
         )
     v.add_points(
-        reconstruct.tri.points,
+        reconstruct.tesselation_graph.vertices,
         name="triangulation_points",
         n_dimensional=False,
         face_color="red",
