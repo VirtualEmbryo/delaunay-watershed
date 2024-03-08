@@ -6,3 +6,5 @@ Examples/*.tif
 Examples/*.py
 dist/
 .ipynb_checkpoints/
+imgui.ini
+.polyscope.ini
