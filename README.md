@@ -6,9 +6,9 @@
 <img src="https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
 
 
-**Delaunay-Watershed-3D** is an algorithm designed to reconstruct *in 3D* a sparse surface mesh representation of the geometry of multicellular structures or nuclei from instance segmentations. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualization of data**. We provide high level APIs to extract geometrical features from the meshes, as well as visualization tools based on [polyscope](https://polyscope.run) and [napari](https://napari.org).
+**Delaunay-Watershed-3D** is an algorithm designed to reconstruct *in 3D* a sparse surface mesh representation of the geometry of multicellular structures or nuclei from instance segmentations. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualization of data**. We provide as well visualization tools based on [polyscope](https://polyscope.run) and [napari](https://napari.org).
 
-Delaunay-Watershed was created by Sacha Ichbiah during his PhD in [Turlier Lab](https://www.turlierlab.com), and is maintained by Sacha Ichbiah, Matthieu Perez and Hervé Turlier. For support, please open an issue.
+Delaunay-Watershed was created by Sacha Ichbiah during his PhD in [Turlier Lab](https://www.turlierlab.com), and is improved and maintained by Matthieu Perez and Hervé Turlier. For support, please open an issue.
 If you use this library in your work please cite the [paper](https://doi.org/10.1101/2023.04.12.536641). 
 
 If you are interested in 2D images and meshes, please look at the [foambryo-2D](https://github.com/VirtualEmbryo/foambryo2D) package instead.
@@ -22,10 +22,15 @@ This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo
 
 ### Installation
 
-We recommend to install delaunay-watershed from the PyPI repository directly
+We recommend to install delaunay-watershed from the PyPI repository directly, in a virtual environment.
 
 ```shell
 pip install delaunay-watershed-3d
+```
+
+If you want to use our visualization tools, install the package with the `viewing` option:
+```shell
+pip install "delaunay-watershed-3d[viewing]"
 ```
 
 For developers, you may also install delaunay-watershed by cloning the source code and installing from the local directory
@@ -37,73 +42,45 @@ pip install pathtopackage/delaunay-watershed
 
 ### Quick start example 
 
-Load an instance segmentation, construct its multimaterial mesh, and extract geometrical features of cells:
+Load an instance segmentation, construct its multimaterial mesh, save it to a file for later, and visualize it:
 
 ```py
 from dw3d import GeometryReconstruction3D
 from dw3D.viewing import plot_in_napari, plot_cells_polyscope
 
-## Load the labels
+# Load the segmentation image
 import skimage.io as io
-labels = io.imread("data/Images/1.tif")
+segmentation_mask = io.imread("data/Images/1.tif")
 
-## Reconstruct a multimaterial mesh from the labels
-DW = geometry_reconstruction_2d(labels,(image, min_dist = 5, expansion_labels =0,print_info=True)
-plot_cells_polyscope(DW)
-v = plot_in_napari(DW, add_mesh=True)
-
+# Reconstruct a multimaterial mesh from the labels
+reconstruct = GeometryReconstruction3D(segmentation_mask, min_dist = 5, print_info=True)
+# Save it
+reconstruct.save_to_vtk_mesh("mesh_from_segmentation.vtk", binary_mode=True)
+# Plot it
+plot_cells_polyscope(reconstruct)
 ```
 
-
----
-
-### API and documentation
-
-#### 1 - Creating a multimaterial mesh:
-The first step is to convert your instance segmentation masks into a multimaterial mesh
-
-- `geometry_reconstruction_3d(labels,min_dist = 5, expansion_labels = 0,original_image = None,print_info = False, mode='torch')`: 
-    - `labels` is a segmentation image array.
-    - `min_dist` defines the minimal distance, in pixels, between two points used for the Delaunay tesselation.
-    - `expansion_labels` can be used to expand the labels and make them contact each other.
-    - `original_image` can be used for visualization purposes in Napari.
-    - `print_info` measures time between several checkpoints and gives usefull information about the procedure.
-    - `mode` can be `torch` or `skimage`. It is highly recommended to use the mode torch (which requires PyTorch).
-    - `return DW`, an object containing visualization and export utilities.
-
-#### 2 - Visualize and export the mesh
-
-Once a `DW` object is generated, we can use its methods the visualize and export the result: 
-- `with dw3d.viewing:`
-    - `dw3d.viewing.plot_cells_polyscope(DW)` plot the resulting mesh in polyscope.
-    - `dw3d.viewing.plot_in_napari(DW, add_mesh=True)` offers more information about the procedure.
-- `with DW:`
-    - `DW.mesh` `return` (`points`,`triangles`, `labels`): 
-        - `points` is an V x 3 numpy array of vertex positions, where V is the number of vertices.
-        - `triangles` is a T x 3 numpy array of T triangles, where at each row the 3 indices refer to the indices of the three vertices of that triangle
-        - `labels` is a T x 2 numpy array of T pair of labels, where at each row the 2 indices refer to a given interface label. An interface label is made of two indices referring to the two materials (e.g. cells) lying on each of its side, 0 being the exterior medium by convention.
-
-#### 3 - Analyze the geometry
-
 Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/) for example.
+
+For more examples, see the notebooks.
 
 
 ---
 ### Biological examples
 
 #### Geometrical reconstruction of cell interfaces in the *P. Mammilata* embryo
-See the [Python notebook 1](./Examples/Geometry_and_mask_reconstruction_1.ipynb).
+See the [Python notebook 1](./Examples/example_1_mesh_reconstruction_visualisation.ipynb).
 
-![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Mesh reconstruction.")
 
 Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
 
 
 #### Geometrical reconstruction of cell nuclei
 
-See the [Python notebook 2](./Examples/Geometry_and_mask_reconstruction_2.ipynb).
+See the [Python notebook 2](./Examples/example_2_mask_compression_reconstruction.ipynb).
 
-![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Title")
+![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
 
 Segmentation masks from [Stardist](https://github.com/stardist/stardist)
 
@@ -113,7 +90,7 @@ Segmentation masks from [Stardist](https://github.com/stardist/stardist)
 
 ### Credits, contact, citations
 If you use this tool, please cite the associated paper.
-Do not hesitate to contact Sacha Ichbiah and Hervé Turlier for practical questions and applications. 
+Do not hesitate to contact Matthieu Perez and Hervé Turlier for practical questions and applications. 
 We hope that **Delaunay-Watershed** could help biologists and physicists to shed light on the mechanical aspects of early development.
 
 ```
