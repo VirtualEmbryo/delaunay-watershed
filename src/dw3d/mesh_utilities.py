@@ -20,15 +20,14 @@ if TYPE_CHECKING:
 #####
 
 
-def separate_faces_dict(triangles_and_labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
+def separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
     """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
-    nb_regions = np.amax(triangles_and_labels[:, [3, 4]]) + 1
+    nb_regions = np.amax(labels) + 1
 
     occupancy = np.zeros(nb_regions, dtype=np.int64)
     triangles_of_region: dict[int, list[int]] = {}
-    for face in triangles_and_labels:
-        triangle = face[:3]
-        region1, region2 = face[3:]
+    for triangle, label in zip(triangles, labels, strict=True):
+        region1, region2 = label
         if region1 >= 0:
             if occupancy[region1] == 0:
                 triangles_of_region[region1] = [triangle]
@@ -101,7 +100,7 @@ def write_mesh_text(
 def retrieve_mesh_multimaterial_multitracker_format(
     tesselation_graph: "TesselationGraph",
     map_label_to_nodes: dict[int, list[int]],
-) -> tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
+) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint], NDArray[np.uint]]:
     """Extract multi-material mesh from the tesselation graph with every nodes (tetrahedrons) marked with a material.
 
     The extracted surface mesh is composed of all triangles that are faces of 2 tetrahedrons with different materials.
@@ -114,8 +113,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
     Returns:
         tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
             - an array of vertices of the mesh. Note that there are some unused points, to be filtered later.
-            - an array of triangles and labels (id p1, id p2, id p3, material 1, material 2)
-            - the list of ids of faces in graph.faces that made it to the array of triangles and labels.
+            - an array of triangles (id p1, id p2, id p3)
+            - an array of labels (material 1, material 2)
             - the list of ids of nodes (tetrahedrons) in graph.nodes that are linked to selected triangles.
     """
     # faces = triangles ; nodes = tetras, with map linking regions to list of tetra/node ids
@@ -123,8 +122,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
     for key in map_label_to_nodes:
         for node_idx in map_label_to_nodes[key]:
             map_nodes_to_labels[node_idx] = key
-    faces: list[list[int]] = []  # p1, p2, p3, l1, l2 of selected faces
-    faces_idx: list[int] = []  # list ids of triangles from selected graph faces.
+    triangles: list[list[int]] = []  # p1, p2, p3, selected faces
+    labels: list[list[int]] = []  # l1, l2 of selected faces
     nodes_linked_by_face: list[list[int]] = []  # list nodes ids linked to triangles from selected graph faces
 
     for idx, face in enumerate(tesselation_graph.triangle_faces):
@@ -138,8 +137,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
 
         if cluster_1 != cluster_2:
             # some faces belong to 2 tetras of two different regions : those are the triangles in final mesh !
-            faces.append([face[0], face[1], face[2], cells[0], cells[1]])  # tri p1, p2, p3, label l1, l2
-            faces_idx.append(idx)  # tri id
+            triangles.append([face[0], face[1], face[2]])  # tri p1, p2, p3, label l1, l2
+            labels.append([cells[0], cells[1]])
             nodes_linked_by_face.append(nodes_linked)  # 2 tetras
 
     # Matthieu Perez:
@@ -152,8 +151,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
         # We incorporate all these edges because they are border edges
         if cluster_1 != 0:
             cells = [0, cluster_1]
-            faces.append([face[0], face[1], face[2], cells[0], cells[1]])
-            faces_idx.append(idx)
+            triangles.append([face[0], face[1], face[2]])
+            labels.append([cells[0], cells[1]])
             nodes_linked_by_face.append(nodes_linked)
 
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
@@ -161,8 +160,8 @@ def retrieve_mesh_multimaterial_multitracker_format(
     # extracted mesh quality.
     return (
         tesselation_graph.vertices,
-        np.array(faces, dtype=np.uint),
-        faces_idx,
+        np.array(triangles, dtype=np.uint),
+        np.array(labels, dtype=np.uint),
         np.array(nodes_linked_by_face, dtype=np.uint),
     )
 
@@ -170,14 +169,22 @@ def retrieve_mesh_multimaterial_multitracker_format(
 def labeled_mesh_from_labeled_graph(
     tesselation_graph: "TesselationGraph",
     map_label_to_nodes_ids: dict[int, list[int]],
-) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
-    """Extract points and triangles_and_labels from a GeometryReconstruction3D object."""
+) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
+    """Extract a labeled mesh from a labeled tesselation graph.
+
+    Args:
+        tesselation_graph (TesselationGraph): TesselationGraph object
+        map_label_to_nodes_ids (dict[int, list[int]]): Labels on this graph.
+
+    Returns:
+        tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]: points, triangles, and labels (materials)
+    """
     # Take a Segmentation class as entry
 
     (
         points,
-        triangles_and_labels,
-        _,
+        triangles,
+        labels,
         nodes_idx_in_graph_linked_to_triangle,
     ) = retrieve_mesh_multimaterial_multitracker_format(
         tesselation_graph,
@@ -185,25 +192,19 @@ def labeled_mesh_from_labeled_graph(
     )
     vertices = points.copy()
 
-    for i, f in enumerate(triangles_and_labels):
-        if f[3] > f[4]:  # if label0 > label1 we swap them
-            triangles_and_labels[i] = triangles_and_labels[
-                i,
-                [0, 1, 2, 4, 3],
-            ]
+    for i, label in enumerate(labels):
+        if label[0] > label[1]:  # if label0 > label1 we swap them
+            labels[i] = labels[i, [1, 0]]
             nodes_idx_in_graph_linked_to_triangle[i] = nodes_idx_in_graph_linked_to_triangle[i][[1, 0]]
 
-    triangles_and_labels = reorient_faces(
-        triangles_and_labels,
-        tesselation_graph,
+    triangles = reorient_triangles(
+        triangles,
+        tesselation_graph.vertices,
+        tesselation_graph.tetrahedrons,
         nodes_idx_in_graph_linked_to_triangle,
     )
 
-    # Automatic swap of all faces after reorientation ? I guess it's not the good norm
-    for i in range(len(triangles_and_labels)):
-        triangles_and_labels[i] = triangles_and_labels[i, [0, 2, 1, 3, 4]]
-
-    return (vertices, triangles_and_labels)
+    return (vertices, triangles, labels)
 
 
 def compute_normal_faces(
@@ -220,42 +221,45 @@ def compute_normal_faces(
     return normals
 
 
-def reorient_faces(
-    triangles_and_labels: NDArray[np.uint],
-    tesselation_graph: "TesselationGraph",
+def reorient_triangles(
+    triangles: NDArray[np.uint],
+    vertices: NDArray[np.float64],
+    tetrahedrons: NDArray[np.intc],
     nodes_linked: NDArray[np.uint],
 ) -> NDArray[np.uint]:
-    """Swap point order in triangles such that all normals points in the same direction."""
+    """Swap point order in triangles such that all normals points in the same direction.
+
+    Args:
+        triangles (NDArray[np.uint]): Triangles of a multimaterial mesh.
+        vertices (NDArray[np.float64]): Vertices of a 3D tesselation (geometry).
+        tetrahedrons (NDArray[np.intc]): Tetrahedrons of the same 3D tesselation (topology).
+        nodes_linked (NDArray[np.uint]): Tetrahedrons id on the tesselation linked to each triangles of the mesh.
+
+    Returns:
+        NDArray[np.uint]: reoriented triangles.
+    """
     # Thumb rule for all the faces
 
-    normals = compute_normal_faces(tesselation_graph.vertices, triangles_and_labels[:, :3])
+    normals = compute_normal_faces(vertices, triangles)
 
-    points = tesselation_graph.vertices[triangles_and_labels[:, :3]]
+    points = vertices[triangles]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        tesselation_graph.vertices[tesselation_graph.tetrahedrons[nodes_linked[:, 0]]],
+        vertices[tetrahedrons[nodes_linked[:, 0]]],
         axis=1,
     )  # center of "first" adjacent tetrahedron in Tesselation Graph
 
     vectors = centroids_nodes - centroids_faces
-    # Matthieu Perez : not necessary to normalize vectors
-    # norms = np.linalg.norm(vectors, axis=1)
-    # vectors[:, 0] /= norms
-    # vectors[:, 1] /= norms
-    # vectors[:, 2] /= norms
 
     dot_product = np.sum(np.multiply(vectors, normals), axis=1)
     normals_sign = np.sign(dot_product)
 
     # Reorientation according to the normal sign
-    reoriented_faces = triangles_and_labels.copy()
-    # for i, s in enumerate(normals_sign):
-    #     if s < 0:
-    #         reoriented_faces[i] = reoriented_faces[i][[0, 2, 1, 3, 4]]
+    reoriented_triangles = triangles.copy()
 
     # Matthieu Perez: one liner is quicker when there's more than 100 faces (ie. always)
-    reoriented_faces[normals_sign < 0] = reoriented_faces[normals_sign < 0][:, [0, 2, 1, 3, 4]]
-    return reoriented_faces
+    reoriented_triangles[normals_sign > 0] = reoriented_triangles[normals_sign > 0][:, [0, 2, 1]]
+    return reoriented_triangles
 
 
 #####

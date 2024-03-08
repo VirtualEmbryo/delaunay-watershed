@@ -58,9 +58,9 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
     #     )
 
     if add_mesh:
-        points, trianges_and_labels = reconstruct.return_mesh()
-        clusters = separate_faces_dict(trianges_and_labels)
-        maxkey = np.amax(trianges_and_labels[:, 3:])
+        points, trianges, labels = reconstruct.return_mesh()
+        clusters = separate_faces_dict(trianges, labels)
+        maxkey = np.amax(trianges)
         all_verts = []
         all_faces = []
         all_labels = []
@@ -120,10 +120,10 @@ def plot_cells_polyscope(
     """
     import polyscope as ps
 
-    points, triangles_and_labels = reconstruct.return_mesh()
+    points, triangles, labels = reconstruct.return_mesh()
     points[:, 0] *= anisotropy_factor
 
-    clusters = separate_faces_dict(triangles_and_labels)
+    clusters = separate_faces_dict(triangles, labels)
     rng = np.random.default_rng(1)
     color_cells = {key: rng.random(3) for key in clusters}
     ps.init()
@@ -142,7 +142,7 @@ def plot_cells_polyscope(
                 smooth_shade=False,
             )
     elif view == "Scattered":
-        centroid_mesh = np.mean(points[triangles_and_labels[:, :3].astype(int)].reshape(-1, 3), axis=0)
+        centroid_mesh = np.mean(points[triangles.astype(int)].reshape(-1, 3), axis=0)
         for key in clusters:
             cluster = clusters[key]
             centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)

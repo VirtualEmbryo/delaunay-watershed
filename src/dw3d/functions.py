@@ -20,6 +20,7 @@ from dw3d.mesh_utilities import (
 )
 from dw3d.networkx_functions import seeded_watershed_map
 from dw3d.segmentation import extract_seed_coords_and_indices
+from dw3d.iorec import save_rec
 
 # def mesh_from_segmentation()
 
@@ -83,23 +84,19 @@ class GeometryReconstruction3D:
         if print_info:
             print("Watershed done in ", np.round(t2 - t1, 3))
 
-    def return_mesh(self) -> tuple[NDArray[np.float64], NDArray[np.uint]]:
-        """Get a couple of (points, triangles_and_labels) describing the mesh obtained from segmented image."""
+    def return_mesh(self) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
+        """Get points, triangles and labels (materials) describing the mesh obtained from segmented image."""
         return labeled_mesh_from_labeled_graph(self.tesselation_graph, self.map_label_to_nodes_ids)
 
-    def export_mesh(self, filename: str | Path, mode: str = "bin") -> None:
+    def export_mesh(self, filename: str | Path, binary_mode: bool = False) -> None:
         """Save the output mesh on disk."""
-        points, triangles_and_labels = self.return_mesh()
-        if mode == "txt":
-            write_mesh_text(filename, points, triangles_and_labels)
-        elif mode == "bin":
-            write_mesh_bin(filename, points, triangles_and_labels)
-        else:
-            print("Please choose a valid format")
+        points, triangles, labels = self.return_mesh()
+        save_rec(filename, points, triangles, labels, binary_mode)
 
     def export_segmentation(self, filename: str | Path) -> None:
         """Export mesh, seeds coordinates and image shape in numpy files."""
-        points, triangles_and_labels = self.return_mesh()
+        points, triangles, labels = self.return_mesh()
+        triangles_and_labels = np.hstack((triangles, labels))
         seeds = self.seeds_coords
         image_shape = np.array(self.segmented_image.shape)
         mesh_dict = {
