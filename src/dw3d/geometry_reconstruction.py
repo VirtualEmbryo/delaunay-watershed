@@ -12,7 +12,7 @@ from scipy.spatial import ckdtree
 from skimage.segmentation import expand_labels
 
 from dw3d.edt import compute_edt_base
-from dw3d.iorec import save_rec
+from dw3d.io import save_rec, save_vtk
 from dw3d.mesh_utilities import (
     center_around_origin,
     labeled_mesh_from_labeled_graph,
@@ -107,11 +107,15 @@ class GeometryReconstruction3D:
         """Scales homogeneously the mesh such that its min & max values are global_min and global_max."""
         self.points = set_points_min_max(self.points, global_min, global_max)
 
-    def export_mesh(self, filename: str | Path, binary_mode: bool = False) -> None:
-        """Save the output mesh on disk."""
+    def save_to_rec_mesh(self, filename: str | Path, binary_mode: bool = False) -> None:
+        """Save the output mesh on disk in the rec format."""
         save_rec(filename, self.points, self.triangles, self.labels, binary_mode)
 
-    def export_segmentation(self, filename: str | Path) -> None:
+    def save_to_vtk_mesh(self, filename: str | Path, binary_mode: bool = False) -> None:
+        """Save the output mesh on disk in the vtk format."""
+        save_vtk(filename, self.points, self.triangles, self.labels, binary_mode)
+
+    def export_compressed_segmentation(self, filename: str | Path) -> None:
         """Export mesh, seeds coordinates and image shape in numpy files."""
         triangles_and_labels = np.hstack((self.triangles, self.labels))
         seeds = self.seeds_coords

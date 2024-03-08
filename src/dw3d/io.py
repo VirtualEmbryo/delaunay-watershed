@@ -1,6 +1,6 @@
-"""IO for .rec meshes.
+"""IO for .rec meshes. IO for .vtk/.vtu meshes.
 
-Copy of private iorec package v1.0.5.
+Copy of private iorec package v1.0.5 for rec part.
 Matthieu Perez 2024
 """
 from __future__ import annotations
@@ -9,8 +9,89 @@ import struct
 from pathlib import Path
 from typing import Any
 
+import meshio
 import numpy as np
 from numpy.typing import NDArray
+
+
+def load_meshio_mesh(
+    filename: str | Path,
+) -> tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64]]:
+    """Read a mesh file using meshio. Error if there are no labels data in the mesh.
+
+    Args:
+        filename (str | Path): The path to the file on disk.
+
+    Raises:
+        ValueError: If the mesh has no "labels" data saved alongside points and triangles.
+        meshio.ReadError: If meshio can't read the file for any reason.
+
+    Returns:
+        tuple[np.array, np.array, np.array]: (points, triangles, labels), with:
+        - points: np.array of shape (num_points, 3) (float64)
+        - triangles: np.array of shape (num_triangles, 3) (ulonglong)
+        - labels: np.array of shape (num_triangles, 2) (uint)
+    """
+    filename = Path(filename).resolve()
+    mesh: meshio.Mesh = meshio.read(filename)
+
+    label1 = mesh.get_cell_data("label1", "triangle")
+    label2 = mesh.get_cell_data("label2", "triangle")
+    labels = np.stack((label1, label2), axis=-1)
+    print(label1, label2, labels)
+
+    if len(labels) == 0:
+        error = f"{filename} has no labels data."
+        raise ValueError(error)
+
+    points = mesh.points
+    triangles = mesh.get_cells_type("triangle")
+
+    return (points, triangles, labels)
+
+
+def save_vtk(
+    filename: str | Path,
+    points: NDArray[np.float64],
+    triangles: NDArray[np.int64],
+    labels: NDArray[np.int64],
+    binary_mode: bool = False,
+) -> None:
+    """Save a rec mesh file at filename. Binary or text mode are available.
+
+    Binary mode is more compact but might not be universally understood.
+
+    Args:
+        filename (str | Path): where to save the mesh file.
+        points (NDArray[np.float64]): Mesh points.
+        triangles (NDArray[np.int64]): Mesh triangles (topology).
+        labels (NDArray[np.int64]): Triangles multimaterial labels.
+        binary_mode (bool, optional): Choose binary mode. Defaults to False.
+    """
+    cells = [
+        ("triangle", triangles),
+    ]
+    cell_data = {
+        "label1": [
+            labels[:, 0],
+        ],
+        "label2": [
+            labels[:, 1],
+        ],
+    }
+
+    mesh = meshio.Mesh(
+        points,
+        cells,
+        # Each item in cell data must match the cells array
+        cell_data=cell_data,
+    )
+
+    mesh.write(
+        filename,  # str, os.PathLike, or buffer/open file
+        binary=binary_mode,
+        # file_format="vtk",  # optional if first argument is a path; inferred from extension
+    )
 
 
 def load_rec(

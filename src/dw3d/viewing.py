@@ -16,57 +16,6 @@ if TYPE_CHECKING:
 import numpy as np
 
 
-def separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
-    """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
-    nb_regions = np.amax(labels) + 1
-
-    occupancy = np.zeros(nb_regions, dtype=np.int64)
-    triangles_of_region: dict[int, list[int]] = {}
-    for triangle, label in zip(triangles, labels, strict=True):
-        region1, region2 = label
-        if region1 >= 0:
-            if occupancy[region1] == 0:
-                triangles_of_region[region1] = [triangle]
-                occupancy[region1] += 1
-            else:
-                triangles_of_region[region1].append(triangle)
-
-        if region2 >= 0:
-            if occupancy[region2] == 0:
-                triangles_of_region[region2] = [triangle]
-                occupancy[region2] += 1
-            else:
-                triangles_of_region[region2].append(triangle)
-
-    faces_separated: dict[int, NDArray[np.uint]] = {}
-    for i in sorted(triangles_of_region.keys()):
-        faces_separated[i] = np.array(triangles_of_region[i])
-
-    return faces_separated
-
-
-def renormalize_verts(
-    points: NDArray[np.float64],
-    triangles: NDArray[np.ulonglong],
-) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:
-    """Take a mesh made from points and triangles and remove points not indexed in triangles. Re-index triangles.
-
-    Return the filtered points and reindexed triangles.
-    """
-    used_points_id = np.unique(triangles)
-    used_points = np.copy(points[used_points_id])
-    idx_mapping = np.arange(len(used_points))
-    mapping = dict(zip(used_points_id, idx_mapping, strict=True))
-
-    reindexed_triangles = np.fromiter(
-        (mapping[xi] for xi in triangles.reshape(-1)),
-        dtype=np.ulonglong,
-        count=3 * len(triangles),
-    ).reshape((-1, 3))
-
-    return (used_points, reindexed_triangles)
-
-
 def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = True) -> "napari.Viewer":
     """Plot results in Napari."""
     import matplotlib.pyplot as plt
@@ -110,7 +59,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
 
     if add_mesh:
         points, trianges, labels = reconstruct.mesh
-        clusters = separate_faces_dict(trianges, labels)
+        clusters = _separate_faces_dict(trianges, labels)
         maxkey = np.amax(trianges)
         all_verts = []
         all_faces = []
@@ -122,7 +71,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
                 continue
             faces = np.array(clusters[key])
 
-            vn, fn = renormalize_verts(points, faces)
+            vn, fn = _renormalize_verts(points, faces)
             ln = np.ones(len(vn)) * key / maxkey
 
             all_verts.append(vn.copy())
@@ -174,7 +123,7 @@ def plot_cells_polyscope(
     points, triangles, labels = reconstruct.mesh
     points[:, 0] *= anisotropy_factor
 
-    clusters = separate_faces_dict(triangles, labels)
+    clusters = _separate_faces_dict(triangles, labels)
     rng = np.random.default_rng(1)
     color_cells = {key: rng.random(3) for key in clusters}
     ps.init()
@@ -184,25 +133,27 @@ def plot_cells_polyscope(
 
     if view == "Simple":
         for key in clusters:
-            cluster = clusters[key]
-            ps.register_surface_mesh(
-                "Cell " + str(key),
-                points,
-                np.array(cluster),
-                color=color_cells[key][:3],
-                smooth_shade=False,
-            )
+            if key != 0:
+                cluster = clusters[key]
+                ps.register_surface_mesh(
+                    "Cell " + str(key),
+                    points,
+                    np.array(cluster),
+                    color=color_cells[key][:3],
+                    smooth_shade=False,
+                )
     elif view == "Scattered":
         centroid_mesh = np.mean(points[triangles.astype(int)].reshape(-1, 3), axis=0)
         for key in clusters:
-            cluster = clusters[key]
-            centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
-            _ = ps.register_surface_mesh(
-                "Cell " + str(key),
-                points - (centroid_mesh - centroid_vert) * (scattering_coeff),
-                cluster,
-                color=color_cells[key][:3],
-            )
+            if key != 0:
+                cluster = clusters[key]
+                centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
+                _ = ps.register_surface_mesh(
+                    "Cell " + str(key),
+                    points - (centroid_mesh - centroid_vert) * (scattering_coeff),
+                    cluster,
+                    color=color_cells[key][:3],
+                )
 
     ps.set_ground_plane_mode("none")
     if transparency:
@@ -215,3 +166,54 @@ def plot_cells_polyscope(
 
     if clean_after:
         ps.remove_all_structures()
+
+
+def _separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
+    """Construct a dictionnary that maps a region id to the array of triangles forming this region."""
+    nb_regions = int(np.amax(labels) + 1)
+
+    occupancy = np.zeros(nb_regions, dtype=np.int64)
+    triangles_of_region: dict[int, list[int]] = {}
+    for triangle, label in zip(triangles, labels, strict=True):
+        region1, region2 = label
+        if region1 >= 0:
+            if occupancy[region1] == 0:
+                triangles_of_region[region1] = [triangle]
+                occupancy[region1] += 1
+            else:
+                triangles_of_region[region1].append(triangle)
+
+        if region2 >= 0:
+            if occupancy[region2] == 0:
+                triangles_of_region[region2] = [triangle]
+                occupancy[region2] += 1
+            else:
+                triangles_of_region[region2].append(triangle)
+
+    faces_separated: dict[int, NDArray[np.uint]] = {}
+    for i in sorted(triangles_of_region.keys()):
+        faces_separated[i] = np.array(triangles_of_region[i])
+
+    return faces_separated
+
+
+def _renormalize_verts(
+    points: NDArray[np.float64],
+    triangles: NDArray[np.ulonglong],
+) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:
+    """Take a mesh made from points and triangles and remove points not indexed in triangles. Re-index triangles.
+
+    Return the filtered points and reindexed triangles.
+    """
+    used_points_id = np.unique(triangles)
+    used_points = np.copy(points[used_points_id])
+    idx_mapping = np.arange(len(used_points))
+    mapping = dict(zip(used_points_id, idx_mapping, strict=True))
+
+    reindexed_triangles = np.fromiter(
+        (mapping[xi] for xi in triangles.reshape(-1)),
+        dtype=np.ulonglong,
+        count=3 * len(triangles),
+    ).reshape((-1, 3))
+
+    return (used_points, reindexed_triangles)
