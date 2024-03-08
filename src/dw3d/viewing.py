@@ -21,8 +21,8 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
     import matplotlib.pyplot as plt
     import napari
 
-    v = napari.view_image(reconstruct.labels, name="Labels")
-    v.add_image(reconstruct.EDT, name="Distance Transform")
+    v = napari.view_image(reconstruct.segmented_image, name="Labels")
+    v.add_image(reconstruct.edt_image, name="Distance Transform")
     if reconstruct.original_image is not None:
         v.add_image(reconstruct.original_image, name="Original Image")
     if not add_mesh:

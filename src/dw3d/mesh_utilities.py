@@ -263,45 +263,6 @@ def reorient_faces(
 #####
 
 
-def retrieve_border_tetra_with_index_map(
-    graph: "DelaunayGraph",
-    map_label_to_nodes: dict[int, list[int]],
-) -> list[list[list[int]]]:
-    """Give a list that maps region number to list of triangles."""
-    map_nodes_to_labels = {}
-    for key in map_label_to_nodes:
-        for node_idx in map_label_to_nodes[key]:
-            map_nodes_to_labels[node_idx] = key
-
-    clusters = [[] for _ in range(len(map_label_to_nodes))]
-    # for _ in range(len(map_label_to_nodes)):
-    #     clusters.append([])
-
-    for idx in range(len(graph.triangle_faces)):
-        nodes_linked = graph.nodes_linked_by_faces[idx]
-
-        cluster_1 = map_nodes_to_labels.get(nodes_linked[0], -1)
-        cluster_2 = map_nodes_to_labels.get(nodes_linked[1], -2)
-        # if the two nodes of the edges belong to the same cluster we ignore them
-        # otherwise we add them to the mesh
-        if cluster_1 != cluster_2:
-            face = list(graph.triangle_faces[idx])
-            if cluster_1 >= 0:
-                clusters[cluster_1].append(face)
-            if cluster_2 >= 0:
-                clusters[cluster_2].append(face)
-
-    for idx in range(len(graph.lone_faces)):
-        edge = graph.lone_faces[idx]
-        node_linked = graph.nodes_linked_by_lone_faces[idx]
-        cluster_1 = map_nodes_to_labels[node_linked]
-        # We incorporate all these edges because they are border edges
-        if cluster_1 != 0:
-            v1, v2, v3 = edge[0], edge[1], edge[2]
-            clusters[cluster_1].append([v1, v2, v3])
-    return clusters
-
-
 def compute_seeds_idx_from_voxel_coords(
     edt: NDArray,
     centroids: NDArray[np.float64],
