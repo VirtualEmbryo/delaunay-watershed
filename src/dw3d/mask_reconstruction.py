@@ -31,7 +31,7 @@ def _create_mesh_semantic_masks(
     image_shape: NDArray[np.uint],
 ) -> NDArray[np.float64]:
     """Create segmentation mask of the mesh membrane, not the interior."""
-    verts, faces = points.copy()[:, [2, 1, 0]], triangles[:, [0, 1, 2]].copy()
+    verts, faces = points.copy()[:, [2, 1, 0]], triangles.copy()
     for i in range(3):
         verts[:, i] /= image_shape[[2, 1, 0]][i]
 
@@ -94,8 +94,8 @@ def create_mesh_instance_masks(
 def reconstruct_mask_from_dict(filename_dict: str) -> NDArray[np.uint8]:
     """Reconstruct a segmentation image from a saved dict of vertices, faces, seeds coords and desired image shape."""
     dict_mask: dict[str, NDArray] = np.load(filename_dict, allow_pickle=True).item()
-    points = dict_mask["Verts"]
-    triangles = dict_mask["Faces"]
+    points = dict_mask["points"]
+    triangles = dict_mask["triangles"]
     seeds = dict_mask["seeds"]
     image_shape = dict_mask["image_shape"]
     labels: NDArray[np.uint8] = create_mesh_instance_masks(points, triangles, image_shape, seeds) - 1
