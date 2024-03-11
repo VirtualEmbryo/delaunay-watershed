@@ -62,14 +62,16 @@ plot_cells_polyscope(reconstruct)
 
 Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/) for example.
 
-For more examples, see the notebooks.
+For more examples and documentation, see the notebooks:
+- [Mesh reconstruction and visualization](./Examples/example_1_mesh_reconstruction_visualisation.ipynb),
+- [Mask compression and reconstruction](./Examples/example_2_mask_compression_reconstruction.ipynb).
 
 
 ---
 ### Biological examples
 
 #### Geometrical reconstruction of cell interfaces in the *P. Mammilata* embryo
-See the [Python notebook 1](./Examples/example_1_mesh_reconstruction_visualisation.ipynb).
+See the [notebook on mesh reconstruction and visualization](./Examples/example_1_mesh_reconstruction_visualisation.ipynb).
 
 ![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d.png "Mesh reconstruction.")
 
@@ -78,7 +80,7 @@ Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/sc
 
 #### Geometrical reconstruction of cell nuclei
 
-See the [Python notebook 2](./Examples/example_2_mask_compression_reconstruction.ipynb).
+See the [notebook on mask compression and reconstruction](./Examples/example_2_mask_compression_reconstruction.ipynb).
 
 ![](https://raw.githubusercontent.com/sacha-ichbiah/delaunay_watershed_3d/main/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
 
