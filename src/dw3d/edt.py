@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 from skimage.segmentation import find_boundaries
 
 
-def compute_edt_base(labels: NDArray[np.uint8], print_info: bool = False) -> NDArray[np.float64]:
+def compute_edt_classical(segmentation_mask: NDArray[np.uint], print_info: bool = False) -> NDArray[np.float64]:
     """Compute the Euclidean Distance Transorm of a segmented image.
 
     It will be 0 at borders and cells boundaries. Bigger when getting far from these points.
@@ -20,7 +20,7 @@ def compute_edt_base(labels: NDArray[np.uint8], print_info: bool = False) -> NDA
         print("Computing EDT ...")
     t1 = time()
 
-    b = _StandardLabelToBoundary()(labels)[0]  # "thick" boundaries are marked by 1, 0 outside
+    b = _StandardLabelToBoundary()(segmentation_mask)[0]  # "thick" boundaries are marked by 1, 0 outside
     mask_2 = b
     edt_2 = euclidean_dt(mask_2)  # EDT of the thick boundaries (0 elsewhere)
     b = _pad_mask(b)  # exterior bbox is marked as 1

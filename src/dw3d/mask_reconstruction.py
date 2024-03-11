@@ -33,7 +33,7 @@ def _create_mesh_semantic_masks(
     """Create segmentation mask of the mesh membrane, not the interior."""
     verts, faces = points.copy()[:, [2, 1, 0]], triangles.copy()
     for i in range(3):
-        verts[:, i] /= image_shape[[2, 1, 0]][i]
+        verts[:, i] /= image_shape[2 - i]
 
     dmax = 1 / np.amax(image_shape)
     # print("start of the subidivision")
@@ -61,7 +61,7 @@ def _subdivide_mesh(
 
 def _make_mask(verts: NDArray[np.float64], image_shape: NDArray[np.uint]) -> NDArray[np.float64]:
     """Mark the pixels touching a vertex of the subdivided mesh."""
-    nx, ny, nz = image_shape[[2, 1, 0]]
+    nz, ny, nx = image_shape
     # nx,ny,nz = grid_size
     points = _create_coords(nx, ny, nz)
     tree = cKDTree(points)
@@ -74,7 +74,7 @@ def _make_mask(verts: NDArray[np.float64], image_shape: NDArray[np.uint]) -> NDA
     return membrane
 
 
-def create_mesh_instance_masks(
+def _create_mesh_instance_masks(
     points: NDArray[np.float64],
     triangles: NDArray[np.ulonglong],
     image_shape: NDArray[np.uint],
@@ -91,12 +91,18 @@ def create_mesh_instance_masks(
     return labels
 
 
-def reconstruct_mask_from_dict(filename_dict: str) -> NDArray[np.uint8]:
-    """Reconstruct a segmentation image from a saved dict of vertices, faces, seeds coords and desired image shape."""
-    dict_mask: dict[str, NDArray] = np.load(filename_dict, allow_pickle=True).item()
+def reconstruct_mask_from_dict(dict_mask: dict[str]) -> NDArray[np.uint8]:
+    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape."""
     points = dict_mask["points"]
     triangles = dict_mask["triangles"]
     seeds = dict_mask["seeds"]
     image_shape = dict_mask["image_shape"]
-    labels: NDArray[np.uint8] = create_mesh_instance_masks(points, triangles, image_shape, seeds) - 1
+
+    labels: NDArray[np.uint8] = _create_mesh_instance_masks(points, triangles, image_shape, seeds) - 1
     return labels
+
+
+def reconstruct_mask_from_saved_file_dict(filename_dict: str) -> NDArray[np.uint8]:
+    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape."""
+    dict_mask: dict[str, NDArray] = np.load(filename_dict, allow_pickle=True).item()
+    return reconstruct_mask_from_dict(dict_mask)

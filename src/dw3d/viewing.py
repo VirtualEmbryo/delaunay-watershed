@@ -11,31 +11,41 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     import napari
 
-    from dw3d import GeometryReconstruction3D
+    from dw3d import MeshReconstructionAlgorithm
 
 import numpy as np
 
 
-def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = True) -> "napari.Viewer":
-    """Plot results in Napari."""
+def plot_in_napari(
+    reconstruct: "MeshReconstructionAlgorithm",
+    add_mesh: bool = True,
+    original_image: NDArray[np.uint] | None = None,
+) -> "napari.Viewer":
+    """Plot results in Napari.
+
+    Args:
+        reconstruct (GeometryReconstruction3D): The reconstruction algorithm object.
+        add_mesh (bool, optional): Whether to show the mesh in Napari (experimental). Defaults to True.
+        original_image (NDArray[np.uint] | None, optional): Original microscopy image (not its mask). Defaults to None.
+    """
     import matplotlib.pyplot as plt
     import napari
 
-    v = napari.view_image(reconstruct.segmented_image, name="Labels")
-    v.add_image(reconstruct.edt_image, name="Distance Transform")
-    if reconstruct.original_image is not None:
-        v.add_image(reconstruct.original_image, name="Original Image")
+    v = napari.view_image(reconstruct._segmented_image, name="Labels")
+    v.add_image(reconstruct._edt_image, name="Distance Transform")
+    if original_image is not None:
+        v.add_image(original_image, name="Original Image")
     if not add_mesh:
         rng = np.random.default_rng()
         v.add_points(
-            reconstruct.seeds_coords,
+            reconstruct._seeds_coords,
             name="Watershed seeds",
             n_dimensional=True,
-            face_color=rng.random((len(reconstruct.seeds_coords), 3)),
+            face_color=rng.random((len(reconstruct._seeds_coords), 3)),
             size=10,
         )
     v.add_points(
-        reconstruct.tesselation_graph.vertices,
+        reconstruct._tesselation_graph.vertices,
         name="triangulation_points",
         n_dimensional=False,
         face_color="red",
@@ -58,7 +68,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
     #     )
 
     if add_mesh:
-        points, trianges, labels = reconstruct.mesh
+        points, trianges, labels = reconstruct.last_constructed_mesh
         clusters = _separate_faces_dict(trianges, labels)
         maxkey = np.amax(trianges)
         all_verts = []
@@ -84,7 +94,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
         all_faces = np.vstack(all_faces)
         all_labels = np.hstack(all_labels)
         v.add_points(
-            reconstruct.seeds_coords,
+            reconstruct._seeds_coords,
             name="Watershed seeds",
             n_dimensional=True,
             face_color=np.array(plt.cm.viridis(np.array(sorted(clusters.keys())) / maxkey))[:, :3],
@@ -97,7 +107,7 @@ def plot_in_napari(reconstruct: "GeometryReconstruction3D", add_mesh: bool = Tru
 
 
 def plot_cells_polyscope(
-    reconstruct: "GeometryReconstruction3D",
+    reconstruct: "MeshReconstructionAlgorithm",
     anisotropy_factor: float = 1.0,
     clean_before: bool = True,
     clean_after: bool = True,
@@ -120,7 +130,7 @@ def plot_cells_polyscope(
     """
     import polyscope as ps
 
-    points, triangles, labels = reconstruct.mesh
+    points, triangles, labels = reconstruct.last_constructed_mesh
     points[:, 0] *= anisotropy_factor
 
     clusters = _separate_faces_dict(triangles, labels)

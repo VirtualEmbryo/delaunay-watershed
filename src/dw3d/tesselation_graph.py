@@ -4,13 +4,15 @@ Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
 from time import time
+from typing import TYPE_CHECKING
 
 import networkx
 import numpy as np
 from numpy.typing import NDArray
 from scipy.interpolate import RegularGridInterpolator
 
-from dw3d.tesselation import tesselation_from_edt
+if TYPE_CHECKING:
+    from dw3d.reconstruction_algorithm import ScoreComputationFunction
 
 
 class TesselationGraph:
@@ -18,36 +20,35 @@ class TesselationGraph:
 
     def __init__(
         self,
+        tesselation_points: NDArray[np.float64],
+        tesselation_tetrahedrons: NDArray[np.int64],
+        score_computation_function: "ScoreComputationFunction",
         edt_image: NDArray[np.float64],
-        min_distance: int = 5,
         print_info: bool = False,
     ) -> None:
         """Create Tesselation graph from EDT image. Compute scores on triangles for watershed."""
-        tri = tesselation_from_edt(
-            edt_image,
-            min_distance=min_distance,
-            print_info=print_info,
-        )
+        self.vertices = tesselation_points
+        self.nodes = tesselation_tetrahedrons
+        self.n_simplices = len(self.nodes)
+
         t1 = time()
-        self.nodes = tri.simplices
-        self.vertices = tri.points
-        self.tri = tri
-        self.n_simplices = len(tri.simplices)
 
         edges_table = self._construct_edges_table()
         self._construct_edges(edges_table)
-        self._compute_scores(edt_image)
+
+        self.scores = score_computation_function(edt_image, self.vertices, self.triangle_faces)
+
         t2 = time()
         if print_info:
             print("Graph build in ", np.round(t2 - t1, 3))
 
     def _construct_edges_table(self) -> NDArray[np.int64]:
         """Get an ordered array of triangle faces from tetrahedrons."""
-        tetrahedrons = np.sort(self.tri.simplices, axis=1)
+        tetrahedrons = np.sort(self.nodes, axis=1)
         self.tetrahedrons = tetrahedrons.copy()
         tetrahedrons += 1  # We shift to get the right keys
         faces_table = np.array(_give_faces_table(tetrahedrons), dtype=np.int64)
-        key_multiplier = _find_key_multiplier(max(len(self.tri.points), len(self.tri.simplices)))
+        key_multiplier = _find_key_multiplier(max(len(self.vertices), len(self.nodes)))
         keys = (
             faces_table[:, 0] * (key_multiplier**3)
             + faces_table[:, 1] * (key_multiplier**2)
@@ -93,11 +94,6 @@ class TesselationGraph:
         self.lone_faces = np.array(self.lone_faces)
         self.nodes_linked_by_lone_faces = np.array(self.nodes_linked_by_lone_faces)
 
-    def _compute_scores(self, edt: NDArray[np.float64]) -> None:
-        # Remember : each edge is a face !
-        edt = _interpolate_image(edt)
-        self.scores = _faces_score_from_sampling(self.triangle_faces, self.vertices, edt)
-
     def _compute_volumes(self) -> NDArray[np.float64]:
         """Get volume of all tetrahedrons of the tesselation."""
         positions = self.vertices[self.tetrahedrons]
@@ -106,7 +102,7 @@ class TesselationGraph:
         return volumes
 
     def _compute_areas(self) -> NDArray[np.float64]:
-        """Get the are of all triangles faces of the tesselation."""
+        """Get the area of all triangles faces of the tesselation."""
         # Triangles[i] = 3*2 array of 3 points of the plane
         # Triangles = self.Vertices[self.Faces]
         positions = self.vertices[self.triangle_faces]
@@ -185,47 +181,3 @@ def _find_key_multiplier(num_points: int) -> int:
     while num_points // key_multiplier != 0:
         key_multiplier *= 10
     return key_multiplier
-
-
-def _faces_score_from_sampling(
-    triangle_faces: NDArray[np.uint],
-    vertices: NDArray[np.float64],
-    f: RegularGridInterpolator,
-) -> NDArray[np.float64]:
-    alpha = np.linspace(0, 1, 5)[1:-1]
-    beta = np.linspace(0, 1, 5)[1:-1]
-    gamma = np.linspace(0, 1, 5)[1:-1]
-
-    vertices = vertices.copy()
-    scale = np.amax(vertices, axis=0) / 2
-    vertices -= scale
-    vertices *= 1 - 1e-4
-    vertices += scale * (1 - 1e-4)
-    v = vertices[triangle_faces]
-
-    v1 = v[:, 0]
-    v2 = v[:, 1]
-    v3 = v[:, 2]
-    count = 0
-    count_bad = 0
-    score_faces = np.zeros(len(triangle_faces), dtype=np.float64)
-    for a in alpha:
-        for b in beta:
-            for c in gamma:
-                try:
-                    s = a + b + c
-                    l1 = a / s
-                    l2 = b / s
-                    l3 = c / s
-
-                    score_faces += np.array(f(v1 * l1 + v2 * l2 + v3 * l3))
-
-                    # Test Matthieu Perez: take score max (seems to improve a bit the results)
-                    # Score_Faces = np.maximum(
-                    #     Score_Faces, f(V1 * l1 + V2 * l2 + V3 * l3)
-                    # )
-                    count += 1
-                except:  # except what ?? what can happen badly ??  # noqa: E722
-                    count_bad += 1
-    score_faces /= count
-    return score_faces

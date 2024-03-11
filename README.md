@@ -45,19 +45,23 @@ pip install pathtopackage/delaunay-watershed
 Load an instance segmentation, construct its multimaterial mesh, save it to a file for later, and visualize it:
 
 ```py
-from dw3d import GeometryReconstruction3D
-from dw3D.viewing import plot_in_napari, plot_cells_polyscope
+from dw3d import get_default_mesh_reconstruction_algorithm
+from dw3D.viewing import plot_cells_polyscope
+
+# Get a mesh reconstruction algorithm
+mesh_reconstruction_algorithm = get_default_mesh_reconstruction_algorithm()
 
 # Load the segmentation image
 import skimage.io as io
 segmentation_mask = io.imread("data/Images/1.tif")
 
-# Reconstruct a multimaterial mesh from the labels
-reconstruct = GeometryReconstruction3D(segmentation_mask, min_dist = 5, print_info=True)
-# Save it
-reconstruct.save_to_vtk_mesh("mesh_from_segmentation.vtk", binary_mode=True)
-# Plot it
-plot_cells_polyscope(reconstruct)
+# Reconstruct a multimaterial mesh from the mask using the mesh reconstruction algorithm
+mesh_reconstruction_algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
+
+# Save the last constructed mesh
+mesh_reconstruction_algorithm.save_to_vtk_mesh("mesh_from_segmentation.vtk", binary_mode=True)
+# Plot the last constructed mesh
+plot_cells_polyscope(mesh_reconstruction_algorithm)
 ```
 
 Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/) for example.
@@ -65,6 +69,8 @@ Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/
 For more examples and documentation, see the notebooks:
 - [Mesh reconstruction and visualization](./Examples/example_1_mesh_reconstruction_visualisation.ipynb),
 - [Mask compression and reconstruction](./Examples/example_2_mask_compression_reconstruction.ipynb).
+
+There is also an advanced notebook if you want to tinkle with the algoritm: [Advanced use](./Examples/example_3_advanced_use.ipynb).
 
 
 ---

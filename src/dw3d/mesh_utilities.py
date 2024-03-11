@@ -169,10 +169,10 @@ def set_pixel_size(
 
 def center_around_origin(points: NDArray[np.float64]) -> NDArray[np.float64]:
     """Return a centered points array around 0."""
-    current_min = points.min()
-    current_max = points.max()
+    current_min = points.min(axis=0)
+    current_max = points.max(axis=0)
 
-    return np.copy(points) - (current_max - current_min) / 2.0
+    return np.copy(points) - (current_max + current_min) / 2.0
 
 
 def _reorient_triangles(
