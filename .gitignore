@@ -1,6 +1,5 @@
 data/
 *egg-info/
-Examples/Dict_mask.npy
 Examples/*.rec
 Examples/*.vtk
 Examples/*.tif
