@@ -1,4 +1,5 @@
 """Main DW3D module."""
+
 from pathlib import Path
 
 import numpy as np
@@ -60,7 +61,7 @@ def save_compressed_segmentation(filename: str | Path, compressed_segmentation: 
 
 __all__ = (
     "MeshReconstructionAlgorithmFactory",
-    "default_mesh_reconstruction_algorithm",
+    "get_default_mesh_reconstruction_algorithm",
     "center_points_around_zero",
     "set_points_pixel_size",
     "set_points_global_min_max",

@@ -45,11 +45,11 @@ pip install pathtopackage/delaunay-watershed
 Load an instance segmentation, construct its multimaterial mesh, save it to a file for later, and visualize it:
 
 ```py
-from dw3d import default_mesh_reconstruction_algorithm
+from dw3d import get_default_mesh_reconstruction_algorithm
 from dw3D.viewing import plot_cells_polyscope
 
 # Get a mesh reconstruction algorithm
-mesh_reconstruction_algorithm = default_mesh_reconstruction_algorithm()
+mesh_reconstruction_algorithm = get_default_mesh_reconstruction_algorithm()
 
 # Load the segmentation image
 import skimage.io as io
