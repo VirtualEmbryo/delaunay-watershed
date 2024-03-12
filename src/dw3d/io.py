@@ -3,6 +3,7 @@
 Copy of private iorec package v1.0.5 for rec part.
 Matthieu Perez 2024
 """
+
 from __future__ import annotations
 
 import struct
@@ -38,7 +39,6 @@ def load_meshio_mesh(
     label1 = mesh.get_cell_data("label1", "triangle")
     label2 = mesh.get_cell_data("label2", "triangle")
     labels = np.stack((label1, label2), axis=-1)
-    print(label1, label2, labels)
 
     if len(labels) == 0:
         error = f"{filename} has no labels data."
