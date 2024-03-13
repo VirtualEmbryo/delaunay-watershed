@@ -3,6 +3,7 @@
 Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
+
 import numpy as np
 from numpy.typing import NDArray
 from skimage.feature import peak_local_max
@@ -10,14 +11,14 @@ from skimage.feature import peak_local_max
 
 def peak_local_points(
     edt_image: NDArray[np.float64],
-    min_distance: float,
+    min_distance: int,
     print_info: bool = False,
 ) -> NDArray[np.uint]:
     """Peak local min and max points (+ corner points) from an EDT image.
 
     Args:
         edt_image (NDArray[np.float64]): 3D image of an Euclidean Distance Transform.
-        min_distance (float): Minimum distance between peaks (local min and local max)
+        min_distance (int): Minimum distance between peaks (local min and local max)
         print_info (bool, optional): Print details about the algorithm. Defaults to False.
 
     Returns:

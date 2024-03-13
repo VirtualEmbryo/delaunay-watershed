@@ -4,6 +4,7 @@ This class allows to build custom algorithms for mesh reconstruction from segmen
 
 Matthieu Perez 2024
 """
+
 from functools import partial
 from typing import Self
 
@@ -37,11 +38,11 @@ class MeshReconstructionAlgorithmFactory:
         self._edt_creation_function = _edt_creation_function_classical(self.print_info)
         return self
 
-    def set_peak_local_points_placement_method(self, min_distance: float = 5) -> Self:
+    def set_peak_local_points_placement_method(self, min_distance: int = 5) -> Self:
         """Place points on the EDT image using local extrema of the EDT (and corners).
 
         Args:
-            min_distance (float, optional): Minimum distance between extrema. Defaults to 5.
+            min_distance (int, optional): Minimum distance between extrema. Defaults to 5.
         """
         self._point_placing_function = _point_placing_function_peak_local(min_distance, self.print_info)
         return self
@@ -77,11 +78,11 @@ class MeshReconstructionAlgorithmFactory:
         )
 
     @staticmethod
-    def get_default_algorithm(min_distance: float = 5, print_info: bool = False) -> MeshReconstructionAlgorithm:
+    def get_default_algorithm(min_distance: int = 5, print_info: bool = False) -> MeshReconstructionAlgorithm:
         """Return the default mesh reconstruction algorithm with sensible default values.
 
         Args:
-            min_distance (float, optional): Minimum distance (in pixels) between extrema when placing
+            min_distance (int, optional): Minimum distance (in pixels) between extrema when placing
                 tesselation points. Defaults to 5.
             print_info (bool, optional): Print algorithm details while executing.
         """
@@ -111,13 +112,13 @@ def _edt_creation_function_classical(
 
 
 def _point_placing_function_peak_local(
-    min_distance: float = 5,
+    min_distance: int = 5,
     print_info: bool = False,
 ) -> PointPlacingFunction:
     """Get a function that peaks local min and max points (+ corner points) from an EDT image.
 
     Args:
-        min_distance (float, optional): Minimum distance between extrema. Defaults to 5.
+        min_distance (int, optional): Minimum distance between extrema. Defaults to 5.
         print_info (bool, optional): Print detals about the algorithm. Defaults to False.
 
     Returns:
