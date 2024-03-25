@@ -3,6 +3,7 @@
 Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
+
 from time import time
 from typing import TYPE_CHECKING
 
@@ -125,6 +126,44 @@ class TesselationGraph:
         bools = segmented_image(centroids) == 0
         ints = np.arange(len(centroids))[bools]
         return ints
+
+    def find_tetra_cycle_around_edge(self, edge: tuple[int, int]) -> list[int]:
+        """Find a cycle of adjacent tetrahedrons around the edge."""
+        pid1, pid2 = edge
+
+        # Find all tetrahedrons with this edge
+        adjacent_tetrahedrons = list(
+            np.where(
+                np.logical_and(
+                    (self.tetrahedrons == pid1).any(axis=1),
+                    (self.tetrahedrons == pid2).any(axis=1),
+                ),
+            )[0],
+        )
+
+        # Now let's find a cycle
+        ordered_tetrahedrons = [adjacent_tetrahedrons[0]]
+        del adjacent_tetrahedrons[0]
+
+        # We find a cycle by finding tetrahedrons sharing a triangle face
+        nb_tetra = len(adjacent_tetrahedrons)
+        selected_id = 0
+        for _ in range(nb_tetra):
+            last_tetra_in_cycle = ordered_tetrahedrons[-1]
+            last_triangles = set(self.faces_of_nodes[last_tetra_in_cycle])
+
+            to_remove = -1
+            for i, tet_id in enumerate(adjacent_tetrahedrons):
+                selected_id = tet_id
+                tet_triangles = self.faces_of_nodes[tet_id]
+                if len(last_triangles.intersection(tet_triangles)) > 0:
+                    to_remove = i
+                    break
+
+            ordered_tetrahedrons.append(selected_id)
+            del adjacent_tetrahedrons[to_remove]
+
+        return ordered_tetrahedrons
 
     def to_networkx_graph(self) -> networkx.Graph:
         """Compute a NetworkX graph with nodes = tetrahedrons, edges = triangle faces and data associated.
