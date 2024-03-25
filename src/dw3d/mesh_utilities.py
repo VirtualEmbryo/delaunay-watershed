@@ -3,6 +3,7 @@
 Sacha Ichbiah 2021.
 Matthieu Perez 2024.
 """
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -56,10 +57,6 @@ def labeled_mesh_from_labeled_graph(
         tesselation_graph.tetrahedrons,
         nodes_idx_in_graph_linked_to_triangle,
     )
-    # filter unused points
-    points, triangles = _filter_unused_points(points, triangles)
-
-    #
 
     return (points, triangles, labels)
 
@@ -230,7 +227,7 @@ def _compute_normal_faces(
     return normals
 
 
-def _filter_unused_points(
+def filter_unused_points(
     points: NDArray[np.float64],
     triangles: NDArray[np.ulonglong],
 ) -> tuple[NDArray[np.float64], NDArray[np.ulonglong]]:

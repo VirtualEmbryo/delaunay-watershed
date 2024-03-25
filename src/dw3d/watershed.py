@@ -3,6 +3,7 @@
 Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
+
 import networkx
 import numpy as np
 from numpy.typing import NDArray
@@ -16,8 +17,11 @@ def seeded_watershed_map(
     seeds_nodes: NDArray[np.uint],
     indices_labels: NDArray[np.uint8],
     zero_nodes: NDArray[np.uint] | None = None,
-) -> dict[int, list[int]]:
-    """Perform Watershed algorithm on tetrahedron nodes to label them. Return the map label -> indices of nodes."""
+) -> tuple[dict[int, list[int]], NDArray[np.uint]]:
+    """Perform Watershed algorithm on tetrahedron nodes to label them.
+
+    Return the map label -> indices of nodes and inverse map.
+    """
     # Init the map node -> label with seeds
     map_node_id_to_label = np.zeros(len(nx_graph.nodes), dtype=int) - 1
 
@@ -32,7 +36,7 @@ def seeded_watershed_map(
         map_node_id_to_label[zero_nodes] = 0
 
     map_label_to_nodes = _build_map_label_to_node_ids(map_node_id_to_label)
-    return map_label_to_nodes
+    return map_label_to_nodes, map_node_id_to_label
 
 
 def _seeded_watershed_aggregation(
