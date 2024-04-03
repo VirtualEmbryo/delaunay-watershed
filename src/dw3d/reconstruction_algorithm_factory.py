@@ -8,7 +8,7 @@ Matthieu Perez 2024
 from functools import partial
 from typing import Self
 
-from dw3d.edt import compute_edt_classical
+from dw3d.edt import compute_edt_boundary_bias, compute_edt_classical
 from dw3d.points_on_edt import peak_local_points
 from dw3d.reconstruction_algorithm import (
     EdtCreationFunction,
@@ -36,6 +36,11 @@ class MeshReconstructionAlgorithmFactory:
     def set_classical_edt_method(self) -> Self:
         """Use the classical method to create the Euclidean Distance Transform from a segmentation mask."""
         self._edt_creation_function = _edt_creation_function_classical(self.print_info)
+        return self
+
+    def set_edt_boundary_bias_method(self) -> Self:
+        """Use the biased method to create the Euclidean Distance Transform from a segmentation mask."""
+        self._edt_creation_function = _edt_creation_function_boundary_bias(self.print_info)
         return self
 
     def set_peak_local_points_placement_method(self, min_distance: int = 3) -> Self:
@@ -109,6 +114,21 @@ def _edt_creation_function_classical(
             - the actual function which takes a segmentation mask and return an Euclidean Distance Transform image.
     """
     return partial(compute_edt_classical, print_info=print_info)
+
+
+def _edt_creation_function_boundary_bias(
+    print_info: bool = False,
+) -> EdtCreationFunction:
+    """Get a function that compute an EDT from a segmentation mask.
+
+    Args:
+        print_info (bool, optional): Print detals about the algorithm. Defaults to False.
+
+    Returns:
+        EdtCreationFunction:
+            - the actual function which takes a segmentation mask and return an Euclidean Distance Transform image.
+    """
+    return partial(compute_edt_boundary_bias, print_info=print_info)
 
 
 def _point_placing_function_peak_local(

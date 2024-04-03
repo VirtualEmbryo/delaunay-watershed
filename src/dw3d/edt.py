@@ -3,6 +3,7 @@
 Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
+
 from time import time
 
 import numpy as np
@@ -129,45 +130,49 @@ def _pad_mask(mask: NDArray[np.uint8], pad_size: int = 1) -> NDArray[np.uint8]:
     return padded_mask
 
 
-# Matthieu Perez : tests bias EDT
-# def compute_edt_with_bias(labels, prints=False):
-#     if prints:
-#         print("Computing EDT (bias) ...")
-#     t1 = time()
+# Matthieu Perez : tests bias EDT towards boundaries between interfaces
+def compute_edt_boundary_bias(segmentation_mask: NDArray[np.uint], print_info: bool = False) -> NDArray[np.float64]:
+    """Compute a biased version of the Euclidean Distance Transform of a segmented image.
 
-#     region_indices = np.unique(labels)
-#     total_boundaries = np.zeros(labels.shape)
+    It is biased towards the boundaries between interfaces.
+    """
+    if print_info:
+        print("Computing EDT (bias) ...")
+    t1 = time()
 
-#     for index in region_indices:
-#         if index == 0:
-#             region_labels = np.where(labels == 0, 1, 0)
-#         else:
-#             region_labels = np.where(labels == index, labels, 0)
-#         total_boundaries += StandardLabelToBoundary()(region_labels)[0]
+    region_indices = np.unique(segmentation_mask)
+    total_boundaries = np.zeros(segmentation_mask.shape)
 
-#     # total_boundaries *= 3
-#     total_boundaries = np.amax(total_boundaries) - total_boundaries
+    for index in region_indices:
+        if index == 0:
+            region_labels = np.where(segmentation_mask == 0, 1, 0)
+        else:
+            region_labels = np.where(segmentation_mask == index, segmentation_mask, 0)
+        total_boundaries += _StandardLabelToBoundary()(region_labels)[0]
 
-#     # "thick" boundaries are marked by 1, 0 outside
-#     b = StandardLabelToBoundary()(labels)[0]
-#     mask_2 = b
-#     # EDT of the thick boundaries (0 elsewhere)
-#     EDT_2 = euclidean_dt(mask_2)
-#     b = pad_mask(b)  # exterior bbox is marked as 1
-#     mask_1 = 1 - b  # 1 everywhere except bbox and boundaries
-#     # main part of the final EDT. Both inside cells and outside cells. 0 in boundaries & bbox
-#     EDT_1 = euclidean_dt(mask_1)
-#     # max EDT2 everywhere except on thick boundaries where it decreases to 0 on the mid of boundaries
-#     # + total_boundaries which is less on interesting parts of the mesh
-#     inv = np.amax(EDT_2) - EDT_2 + total_boundaries
-#     # total EDT is valid also on thick boundaries
-#     Total_EDT = (EDT_1 + np.amax(inv)) * mask_1 + inv * mask_2
+    # total_boundaries *= 3
+    total_boundaries = np.amax(total_boundaries) - total_boundaries
 
-#     # # Matthieu Perez try 2: augment constrast in EDT
-#     # Total_EDT = 255 * ((Total_EDT / 255) ** 0.5)
+    # "thick" boundaries are marked by 1, 0 outside
+    b = _StandardLabelToBoundary()(segmentation_mask)[0]
+    mask_2 = b
+    # EDT of the thick boundaries (0 elsewhere)
+    edt_2 = euclidean_dt(mask_2)
+    b = _pad_mask(b)  # exterior bbox is marked as 1
+    mask_1 = 1 - b  # 1 everywhere except bbox and boundaries
+    # main part of the final EDT. Both inside cells and outside cells. 0 in boundaries & bbox
+    edt_1 = euclidean_dt(mask_1)
+    # max EDT2 everywhere except on thick boundaries where it decreases to 0 on the mid of boundaries
+    # + total_boundaries which is less on interesting parts of the mesh
+    inv = np.amax(edt_2) - edt_2 + total_boundaries
+    # total EDT is valid also on thick boundaries
+    total_edt = (edt_1 + np.amax(inv)) * mask_1 + inv * mask_2
 
-#     t2 = time()
-#     if prints:
-#         print("EDT computed in ", np.round(t2 - t1, 2))
+    # Matthieu Perez try 2: augment constrast in EDT
+    # Total_EDT = 255 * ((Total_EDT / 255) ** 0.5)
 
-#     return Total_EDT
+    t2 = time()
+    if print_info:
+        print("EDT computed in ", np.round(t2 - t1, 2))
+
+    return total_edt
