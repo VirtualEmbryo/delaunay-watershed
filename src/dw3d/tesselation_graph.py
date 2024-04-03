@@ -144,6 +144,7 @@ class TesselationGraph:
         # Now let's find a cycle
         ordered_tetrahedrons = [adjacent_tetrahedrons[0]]
         del adjacent_tetrahedrons[0]
+        ordered_triangles = []  # transition between each tetra
 
         # We find a cycle by finding tetrahedrons sharing a triangle face
         nb_tetra = len(adjacent_tetrahedrons)
@@ -156,12 +157,21 @@ class TesselationGraph:
             for i, tet_id in enumerate(adjacent_tetrahedrons):
                 selected_id = tet_id
                 tet_triangles = self.faces_of_nodes[tet_id]
-                if len(last_triangles.intersection(tet_triangles)) > 0:
+                common_triangles = last_triangles.intersection(tet_triangles)  # normally 0 or 1
+                if len(common_triangles) > 0:
+                    ordered_triangles.append(next(iter(common_triangles)))  # first triangle in intersection (only one)
                     to_remove = i
                     break
 
             ordered_tetrahedrons.append(selected_id)
             del adjacent_tetrahedrons[to_remove]
+
+        # tetrahedrons are sorted
+        first_triangles = self.faces_of_nodes[ordered_tetrahedrons[0]]
+        last_triangles = set(self.faces_of_nodes[ordered_tetrahedrons[-1]])
+        common_triangles = last_triangles.intersection(first_triangles)  # normally 0 or 1
+        if len(common_triangles) > 0:
+            ordered_triangles.append(next(iter(common_triangles)))  # first triangle in intersection (only one)
 
         return ordered_tetrahedrons
 

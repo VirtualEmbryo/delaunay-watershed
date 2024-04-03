@@ -143,11 +143,12 @@ class MeshReconstructionAlgorithm:
         if self.print_info:
             print(f"Watershed done in {perf_counter() - t1:.3} seconds.")
 
-    def _mesh_surgery(self, max_iter: int = 3) -> None:
+    def _mesh_surgery(self) -> None:
         """Try to detect and fix mesh problems while we have all the Watershed data."""
+        # return
         # Optional part
         if self.perform_mesh_postprocess_surgery:
-            post_process_mesh_surgery(self, max_iter)
+            post_process_mesh_surgery(self)
 
         # Always do this part
         # filter unused points
