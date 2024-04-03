@@ -9,7 +9,7 @@ from functools import partial
 from typing import Self
 
 from dw3d.edt import compute_edt_boundary_bias, compute_edt_classical
-from dw3d.points_on_edt import peak_local_points
+from dw3d.points_on_edt import peak_local_points, peak_local_points_bias_boundaries
 from dw3d.reconstruction_algorithm import (
     EdtCreationFunction,
     MeshReconstructionAlgorithm,
@@ -50,6 +50,15 @@ class MeshReconstructionAlgorithmFactory:
             min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
         """
         self._point_placing_function = _point_placing_function_peak_local(min_distance, self.print_info)
+        return self
+
+    def set_peak_local_points_bias_boundary_placement_method(self, min_distance: int = 3) -> Self:
+        """Place points on the EDT image using local extrema of the EDT (and corners) and boundaries.
+
+        Args:
+            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+        """
+        self._point_placing_function = _point_placing_function_peak_local_bias_boundaries(min_distance, self.print_info)
         return self
 
     def set_delaunay_tesselation_method(self) -> Self:
@@ -147,3 +156,21 @@ def _point_placing_function_peak_local(
               of local min & max of the EDT (+ corners)
     """
     return partial(peak_local_points, min_distance=min_distance, print_info=print_info)
+
+
+def _point_placing_function_peak_local_bias_boundaries(
+    min_distance: int = 3,
+    print_info: bool = False,
+) -> PointPlacingFunction:
+    """Get a function that peaks local min and max points (+ corner points) from an EDT image.
+
+    Args:
+        min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+        print_info (bool, optional): Print detals about the algorithm. Defaults to False.
+
+    Returns:
+        Callable[[NDArray[np.float64]], NDArray[np.uint]]:
+            - the actual function which takes only an EDT image and return an array of 3D pixel coordinates
+              of local min & max of the EDT (+ corners)
+    """
+    return partial(peak_local_points_bias_boundaries, min_distance=min_distance, print_info=print_info)

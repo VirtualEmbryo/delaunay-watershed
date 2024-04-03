@@ -176,3 +176,19 @@ def compute_edt_boundary_bias(segmentation_mask: NDArray[np.uint], print_info: b
         print("EDT computed in ", np.round(t2 - t1, 2))
 
     return total_edt
+
+
+def get_total_boundaries(segmented_mask: NDArray[np.uint]) -> NDArray[np.float64]:
+    """Obtain pre-EDT on boundaries from segmentation mask."""
+    region_indices = np.unique(segmented_mask)
+    total_boundaries = np.zeros(segmented_mask.shape)
+
+    for index in region_indices:
+        if index == 0:
+            region_labels = np.where(segmented_mask == 0, 1, 0)
+        else:
+            region_labels = np.where(segmented_mask == index, segmented_mask, 0)
+        total_boundaries += _StandardLabelToBoundary()(region_labels)[0]
+
+    total_boundaries = np.amax(total_boundaries) - total_boundaries
+    return total_boundaries

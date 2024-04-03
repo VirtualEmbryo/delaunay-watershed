@@ -27,8 +27,8 @@ from dw3d.watershed import seeded_watershed_map
 
 # segmentation mask -> EDT image
 EdtCreationFunction = Callable[[NDArray[np.uint]], NDArray[np.float64]]
-# EDT image -> array of pixel coordinates
-PointPlacingFunction = Callable[[NDArray[np.float64]], NDArray[np.uint]]
+# optional segmentation mask + EDT image -> array of pixel coordinates
+PointPlacingFunction = Callable[[NDArray[np.uint] | None, NDArray[np.float64]], NDArray[np.uint]]
 # array of pixel coordinates -> tesselation: array of points coordinates + array of tetrahedrons as points indices
 TesselationCreationFunction = Callable[[NDArray[np.uint]], tuple[NDArray[np.float64], NDArray[np.int64]]]
 # EDT image, array of points + triangle faces (from tesselation) -> Array of scores
@@ -88,7 +88,7 @@ class MeshReconstructionAlgorithm:
 
         self._edt_image = self.edt_creation_function(self._segmented_image)
 
-        points_for_tesselation = self.point_placing_function(self._edt_image)
+        points_for_tesselation = self.point_placing_function(self._segmented_image, self._edt_image)
 
         t_init_tesselation = perf_counter()
         tesselation_points, tesselation_tetrahedrons = self.tesselation_creation_function(points_for_tesselation)
