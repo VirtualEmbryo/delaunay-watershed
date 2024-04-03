@@ -4,6 +4,7 @@ Install them with the [viewing] option.
 
 Matthieu Perez, 2024.
 """
+
 from typing import TYPE_CHECKING
 
 from numpy.typing import NDArray
@@ -38,12 +39,13 @@ def plot_in_napari(
     if not add_mesh:
         rng = np.random.default_rng()
         v.add_points(
-            reconstruct._seeds_coords,
+            reconstruct._seeds_coords.astype(np.float64),
             name="Watershed seeds",
             n_dimensional=True,
             face_color=rng.random((len(reconstruct._seeds_coords), 3)),
             size=10,
         )
+
     v.add_points(
         reconstruct._tesselation_graph.vertices,
         name="triangulation_points",
@@ -94,7 +96,7 @@ def plot_in_napari(
         all_faces = np.vstack(all_faces)
         all_labels = np.hstack(all_labels)
         v.add_points(
-            reconstruct._seeds_coords,
+            reconstruct._seeds_coords.astype(np.float64),
             name="Watershed seeds",
             n_dimensional=True,
             face_color=np.array(plt.cm.viridis(np.array(sorted(clusters.keys())) / maxkey))[:, :3],
