@@ -1,0 +1,7 @@
+edt>=2.4.0
+meshio>=5.3.4
+networkx>=2.8.0
+numpy>=1.24.0
+scikit>image==0.20.0
+scipy>=1.9.3
+trimesh>=4.0.0
