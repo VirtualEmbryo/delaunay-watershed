@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = [
+lint.select = [
     "E",
     "F",
     "W",
@@ -36,11 +36,11 @@ select = [
     "PERF",
     "RUF",
 ]
-ignore = ["S101", "ANN10"]
+lint.ignore = ["S101", "ANN10"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
+lint.fixable = ["ALL"]
+lint.unfixable = []
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -67,11 +67,11 @@ exclude = [
     "venv",
     "*.pyi",
 ]
-per-file-ignores = {}
+lint.per-file-ignores = {}
 
 line-length = 120
 
 target-version = "py311"
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
