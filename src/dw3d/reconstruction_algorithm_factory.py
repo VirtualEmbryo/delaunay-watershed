@@ -30,7 +30,7 @@ class MeshReconstructionAlgorithmFactory:
         self._edt_creation_function: EdtCreationFunction = _edt_creation_function_classical(print_info=print_info)
         self._point_placing_function: PointPlacingFunction = _point_placing_function_peak_local(print_info=print_info)
         self._tesselation_creation_function: TesselationCreationFunction = simple_delaunay_tesselation
-        self._score_computation_function: ScoreComputationFunction = compute_scores_by_mean_value
+        self._score_computation_function: ScoreComputationFunction = compute_scores_by_max_value
         self.perform_mesh_postprocess_surgery = perform_mesh_postprocess_surgery
 
     def set_classical_edt_method(self) -> Self:
@@ -105,7 +105,7 @@ class MeshReconstructionAlgorithmFactory:
             edt_creation_function=_edt_creation_function_classical(print_info=print_info),
             point_placing_function=_point_placing_function_peak_local(min_distance=min_distance, print_info=print_info),
             tesselation_creation_function=simple_delaunay_tesselation,
-            score_computation_function=compute_scores_by_mean_value,
+            score_computation_function=compute_scores_by_max_value,
             perform_mesh_postprocess_surgery=True,
         )
 
