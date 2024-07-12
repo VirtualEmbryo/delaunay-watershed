@@ -234,24 +234,33 @@ def _compute_seeds_idx_from_voxel_coords(
 ) -> NDArray[np.uint]:
     """Compute the seeds used for watershed."""
     nx, ny, nz = edt.shape
-    points = _pixels_coords(nx, ny, nz)
+    # points = _pixels_coords(nx, ny, nz)
     anchors = seed_pixel_coords[:, 0] * ny * nz + seed_pixel_coords[:, 1] * nz + seed_pixel_coords[:, 2]
 
-    p = points[anchors]
+    # p = points[anchors]
+    p = _linear_to_3d_index(anchors, ny, nz).transpose()
 
     tree = ckdtree.cKDTree(centroids)
     _, idx_seeds = tree.query(p)
     return idx_seeds  # "seed" nodes ids
 
 
-def _pixels_coords(nx: int, ny: int, nz: int) -> NDArray[np.int64]:
-    """Create all pixels coordinates for an image of size nx*ny*nz."""
-    xv = np.linspace(0, nx - 1, nx)
-    yv = np.linspace(0, ny - 1, ny)
-    zv = np.linspace(0, nz - 1, nz)
-    xvv, yvv, zvv = np.meshgrid(xv, yv, zv)
-    xvv = np.transpose(xvv, (1, 0, 2)).flatten()
-    yvv = np.transpose(yvv, (1, 0, 2)).flatten()
-    zvv = zvv.flatten()
-    points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
-    return points
+def _linear_to_3d_index(idx: int, ny: int, nz: int) -> NDArray[np.int64]:
+    z = idx // (ny * nz)
+    idx -= z * ny * nz
+    y = idx // nz
+    x = idx % nz
+    return np.array([z, y, x])
+
+
+# def _pixels_coords(nx: int, ny: int, nz: int) -> NDArray[np.int64]:
+#     """Create all pixels coordinates for an image of size nx*ny*nz."""
+#     xv = np.linspace(0, nx - 1, nx)
+#     yv = np.linspace(0, ny - 1, ny)
+#     zv = np.linspace(0, nz - 1, nz)
+#     xvv, yvv, zvv = np.meshgrid(xv, yv, zv)
+#     xvv = np.transpose(xvv, (1, 0, 2)).flatten()
+#     yvv = np.transpose(yvv, (1, 0, 2)).flatten()
+#     zvv = zvv.flatten()
+#     points = np.vstack([xvv, yvv, zvv]).transpose().astype(int)
+#     return points
