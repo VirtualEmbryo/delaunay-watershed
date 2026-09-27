@@ -1,0 +1,286 @@
+{
+  "a1b": {
+    "fixed": {
+      "fit": {
+        "ci95": [
+          -3.948985679617083,
+          3.147847212500051
+        ],
+        "exponent": -0.4005692335585161,
+        "n_points": 5,
+        "r_squared": 0.04124711804504964,
+        "stderr": 1.1149964856177625
+      },
+      "mode": "fixed",
+      "rows": [
+        {
+          "h": 0.06,
+          "mean_deg": 34.92579718406038,
+          "median_deg": 26.194347888045257,
+          "min_distance": 3,
+          "n_interior_angles": 3,
+          "n_mesh_points": 8,
+          "n_triangles": 16,
+          "p90_deg": 47.149826198481556,
+          "resolution": 40
+        },
+        {
+          "h": 0.04285714285714286,
+          "mean_deg": 6.707857870619989,
+          "median_deg": 2.5617868059299838,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 13,
+          "n_triangles": 31,
+          "p90_deg": 15.0,
+          "resolution": 56
+        },
+        {
+          "h": 0.03,
+          "mean_deg": 29.574702379499964,
+          "median_deg": 25.5410453956193,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 44,
+          "n_triangles": 119,
+          "p90_deg": 50.403487635061516,
+          "resolution": 80
+        },
+        {
+          "h": 0.02142857142857143,
+          "mean_deg": 36.85261508923109,
+          "median_deg": 39.62848970500199,
+          "min_distance": 3,
+          "n_interior_angles": 6,
+          "n_mesh_points": 105,
+          "n_triangles": 235,
+          "p90_deg": 55.45732454439694,
+          "resolution": 112
+        },
+        {
+          "h": 0.015,
+          "mean_deg": 13.383473219505781,
+          "median_deg": 13.167802190962945,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 251,
+          "n_triangles": 597,
+          "p90_deg": 20.944412910315144,
+          "resolution": 160
+        }
+      ]
+    },
+    "scaled": {
+      "fit": {
+        "ci95": [
+          -2.177757906819725,
+          1.7665169776925402
+        ],
+        "exponent": -0.20562046456359231,
+        "n_points": 5,
+        "r_squared": 0.035400253621627076,
+        "stderr": 0.6196922911100997
+      },
+      "mode": "scaled",
+      "rows": [
+        {
+          "h": 0.06,
+          "mean_deg": 34.92579718406038,
+          "median_deg": 26.194347888045257,
+          "min_distance": 3,
+          "n_interior_angles": 3,
+          "n_mesh_points": 8,
+          "n_triangles": 16,
+          "p90_deg": 47.149826198481556,
+          "resolution": 40
+        },
+        {
+          "h": 0.04285714285714286,
+          "mean_deg": 11.158071290638915,
+          "median_deg": 9.15899432597206,
+          "min_distance": 4,
+          "n_interior_angles": 9,
+          "n_mesh_points": 10,
+          "n_triangles": 25,
+          "p90_deg": 22.442417919820926,
+          "resolution": 56
+        },
+        {
+          "h": 0.03,
+          "mean_deg": 15.384350987996688,
+          "median_deg": 13.262201583965883,
+          "min_distance": 6,
+          "n_interior_angles": 6,
+          "n_mesh_points": 114,
+          "n_triangles": 244,
+          "p90_deg": 25.372311288784367,
+          "resolution": 80
+        },
+        {
+          "h": 0.02142857142857143,
+          "mean_deg": 37.85573534657396,
+          "median_deg": 42.85881889462636,
+          "min_distance": 8,
+          "n_interior_angles": 6,
+          "n_mesh_points": 154,
+          "n_triangles": 313,
+          "p90_deg": 61.07548906686867,
+          "resolution": 112
+        },
+        {
+          "h": 0.015,
+          "mean_deg": 20.66325570858677,
+          "median_deg": 17.318962333838634,
+          "min_distance": 12,
+          "n_interior_angles": 6,
+          "n_mesh_points": 157,
+          "n_triangles": 340,
+          "p90_deg": 35.45631025197554,
+          "resolution": 160
+        }
+      ]
+    }
+  },
+  "default": {
+    "fixed": {
+      "fit": {
+        "ci95": [
+          0.5310302099334426,
+          2.0793654608683845
+        ],
+        "exponent": 1.3051978354009135,
+        "n_points": 5,
+        "r_squared": 0.9056234561079832,
+        "stderr": 0.2432618027779908
+      },
+      "mode": "fixed",
+      "rows": [
+        {
+          "h": 0.06,
+          "mean_deg": 22.23356045821644,
+          "median_deg": 22.361855596113585,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 31,
+          "n_triangles": 78,
+          "p90_deg": 36.884901534632746,
+          "resolution": 40
+        },
+        {
+          "h": 0.04285714285714286,
+          "mean_deg": 21.857905868539746,
+          "median_deg": 20.881098799301938,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 42,
+          "n_triangles": 109,
+          "p90_deg": 38.43972223815177,
+          "resolution": 56
+        },
+        {
+          "h": 0.03,
+          "mean_deg": 11.533907088692834,
+          "median_deg": 9.233633397983297,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 105,
+          "n_triangles": 249,
+          "p90_deg": 21.667038618816218,
+          "resolution": 80
+        },
+        {
+          "h": 0.02142857142857143,
+          "mean_deg": 8.707653384092543,
+          "median_deg": 9.17887411566916,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 208,
+          "n_triangles": 487,
+          "p90_deg": 13.223249567996644,
+          "resolution": 112
+        },
+        {
+          "h": 0.015,
+          "mean_deg": 7.801152275030315,
+          "median_deg": 3.539117995174955,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 414,
+          "n_triangles": 942,
+          "p90_deg": 17.403137440843892,
+          "resolution": 160
+        }
+      ]
+    },
+    "scaled": {
+      "fit": {
+        "ci95": [
+          -69.02537258311557,
+          89.83252609260862
+        ],
+        "exponent": 10.403576754746517,
+        "n_points": 4,
+        "r_squared": 0.13703826438684308,
+        "stderr": 18.460460168833364
+      },
+      "mode": "scaled",
+      "rows": [
+        {
+          "h": 0.06,
+          "mean_deg": 22.23356045821644,
+          "median_deg": 22.361855596113585,
+          "min_distance": 3,
+          "n_interior_angles": 12,
+          "n_mesh_points": 31,
+          "n_triangles": 78,
+          "p90_deg": 36.884901534632746,
+          "resolution": 40
+        },
+        {
+          "h": 0.04285714285714286,
+          "mean_deg": 25.122733629854878,
+          "median_deg": 23.597805071641638,
+          "min_distance": 4,
+          "n_interior_angles": 12,
+          "n_mesh_points": 41,
+          "n_triangles": 109,
+          "p90_deg": 38.615672361926904,
+          "resolution": 56
+        },
+        {
+          "h": 0.03,
+          "mean_deg": null,
+          "median_deg": null,
+          "min_distance": 6,
+          "n_interior_angles": 0,
+          "n_mesh_points": 5,
+          "n_triangles": 6,
+          "p90_deg": null,
+          "resolution": 80
+        },
+        {
+          "h": 0.02142857142857143,
+          "mean_deg": 3.1717793994521863,
+          "median_deg": 7.105427357601002e-15,
+          "min_distance": 8,
+          "n_interior_angles": 6,
+          "n_mesh_points": 40,
+          "n_triangles": 94,
+          "p90_deg": 9.515338198356552,
+          "resolution": 112
+        },
+        {
+          "h": 0.015,
+          "mean_deg": 20.54446780542961,
+          "median_deg": 14.742579447619924,
+          "min_distance": 12,
+          "n_interior_angles": 12,
+          "n_mesh_points": 48,
+          "n_triangles": 124,
+          "p90_deg": 55.711067677630155,
+          "resolution": 160
+        }
+      ]
+    }
+  }
+}

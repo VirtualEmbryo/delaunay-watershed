@@ -1,0 +1,98 @@
+[
+  {
+    "sweep": "fixed-inradius",
+    "side": 128,
+    "n_cells": 8,
+    "n_voxels": 2097152,
+    "inradius_voxels": 32.0,
+    "boundary_voxels": 224399,
+    "n_zero_voxels": 321175,
+    "bytes_stored": 7321096,
+    "dense_float32_bytes": 8388608,
+    "fraction_of_dense": 0.8727426528930664
+  },
+  {
+    "sweep": "fixed-inradius",
+    "side": 192,
+    "n_cells": 11,
+    "n_voxels": 7077888,
+    "inradius_voxels": 43.16585405017049,
+    "boundary_voxels": 581140,
+    "n_zero_voxels": 800028,
+    "bytes_stored": 18325120,
+    "dense_float32_bytes": 28311552,
+    "fraction_of_dense": 0.6472665292245371
+  },
+  {
+    "sweep": "fixed-inradius",
+    "side": 256,
+    "n_cells": 27,
+    "n_voxels": 16777216,
+    "inradius_voxels": 42.666666666666664,
+    "boundary_voxels": 1306314,
+    "n_zero_voxels": 1696466,
+    "bytes_stored": 39154576,
+    "dense_float32_bytes": 67108864,
+    "fraction_of_dense": 0.5834486484527588
+  },
+  {
+    "sweep": "fixed-inradius",
+    "side": 320,
+    "n_cells": 53,
+    "n_voxels": 32768000,
+    "inradius_voxels": 42.59526842977862,
+    "boundary_voxels": 2443061,
+    "n_zero_voxels": 3053629,
+    "bytes_stored": 70844824,
+    "dense_float32_bytes": 131072000,
+    "fraction_of_dense": 0.5405031127929687
+  },
+  {
+    "sweep": "fixed-side",
+    "side": 320,
+    "n_cells": 8,
+    "n_voxels": 32768000,
+    "inradius_voxels": 80.0,
+    "boundary_voxels": 1414240,
+    "n_zero_voxels": 2024808,
+    "bytes_stored": 46153120,
+    "dense_float32_bytes": 131072000,
+    "fraction_of_dense": 0.352120361328125
+  },
+  {
+    "sweep": "fixed-side",
+    "side": 320,
+    "n_cells": 27,
+    "n_voxels": 32768000,
+    "inradius_voxels": 53.333333333333336,
+    "boundary_voxels": 2049338,
+    "n_zero_voxels": 2659906,
+    "bytes_stored": 61395472,
+    "dense_float32_bytes": 131072000,
+    "fraction_of_dense": 0.4684102783203125
+  },
+  {
+    "sweep": "fixed-side",
+    "side": 320,
+    "n_cells": 64,
+    "n_voxels": 32768000,
+    "inradius_voxels": 40.00000000000001,
+    "boundary_voxels": 2577189,
+    "n_zero_voxels": 3187757,
+    "bytes_stored": 74063896,
+    "dense_float32_bytes": 131072000,
+    "fraction_of_dense": 0.5650626831054687
+  },
+  {
+    "sweep": "fixed-side",
+    "side": 320,
+    "n_cells": 216,
+    "n_voxels": 32768000,
+    "inradius_voxels": 26.66666666666667,
+    "boundary_voxels": 3614279,
+    "n_zero_voxels": 4224847,
+    "bytes_stored": 98954056,
+    "dense_float32_bytes": 131072000,
+    "fraction_of_dense": 0.7549595336914062
+  }
+]

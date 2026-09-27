@@ -1,0 +1,116 @@
+[
+  {
+    "variant": "classical",
+    "n_voxels": 1073741824,
+    "shape": [
+      1024,
+      1024,
+      1024
+    ],
+    "wall_time_s_median": 118.63131937501021,
+    "wall_time_s_all": [
+      118.63131937501021
+    ],
+    "peak_rss_mb": 36166.078125,
+    "peak_rss_mb_all_repeats": 36166.078125,
+    "baseline_rss_mb": 22.765625,
+    "mask_rss_mb": 4118.84375,
+    "edt_stage_rss_mb": 32047.234375,
+    "dtype": "float64",
+    "edt_nbytes": 8589934592,
+    "plateau_maxima_s": 36.053923208033666,
+    "n_maxima": 103488,
+    "plateau_minima_s": 57.65689883381128,
+    "n_minima": 472951,
+    "peak_rss_mb_after_seeding": 36166.078125,
+    "case": "foam_1024",
+    "mask_source": "/tmp/foam_1024.npy"
+  },
+  {
+    "variant": "float32",
+    "n_voxels": 1073741824,
+    "shape": [
+      1024,
+      1024,
+      1024
+    ],
+    "wall_time_s_median": 117.14889712492004,
+    "wall_time_s_all": [
+      117.14889712492004
+    ],
+    "peak_rss_mb": 16111.890625,
+    "peak_rss_mb_all_repeats": 16111.890625,
+    "baseline_rss_mb": 22.78125,
+    "mask_rss_mb": 4118.859375,
+    "edt_stage_rss_mb": 11993.03125,
+    "dtype": "float32",
+    "edt_nbytes": 4294967296,
+    "plateau_maxima_s": 32.66038087499328,
+    "n_maxima": 103488,
+    "plateau_minima_s": 58.06596512510441,
+    "n_minima": 472951,
+    "peak_rss_mb_after_seeding": 16520.84375,
+    "case": "foam_1024",
+    "mask_source": "/tmp/foam_1024.npy"
+  },
+  {
+    "variant": "tiled",
+    "n_voxels": 1073741824,
+    "shape": [
+      1024,
+      1024,
+      1024
+    ],
+    "wall_time_s_median": 124.63429562491365,
+    "wall_time_s_all": [
+      124.63429562491365
+    ],
+    "peak_rss_mb": 13506.203125,
+    "peak_rss_mb_all_repeats": 13506.203125,
+    "baseline_rss_mb": 22.671875,
+    "mask_rss_mb": 4118.75,
+    "edt_stage_rss_mb": 9387.453125,
+    "dtype": "float32",
+    "edt_nbytes": 4294967296,
+    "plateau_maxima_s": 33.299648749874905,
+    "n_maxima": 103488,
+    "plateau_minima_s": 56.959023209055886,
+    "n_minima": 472951,
+    "peak_rss_mb_after_seeding": 17818.21875,
+    "case": "foam_1024",
+    "mask_source": "/tmp/foam_1024.npy"
+  },
+  {
+    "variant": "narrow_band_seeding",
+    "n_voxels": 1073741824,
+    "shape": [
+      1024,
+      1024,
+      1024
+    ],
+    "wall_time_s_median": 324.675641000038,
+    "wall_time_s_all": [
+      324.675641000038
+    ],
+    "peak_rss_mb": 14913.890625,
+    "peak_rss_mb_all_repeats": 14913.890625,
+    "baseline_rss_mb": 22.90625,
+    "mask_rss_mb": 4118.984375,
+    "edt_stage_rss_mb": 10794.90625,
+    "n_maxima": 103488,
+    "n_minima": 472951,
+    "report_minima": {
+      "n_tiles": 64,
+      "n_escalated": 64,
+      "halo_max_used": 43,
+      "n_candidates": 28853656,
+      "n_candidates_above_halo": 0,
+      "global_min": 0.0,
+      "global_max": 45.29806137084961,
+      "max_value_at_candidates": 1.4494898319244385,
+      "min_value_at_candidates": 0.0
+    },
+    "case": "foam_1024",
+    "mask_source": "/tmp/foam_1024.npy"
+  }
+]

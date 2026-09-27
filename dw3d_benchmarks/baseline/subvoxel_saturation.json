@@ -1,0 +1,246 @@
+[
+  {
+    "case": "3",
+    "n_maxima": 224,
+    "n_minima": 5228,
+    "normal_order1_maxima": {
+      "fraction_saturated_per_component": 0.0,
+      "fraction_saturated_per_point": 0.0,
+      "median_shift_voxels": 0.019412415595000402,
+      "n": 224,
+      "p90_shift_voxels": 0.10100024801790365
+    },
+    "normal_order1_minima": {
+      "fraction_saturated_per_component": 0.0005738332058148432,
+      "fraction_saturated_per_point": 0.0005738332058148432,
+      "median_shift_voxels": 0.25,
+      "n": 5228,
+      "p90_shift_voxels": 0.25
+    },
+    "normal_order3_maxima": {
+      "fraction_saturated_per_component": 0.07142857142857142,
+      "fraction_saturated_per_point": 0.07142857142857142,
+      "median_shift_voxels": 0.03583294437250159,
+      "n": 224,
+      "p90_shift_voxels": 0.2119386264645733
+    },
+    "normal_order3_minima": {
+      "fraction_saturated_per_component": 0.002104055087987758,
+      "fraction_saturated_per_point": 0.002104055087987758,
+      "median_shift_voxels": 0.25,
+      "n": 5228,
+      "p90_shift_voxels": 0.32864357939537375
+    },
+    "separable_order1_maxima": {
+      "fraction_saturated_per_component": 0.30505952380952384,
+      "fraction_saturated_per_point": 0.6026785714285714,
+      "median_shift_voxels": 0.5002580019808165,
+      "n": 224,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order1_minima": {
+      "fraction_saturated_per_component": 0.813504208110176,
+      "fraction_saturated_per_point": 0.8930757459831675,
+      "median_shift_voxels": 0.5,
+      "n": 5228,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_maxima": {
+      "fraction_saturated_per_component": 0.30505952380952384,
+      "fraction_saturated_per_point": 0.6026785714285714,
+      "median_shift_voxels": 0.5002580019808165,
+      "n": 224,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_minima": {
+      "fraction_saturated_per_component": 0.813504208110176,
+      "fraction_saturated_per_point": 0.8930757459831675,
+      "median_shift_voxels": 0.5,
+      "n": 5228,
+      "p90_shift_voxels": 0.7071067811865476
+    }
+  },
+  {
+    "case": "000_labels_filled",
+    "n_maxima": 284,
+    "n_minima": 5550,
+    "normal_order1_maxima": {
+      "fraction_saturated_per_component": 0.0,
+      "fraction_saturated_per_point": 0.0,
+      "median_shift_voxels": 0.01872758043012672,
+      "n": 284,
+      "p90_shift_voxels": 0.10536122380722807
+    },
+    "normal_order1_minima": {
+      "fraction_saturated_per_component": 0.00018018018018018018,
+      "fraction_saturated_per_point": 0.00018018018018018018,
+      "median_shift_voxels": 0.25,
+      "n": 5550,
+      "p90_shift_voxels": 0.25
+    },
+    "normal_order3_maxima": {
+      "fraction_saturated_per_component": 0.045774647887323945,
+      "fraction_saturated_per_point": 0.045774647887323945,
+      "median_shift_voxels": 0.03369469069836896,
+      "n": 284,
+      "p90_shift_voxels": 0.19220039042805306
+    },
+    "normal_order3_minima": {
+      "fraction_saturated_per_component": 0.002702702702702703,
+      "fraction_saturated_per_point": 0.002702702702702703,
+      "median_shift_voxels": 0.25,
+      "n": 5550,
+      "p90_shift_voxels": 0.3406457543786441
+    },
+    "separable_order1_maxima": {
+      "fraction_saturated_per_component": 0.28169014084507044,
+      "fraction_saturated_per_point": 0.5633802816901409,
+      "median_shift_voxels": 0.5011007339278415,
+      "n": 284,
+      "p90_shift_voxels": 0.7071516639175751
+    },
+    "separable_order1_minima": {
+      "fraction_saturated_per_component": 0.8095495495495495,
+      "fraction_saturated_per_point": 0.8924324324324324,
+      "median_shift_voxels": 0.5,
+      "n": 5550,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_maxima": {
+      "fraction_saturated_per_component": 0.28169014084507044,
+      "fraction_saturated_per_point": 0.5633802816901409,
+      "median_shift_voxels": 0.5011007339278415,
+      "n": 284,
+      "p90_shift_voxels": 0.7071516639175751
+    },
+    "separable_order3_minima": {
+      "fraction_saturated_per_component": 0.8095495495495495,
+      "fraction_saturated_per_point": 0.8924324324324324,
+      "median_shift_voxels": 0.5,
+      "n": 5550,
+      "p90_shift_voxels": 0.7071067811865476
+    }
+  },
+  {
+    "case": "007_labels_filled",
+    "n_maxima": 222,
+    "n_minima": 4535,
+    "normal_order1_maxima": {
+      "fraction_saturated_per_component": 0.0,
+      "fraction_saturated_per_point": 0.0,
+      "median_shift_voxels": 0.020097852736846562,
+      "n": 222,
+      "p90_shift_voxels": 0.08460272421138383
+    },
+    "normal_order1_minima": {
+      "fraction_saturated_per_component": 0.0002205071664829107,
+      "fraction_saturated_per_point": 0.0002205071664829107,
+      "median_shift_voxels": 0.25,
+      "n": 4535,
+      "p90_shift_voxels": 0.25
+    },
+    "normal_order3_maxima": {
+      "fraction_saturated_per_component": 0.036036036036036036,
+      "fraction_saturated_per_point": 0.036036036036036036,
+      "median_shift_voxels": 0.03767388651017213,
+      "n": 222,
+      "p90_shift_voxels": 0.16298215511466602
+    },
+    "normal_order3_minima": {
+      "fraction_saturated_per_component": 0.0015435501653803748,
+      "fraction_saturated_per_point": 0.0015435501653803748,
+      "median_shift_voxels": 0.25,
+      "n": 4535,
+      "p90_shift_voxels": 0.3329416692699782
+    },
+    "separable_order1_maxima": {
+      "fraction_saturated_per_component": 0.2627627627627628,
+      "fraction_saturated_per_point": 0.5405405405405406,
+      "median_shift_voxels": 0.5034879813282287,
+      "n": 222,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order1_minima": {
+      "fraction_saturated_per_component": 0.813156927600147,
+      "fraction_saturated_per_point": 0.8884233737596472,
+      "median_shift_voxels": 0.5,
+      "n": 4535,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_maxima": {
+      "fraction_saturated_per_component": 0.2627627627627628,
+      "fraction_saturated_per_point": 0.5405405405405406,
+      "median_shift_voxels": 0.5034879813282287,
+      "n": 222,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_minima": {
+      "fraction_saturated_per_component": 0.813156927600147,
+      "fraction_saturated_per_point": 0.8884233737596472,
+      "median_shift_voxels": 0.5,
+      "n": 4535,
+      "p90_shift_voxels": 0.7071067811865476
+    }
+  },
+  {
+    "case": "023_labels_filled",
+    "n_maxima": 200,
+    "n_minima": 4404,
+    "normal_order1_maxima": {
+      "fraction_saturated_per_component": 0.0,
+      "fraction_saturated_per_point": 0.0,
+      "median_shift_voxels": 0.017548124899648774,
+      "n": 200,
+      "p90_shift_voxels": 0.09764401520795911
+    },
+    "normal_order1_minima": {
+      "fraction_saturated_per_component": 0.00022706630336058128,
+      "fraction_saturated_per_point": 0.00022706630336058128,
+      "median_shift_voxels": 0.25,
+      "n": 4404,
+      "p90_shift_voxels": 0.25
+    },
+    "normal_order3_maxima": {
+      "fraction_saturated_per_component": 0.04,
+      "fraction_saturated_per_point": 0.04,
+      "median_shift_voxels": 0.03339139601696828,
+      "n": 200,
+      "p90_shift_voxels": 0.18480936892289831
+    },
+    "normal_order3_minima": {
+      "fraction_saturated_per_component": 0.0013623978201634877,
+      "fraction_saturated_per_point": 0.0013623978201634877,
+      "median_shift_voxels": 0.25,
+      "n": 4404,
+      "p90_shift_voxels": 0.325785356105469
+    },
+    "separable_order1_maxima": {
+      "fraction_saturated_per_component": 0.26666666666666666,
+      "fraction_saturated_per_point": 0.545,
+      "median_shift_voxels": 0.5056957800371085,
+      "n": 200,
+      "p90_shift_voxels": 0.7071250997969887
+    },
+    "separable_order1_minima": {
+      "fraction_saturated_per_component": 0.8334090221011202,
+      "fraction_saturated_per_point": 0.9032697547683923,
+      "median_shift_voxels": 0.5,
+      "n": 4404,
+      "p90_shift_voxels": 0.7071067811865476
+    },
+    "separable_order3_maxima": {
+      "fraction_saturated_per_component": 0.26666666666666666,
+      "fraction_saturated_per_point": 0.545,
+      "median_shift_voxels": 0.5056957800371085,
+      "n": 200,
+      "p90_shift_voxels": 0.7071250997969887
+    },
+    "separable_order3_minima": {
+      "fraction_saturated_per_component": 0.8334090221011202,
+      "fraction_saturated_per_point": 0.9032697547683923,
+      "median_shift_voxels": 0.5,
+      "n": 4404,
+      "p90_shift_voxels": 0.7071067811865476
+    }
+  }
+]
