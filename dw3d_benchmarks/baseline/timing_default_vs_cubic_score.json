@@ -1,0 +1,225 @@
+{
+  "per_case": {
+    "000_labels_filled": {
+      "cubic_score": 2.679084250004962,
+      "default": 2.342831583926454
+    },
+    "001_labels_filled": {
+      "cubic_score": 2.0440157919656485,
+      "default": 1.8296822090633214
+    },
+    "002_labels_filled": {
+      "cubic_score": 1.0242772079072893,
+      "default": 0.9212718328926712
+    },
+    "003_labels_filled": {
+      "cubic_score": 2.2525367501657456,
+      "default": 1.9849752499721944
+    },
+    "004_labels_filled": {
+      "cubic_score": 2.0357865418773144,
+      "default": 1.7903933748602867
+    },
+    "005_labels_filled": {
+      "cubic_score": 1.8141310829669237,
+      "default": 1.6168253750074655
+    },
+    "006_labels_filled": {
+      "cubic_score": 1.8269147500395775,
+      "default": 1.5819880422204733
+    },
+    "007_labels_filled": {
+      "cubic_score": 2.078965499997139,
+      "default": 1.8135324998293072
+    },
+    "008_labels_filled": {
+      "cubic_score": 1.4517357081640512,
+      "default": 1.2847830830141902
+    },
+    "009_labels_filled": {
+      "cubic_score": 1.8302949590142816,
+      "default": 1.6437645840924233
+    },
+    "010_labels_filled": {
+      "cubic_score": 2.0743136659730226,
+      "default": 1.825101291993633
+    },
+    "011_labels_filled": {
+      "cubic_score": 2.0381224588491023,
+      "default": 1.8076578751206398
+    },
+    "012_labels_filled": {
+      "cubic_score": 2.3241103331092745,
+      "default": 2.001354750012979
+    },
+    "013_labels_filled": {
+      "cubic_score": 2.6381185830105096,
+      "default": 2.342191250063479
+    },
+    "014_labels_filled": {
+      "cubic_score": 1.9586540409363806,
+      "default": 1.753235667012632
+    },
+    "015_labels_filled": {
+      "cubic_score": 1.8157006250694394,
+      "default": 1.5741545830387622
+    },
+    "016_labels_filled": {
+      "cubic_score": 1.7356822500005364,
+      "default": 1.54192225006409
+    },
+    "017_labels_filled": {
+      "cubic_score": 2.3986032919492573,
+      "default": 2.1091206250712276
+    },
+    "018_labels_filled": {
+      "cubic_score": 2.310169375035912,
+      "default": 2.01124329213053
+    },
+    "019_labels_filled": {
+      "cubic_score": 2.0753178750164807,
+      "default": 1.802617833018303
+    },
+    "020_labels_filled": {
+      "cubic_score": 2.144737666938454,
+      "default": 1.902981209103018
+    },
+    "021_labels_filled": {
+      "cubic_score": 2.3557664998807013,
+      "default": 2.02693216688931
+    },
+    "022_labels_filled": {
+      "cubic_score": 2.635184333892539,
+      "default": 2.31114162504673
+    },
+    "023_labels_filled": {
+      "cubic_score": 1.9017684170976281,
+      "default": 1.67973491596058
+    },
+    "024_labels_filled": {
+      "cubic_score": 1.602328124921769,
+      "default": 1.40395945799537
+    },
+    "025_labels_filled": {
+      "cubic_score": 2.3727969580795616,
+      "default": 2.08429175009951
+    },
+    "026_labels_filled": {
+      "cubic_score": 1.8717548330314457,
+      "default": 1.6685453339014202
+    },
+    "027_labels_filled": {
+      "cubic_score": 2.1581604999955744,
+      "default": 1.8657921669073403
+    },
+    "028_labels_filled": {
+      "cubic_score": 2.4895464591681957,
+      "default": 2.198608374921605
+    },
+    "029_labels_filled": {
+      "cubic_score": 1.0978804170154035,
+      "default": 0.9928174170199782
+    },
+    "030_labels_filled": {
+      "cubic_score": 1.7526303748600185,
+      "default": 1.576920042047277
+    },
+    "031_labels_filled": {
+      "cubic_score": 1.453285625204444,
+      "default": 1.2861382078845054
+    },
+    "032_labels_filled": {
+      "cubic_score": 2.7004217500798404,
+      "default": 2.38815762498416
+    },
+    "033_labels_filled": {
+      "cubic_score": 2.4206341670360416,
+      "default": 2.1369395421352237
+    },
+    "034_labels_filled": {
+      "cubic_score": 1.9683250000234693,
+      "default": 1.7150415000505745
+    },
+    "035_labels_filled": {
+      "cubic_score": 2.3449725420214236,
+      "default": 2.032132042106241
+    },
+    "036_labels_filled": {
+      "cubic_score": 2.4347124581690878,
+      "default": 2.1331309999804944
+    },
+    "037_labels_filled": {
+      "cubic_score": 2.2255568329710513,
+      "default": 1.9777386249043047
+    },
+    "038_labels_filled": {
+      "cubic_score": 1.8680748750921339,
+      "default": 1.642458040965721
+    },
+    "039_labels_filled": {
+      "cubic_score": 2.3290325419511646,
+      "default": 2.031921499874443
+    },
+    "040_labels_filled": {
+      "cubic_score": 2.6923487088643014,
+      "default": 2.344916915986687
+    },
+    "041_labels_filled": {
+      "cubic_score": 2.6441729159560055,
+      "default": 2.345506167039275
+    },
+    "042_labels_filled": {
+      "cubic_score": 1.675086708040908,
+      "default": 1.5153650420252234
+    },
+    "043_labels_filled": {
+      "cubic_score": 2.4346022920217365,
+      "default": 2.0247681671753526
+    },
+    "044_labels_filled": {
+      "cubic_score": 2.685248791007325,
+      "default": 2.444955416955054
+    },
+    "045_labels_filled": {
+      "cubic_score": 2.7646640001330525,
+      "default": 2.467202916974202
+    },
+    "046_labels_filled": {
+      "cubic_score": 1.5672029999550432,
+      "default": 1.3876528339460492
+    },
+    "1": {
+      "cubic_score": 1.746028499910608,
+      "default": 1.527540208073333
+    },
+    "2": {
+      "cubic_score": 1.7013162500225008,
+      "default": 1.5095667920541018
+    },
+    "3": {
+      "cubic_score": 2.410451916977763,
+      "default": 2.1026589160319418
+    },
+    "4": {
+      "cubic_score": 2.337999542010948,
+      "default": 2.038913124939427
+    }
+  },
+  "summary": {
+    "n_cases": 51,
+    "n_cases_above_1_20": 1,
+    "ratio_max": 1.2024103951703873,
+    "ratio_median": 1.1347933684298075,
+    "ratio_min": 1.0982812906877184,
+    "ratio_of_totals": 1.1362066221651506,
+    "repeats": 2,
+    "totals_s": {
+      "cubic_score": 107.19322804338299,
+      "default": 94.34307629638352
+    },
+    "variants": [
+      "default",
+      "cubic_score"
+    ]
+  }
+}

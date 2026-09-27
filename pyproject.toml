@@ -2,39 +2,102 @@
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "delaunay-watershed-3d"
+version = "0.5.0"
+description = "Geometrical reconstruction of cell assemblies from instance segmentations"
+readme = "README.md"
+license = { text = "CC BY-NC-SA 4.0" }
+authors = [
+  { name = "Sacha Ichbiah", email = "sacha.ichbiah@college-de-france.fr" },
+]
+maintainers = [{ name = "Matthieu Perez", email = "matthieu.perez@cnrs.fr" }]
+requires-python = ">=3.11"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Intended Audience :: Science/Research",
+]
+dependencies = [
+  "edt>=2.4.0",
+  "meshio>=5.3.4",
+  "networkx>=2.8.0",
+  "numpy>=1.24.0",
+  "scikit-image>=0.20.0",
+  "scipy>=1.9.3",
+  "trimesh>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/VirtualEmbryo/delaunay-watershed"
+"Team website" = "https://www.turlierlab.com/"
+
+[project.optional-dependencies]
+viewing = ["napari[all]", "polyscope>=1.2.0", "matplotlib>=3.3.1"]
+# For the figure scripts only (dw3d_benchmarks/mesh_quality_comparison/figures/), so plotting
+# a benchmark does not require installing napari (pulled in by `viewing`). Those scripts also
+# import foambryo directly, which is not declared here: the published foambryo (0.3.5 on
+# PyPI) pulls in torch/CUDA as a core dependency, a multi-GB footprint this extra should not
+# impose. In this workspace foambryo is already present as a sibling editable install; a
+# standalone `pip install dw3d[benchmarks]` would still need `pip install foambryo`
+# separately. `src/dw3d` itself must never depend on foambryo -- only the benchmarks package
+# does.
+benchmarks = ["matplotlib>=3.3.1"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6", "ty", "pytest-cov>=4.0.0"]
+
+[tool.uv]
+compile-bytecode = true
+
+[tool.pytest.ini_options]
+# A bare `pytest` from the repo root must collect only the production suite. `testpaths` keeps
+# it from collecting test files outside `tests/`, such as development scripts kept in the
+# development repository, which would inflate the test count and let them break the suite.
+addopts = ["-ra", "--showlocals"]
+testpaths = ["tests"]
+
 [tool.ruff]
 # Enable the pycodestyle (`E`) and Pyflakes (`F`) rules by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
 lint.select = [
-    "E",
-    "F",
-    "W",
-    "C90",
-    "I",
-    "N",
-    "D",
-    "UP",
-    "ANN",
-    "S",
-    "B",
-    "A",
-    "COM",
-    # "CPY",
-    "C4",
-    "EM",
-    "EXE",
-    "FA",
-    "ISC",
-    # "INP",
-    "PT",
-    "Q",
-    "SIM",
-    "ARG",
-    "PTH",
-    "NPY",
-    "PERF",
-    "RUF",
+  "E",
+  "F",
+  "W",
+  "C90",
+  "I",
+  "N",
+  "D",
+  "UP",
+  "ANN",
+  "S",
+  "B",
+  "A",
+  "COM",
+  # "CPY",
+  "C4",
+  "EM",
+  "EXE",
+  "FA",
+  "ISC",
+  # "INP",
+  "PT",
+  "Q",
+  "SIM",
+  "ARG",
+  "PTH",
+  "NPY",
+  "PERF",
+  "RUF",
 ]
 lint.ignore = ["S101", "ANN10"]
 
@@ -44,34 +107,63 @@ lint.unfixable = []
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-    "*.pyi",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".ty_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+  "*.pyi",
 ]
-lint.per-file-ignores = {}
-
 line-length = 120
 
 target-version = "py311"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Test functions are not a public API: they are collected and called by pytest, never
+# imported by a caller who needs a signature or a docstring. Their names are the
+# documentation (`test_score_gap_fraction_below_1e3`), and their arguments are fixtures
+# injected by pytest rather than parameters a caller chooses. Annotating and
+# docstringing all of them would add ~60 lines of noise without adding information, so
+# these four API-documentation rules are disabled here and *only* here. Everything else
+# in the configured rule set — including every correctness and simplification rule —
+# still applies to tests.
+"tests/**" = ["ANN001", "ANN201", "ANN202", "D103", "D104"]
+
+[tool.ty.environment]
+python-version = "3.11"
+root = ["./src"]
+
+[tool.check-manifest]
+ignore = [
+  ".github/**",
+  "Justfile",
+  "Examples/**",
+  "data/**",
+  "Figures_readme/**",
+]
+
+[tool.coverage.run]
+omit = []
+
+[tool.coverage.report]
+skip_empty = true

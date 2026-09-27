@@ -66,6 +66,115 @@ plot_cells_polyscope(mesh_reconstruction_algorithm)
 
 Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/) for example.
 
+### Reconstruction variants
+
+`get_default_mesh_reconstruction_algorithm` gives you the **default** reconstruction: the
+published algorithm (equivalent to dw3d 0.3.6). It is the more accurate one for downstream
+tension inference today, so it is what most users should start with.
+
+A **revised meshing pipeline** is also available, opt-in, as
+`get_link_checked_mesh_reconstruction_algorithm`. It is deterministic, protects triple
+junctions explicitly, and produces cleaner topology and lower interface-area bias than the
+default — but as measured on `foambryo`'s benchmarking dataset, meshes it produces currently
+give *worse* end-to-end tension-inference accuracy than the default, on every inference method
+tested (see `BENCHMARKS.md`). Reach for it when mesh geometry and topology matter more to you
+than today's downstream inference accuracy — for example, when the mesh itself, rather than
+inferred tensions, is the deliverable:
+
+```py
+from dw3d import get_link_checked_mesh_reconstruction_algorithm
+
+mesh_reconstruction_algorithm = get_link_checked_mesh_reconstruction_algorithm()
+mesh_reconstruction_algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
+```
+
+### Straightening the junction lines (on by default since 0.5.0)
+
+A reconstructed mesh's trijunction lines are ragged at voxel scale: the extraction places junction
+vertices wherever the tessellation happens to bracket them. Since 0.5.0 every reconstruction moves
+them onto the trijunction curves the mask itself gives, as a post-process on the finished mesh:
+
+```py
+from dw3d import get_default_mesh_reconstruction_algorithm
+
+algorithm = get_default_mesh_reconstruction_algorithm()
+points, triangles, labels = algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
+print(algorithm.relocation_provenance)          # did it run, with which guard, did it warn
+print(algorithm.relocation_report.as_dict())    # what it moved
+```
+
+**To reproduce the 0.4 meshes, switch it off**: `algorithm.relocate_junctions = False` before
+reconstructing, or `MeshReconstructionAlgorithmFactory().set_junction_relocation(False)`. At a
+point-placement `min_distance` of 5 or more the reconstruction emits
+`dw3d.CoarseSpacingRelocationWarning` once: the effect on surface-tangent contact angles there lies
+within the check's own noise and larger spacings are unmeasured; facet-based angles improve.
+
+It can also be applied to a mesh you already have:
+
+```py
+from dw3d import relocate_junction_vertices
+from dw3d.io import load_rec
+
+points, triangles, labels = load_rec("mesh.rec")
+points, report = relocate_junction_vertices(segmentation_mask, points, triangles, labels)
+```
+
+**It moves vertices and nothing else.** Triangles and material labels come back untouched, so a
+treated mesh can be compared vertex-for-vertex with its own untreated original.
+
+**What it buys**, measured over 40 benchmark cases at four reconstruction spacings and four point
+samplers: line position error, local tangent error and discrete curvature all improve at every
+spacing on every sampler, and no existing mesh-validity number changes on any case. If you are
+using a seed-free sampler (`get_deterministic_mesh_reconstruction_algorithm`) it also improves
+contact angles by 2.3–3.5 degrees and downstream tension error by 20–40 %, and brings the junction
+lines to the default sampler's own untreated accuracy or better. On the default's seeded sampler
+the lines improve and the contact angles do not move significantly. See `BENCHMARKS.md` (measured
+before relocation became the default).
+
+**What it costs**: about +0.75 s on the benchmark meshes, whose reconstruction takes about 5 s
+(+15 %); 0.1–1.5 s per timepoint on real embryo volumes, whose reconstruction takes about 0.6 s
+(median 0.34 s and 0.48 s on two time series). Within one real series it grows faster than linearly
+with mesh size (fitted exponent 2.68 over a 2.2-fold range — not a tissue-scale law). A faster
+neighbour search is planned for 0.5.1.
+
+**It cannot make the mesh pass through itself.** Every accepted move is checked against the whole
+mesh, not only the triangles around the vertex it moves, so the number of self-intersecting
+triangle pairs can never rise. That check is available on its own as
+`dw3d.count_self_intersections(points, triangles)`.
+
+### `.rec` / `.arec` metadata appendix
+
+`save_rec`/`load_rec` (`dw3d.io`) read and write `.rec`/`.arec` multimaterial mesh files
+(points, triangles, and per-triangle material labels; text or binary). Optionally, a
+`.rec`/`.arec` file can carry a small metadata appendix: pass `metadata={...}` to
+`save_rec`, and read it back with `load_rec_appendix(filename)`.
+
+The appendix is a trailing block of ASCII `# key = value` lines, written after the
+geometry data — never before it, because every existing reader (this one included) reads
+a count and then exactly that many values, so a trailing block is invisible to them,
+while a leading one breaks parsing outright. Fields:
+
+```
+# rec-appendix 1
+# written_by = dw3d <version>
+# coordinate_frame = voxel_index
+# axis_order = zyx
+# spacing = 1.0 0.325 0.325
+# spacing_unit = um
+# source_shape = 194 200 199
+# crop_offset = 0 0 0
+```
+
+- `coordinate_frame` is `voxel_index`, `physical`, or `unknown` — this is the field the
+  appendix exists for, since spacing alone can't tell a reader whether coordinates are
+  raw voxel indices awaiting a scale or physical units that already have it applied.
+- `axis_order`, `spacing`/`spacing_unit`, `source_shape` and `crop_offset` record the
+  rest of the sampling geometry, `crop_offset` even when zero (it is what will later let
+  a reader distinguish a physical exterior boundary from a crop boundary).
+- **A file with no appendix must be treated as `coordinate_frame == "unknown"`, never as
+  isotropic spacing** — `load_rec_appendix` returns `None` in that case, and every file
+  saved before this feature existed has no appendix.
+
 For more examples and documentation, see the notebooks:
 - [Mesh reconstruction and visualization](./Examples/example_1_mesh_reconstruction_visualisation.ipynb),
 - [Mask compression and reconstruction](./Examples/example_2_mask_compression_reconstruction.ipynb).
@@ -95,6 +204,11 @@ Segmentation masks from [Stardist](https://github.com/stardist/stardist)
 
 ---
 
+### Repository layout
+
+The project's development record (working notes, exploratory scripts and their results) is
+kept in the development repository for provenance and is not part of this distribution:
+`pip install` does not ship it, and nothing under `dw3d` imports from it.
 
 ### Credits, contact, citations
 If you use this tool, please cite the associated paper.

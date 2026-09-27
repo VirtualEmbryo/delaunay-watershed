@@ -23,14 +23,24 @@ class TesselationGraph:
         self,
         tesselation_points: NDArray[np.float64],
         tesselation_tetrahedrons: NDArray[np.int64],
+        indices_of_sorted_maxes: NDArray[np.uint],
         score_computation_function: "ScoreComputationFunction",
         edt_image: NDArray[np.float64],
         print_info: bool = False,
     ) -> None:
-        """Create Tesselation graph from EDT image. Compute scores on triangles for watershed."""
+        """Create Tesselation graph from EDT image. Compute scores on triangles for watershed.
+
+        `indices_of_sorted_maxes` is not used to build the graph. It is stored so that
+        callers (benchmarks, later point-placement schemes) can tell which tesselation
+        vertices are interior EDT maxima without recomputing the point-placement stage.
+        It used to be consumed by `_improve_tesselation`, which was dead and known
+        broken and was deleted as dead code; the code is
+        preserved on branch `archive/improve-tesselation`.
+        """
         self.vertices = tesselation_points
         self.nodes = tesselation_tetrahedrons
         self.n_simplices = len(self.nodes)
+        self.indices_of_sorted_maxes = indices_of_sorted_maxes
 
         t1 = time()
 
@@ -49,39 +59,55 @@ class TesselationGraph:
         self.tetrahedrons = tetrahedrons.copy()
         tetrahedrons += 1  # We shift to get the right keys
         faces_table = np.array(_give_faces_table(tetrahedrons), dtype=np.int64)
-        key_multiplier = _find_key_multiplier(max(len(self.vertices), len(self.nodes)))
-        keys = (
-            faces_table[:, 0] * (key_multiplier**3)
-            + faces_table[:, 1] * (key_multiplier**2)
-            + faces_table[:, 2] * (key_multiplier**1)
-            + faces_table[:, 3] * (key_multiplier**0)
-        )
-        edges_table: NDArray[np.uint] = faces_table[np.argsort(keys)]  # .tolist()
 
+        # sort faces (3 triangles point indices + tetra id) lexicographically.
+        # i.e. first point index is sorted, then second, then third, then tetra id.
+        # Note : a triangle separating two tetrahedrons will appear twice in a row (which is what we want)
+        lex_keys = (faces_table[:, 3], faces_table[:, 2], faces_table[:, 1], faces_table[:, 0])
+        edges_table: NDArray[np.uint] = faces_table[np.lexsort(lex_keys)]
         return edges_table
 
     def _construct_edges(self, edges_table: NDArray[np.int64]) -> None:
-        """Build adjacency maps between tetrahedrons (nodes) and triangles faces ("edges")."""
+        """Build adjacency maps between tetrahedrons (nodes) and triangles faces ("edges").
+
+        `edges_table` is lexicographically sorted, so the two copies of a triangle shared
+        by two tetrahedrons are adjacent rows. Every row is therefore either the first of
+        such a pair (a shared face) or unpaired (a "lone" face on the tesselation
+        boundary), which gives the invariant
+        `2 * len(triangle_faces) + len(lone_faces) == len(edges_table)`.
+
+        The loop bound is `index < n`, not `index < n - 1`: the latter never examined the
+        last row, so a *trailing lone face* was silently dropped and its tetrahedron not
+        marked in `nodes_on_the_border`. On all 8
+        golden-master configurations the last row happens to be the second half of a
+        matched pair, so the bug does not fire there and this fix changes no output; it
+        fires whenever the lexicographically largest face is a boundary face. See
+        `tests/test_construct_edges.py`.
+        """
         index = 0
         n = len(edges_table)
 
         self.triangle_faces = []
         self.nodes_linked_by_faces = []
         self.nodes_on_the_border = np.zeros(len(self.nodes))
-        self.faces_of_nodes = {}
+        self.faces_of_nodes = {i: [] for i in range(len(self.nodes))}
         self.lone_faces = []
         self.nodes_linked_by_lone_faces = []
-        while index < n - 1:
-            if (
+        while index < n:
+            if index + 1 < n and (
                 edges_table[index][0] == edges_table[index + 1][0]
                 and edges_table[index][1] == edges_table[index + 1][1]
                 and edges_table[index][2] == edges_table[index + 1][2]
             ):
+                # same triangle,two tetraedron indices
                 a, b = edges_table[index][3], edges_table[index + 1][3]
                 self.triangle_faces.append(edges_table[index][:-1] - 1)  # We correct the previous shift
                 self.nodes_linked_by_faces.append([a, b])
-                self.faces_of_nodes[a] = [*self.faces_of_nodes.get(a, []), len(self.triangle_faces) - 1]
-                self.faces_of_nodes[b] = [*self.faces_of_nodes.get(b, []), len(self.triangle_faces) - 1]
+
+                self.faces_of_nodes[a].append(len(self.triangle_faces) - 1)
+                self.faces_of_nodes[b].append(len(self.triangle_faces) - 1)
+                # self.faces_of_nodes[a] = [*self.faces_of_nodes.get(a, []), len(self.triangle_faces) - 1]
+                # self.faces_of_nodes[b] = [*self.faces_of_nodes.get(b, []), len(self.triangle_faces) - 1]
                 index += 2
             else:
                 self.nodes_on_the_border[edges_table[index][3]] = 1
@@ -117,10 +143,23 @@ class TesselationGraph:
 
     def compute_nodes_centroids(self) -> NDArray[np.float64]:
         """Compute tesselation's tetrahedrons' centroid point."""
-        return np.mean(self.vertices[self.nodes], axis=1)
+        return np.mean(self.vertices[self.tetrahedrons], axis=1)
 
     def compute_zero_nodes(self, segmented_image: NDArray[np.uint]) -> NDArray[np.uint]:
-        """Get index of tetrahedrons with centroids on the part where segmented image is 0."""
+        """Get index of tetrahedrons with centroids on the part where segmented image is 0.
+
+        These are the "background" tetrahedrons. **Nothing in the pipeline currently calls
+        this.** It was called by `MeshReconstructionAlgorithm._watershed_seeded` and passed
+        to `seeded_watershed_map`, which guarded its use behind an inverted condition and
+        so never applied it. The defect-cleanup work
+        deleted the dead guard and the now-pointless call, preserving the de-facto behaviour
+        (background-tetrahedron forcing *inactive*).
+
+        The method itself is correct and kept deliberately: whether the watershed *should*
+        force these tetrahedrons to label 0 is an open question, not a settled one, and
+        answering it changes the labelling. See `seeded_watershed_map`'s docstring for what
+        re-enabling would take.
+        """
         centroids = self.compute_nodes_centroids()
         segmented_image = _interpolate_image(segmented_image)
         bools = segmented_image(centroids) == 0
@@ -225,8 +264,75 @@ def _give_faces_table(tetrahedrons: NDArray[np.uint]) -> list[list[int]]:
     return faces_table
 
 
-def _find_key_multiplier(num_points: int) -> int:
-    key_multiplier = 1
-    while num_points // key_multiplier != 0:
-        key_multiplier *= 10
-    return key_multiplier
+def intersect_line_triangle(l1: NDArray, l2: NDArray, t1: NDArray, t2: NDArray, t3: NDArray) -> NDArray | None:
+    """Get the intersection point of a line segment and a triangle, if it exists and is unique. Otherwise return None.
+
+    Args:
+        l1 (NDArray): First 3D point of the line segment.
+        l2 (NDArray): Second 3D point of the line segment.
+        t1 (NDArray): First 3D point of the triangle.
+        t2 (NDArray): Second 3D point of the triangle.
+        t3 (NDArray): Third 3D point of the triangle.
+
+    Returns:
+        NDArray | None: Intersection point between triangle and line segment if it exists and is unique. Otherwise None.
+    """
+    # Thanks to Bruno Levy https://stackoverflow.com/a/42752998
+
+    def sign_of_tetra_volume(a: NDArray, b: NDArray, c: NDArray, d: NDArray) -> int:
+        """Get the sign of the volume of the tetraedron defined by the 4 points a, b, c, d.
+
+        Return 1 if the volume is positive, -1 if negative, 0 if degenerate/flat.
+        Designed for 3D points.
+        """
+        return np.sign(np.dot(np.cross(b - a, c - a), d - a))
+
+    # unnecessary first test (in our case) because we know that l1 and l2 are on two different sides of the triangle.
+    # Under the assumption that the first tesselation is correct and that our modifications of it are also correct!
+    # ---
+    # Check 1 : check that l1 and l2 are on two different sides of the triangle
+    # and also that neither l1 or l2 are on the plane defined by the triangle.
+    # Therefore there will be at most a unique intersection point.
+    if sign_of_tetra_volume(l1, t1, t2, t3) * sign_of_tetra_volume(l2, t1, t2, t3) == -1:
+        s3 = sign_of_tetra_volume(l1, l2, t1, t2)
+        s4 = sign_of_tetra_volume(l1, l2, t2, t3)
+        # Check 2 & 3: all of the following tetraedrons have the same signed volume
+        if s3 == s4:
+            s5 = sign_of_tetra_volume(l1, l2, t3, t1)
+            if s4 == s5:
+                # If yes, it means that there is a unique intersection point inside the triangle. Let's find it.
+                n = np.cross(t2 - t1, t3 - t1)
+                t = np.dot(t1 - l1, n) / np.dot(l2 - l1, n)
+                return l1 + t * (l2 - l1)
+    # All other cases : no unique, well-defined intersection point : we return None.
+    return None
+
+
+if __name__ == "__main__":
+    # Define triangle
+    t1 = np.array([0, 0, 0])
+    t2 = np.array([1, 0, 0])
+    t3 = np.array([0, 1, 0])
+    # Exactly over a point : No intersection
+    l1 = np.array([0, 0, 1])
+    l2 = np.array([0, 0, -1])
+    assert np.array_equal(None, intersect_line_triangle(l1, l2, t1, t2, t3))
+    # Exactly over a segment of the triangle : No intersection
+    l1 = np.array([0.5, 0, 1])
+    l2 = np.array([0.5, 0, -1])
+    assert np.array_equal(None, intersect_line_triangle(l1, l2, t1, t2, t3))
+    # We also check for same side points
+    l1 = np.array([0.25, 0.25, 1])
+    l2 = np.array([0.26, 0.24, 1.1])
+    assert np.array_equal(None, intersect_line_triangle(l1, l2, t1, t2, t3))
+    # Or coplanar points
+    l1 = np.array([0.25, 0.25, 0])
+    l2 = np.array([0.25, 0.25, -1])
+    assert np.array_equal(None, intersect_line_triangle(l1, l2, t1, t2, t3))
+    # Inside the triangle : intersection
+    l1 = np.array([0.25, 0.25, 1])
+    l2 = np.array([0.25, 0.25, -1])
+    assert np.array_equal(np.array([0.25, 0.25, 0]), intersect_line_triangle(l1, l2, t1, t2, t3))
+    l1 = np.array([0.26, 0.23, 1])
+    l2 = np.array([0.24, 0.27, -1])
+    assert np.array_equal(np.array([0.25, 0.25, 0]), intersect_line_triangle(l1, l2, t1, t2, t3))

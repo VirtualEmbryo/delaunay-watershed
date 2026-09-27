@@ -1,0 +1,590 @@
+[
+  {
+    "case": "1",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "2",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "3",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "4",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "000_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "001_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "002_labels_filled",
+    "edges": [
+      {
+        "dist_to_0_stratum": Infinity,
+        "dist_to_1_stratum": 1.4142135623730951,
+        "edge": [
+          5,
+          266
+        ],
+        "edge_length": 12.449899597988733,
+        "endpoints_are_junction_samples": [
+          false,
+          false
+        ],
+        "interface_pairs": [
+          [
+            "0-1",
+            2
+          ],
+          [
+            "0-2",
+            2
+          ]
+        ],
+        "label_cycle": [
+          2,
+          2,
+          0,
+          1,
+          1,
+          0,
+          2,
+          2
+        ],
+        "materials": [
+          0,
+          1,
+          2
+        ],
+        "max_multiplicity_within_3vox": 3,
+        "n_materials": 3,
+        "p1": [
+          28.0,
+          102.0,
+          76.0
+        ],
+        "p2": [
+          37.0,
+          97.0,
+          69.0
+        ],
+        "surgery_double_switch_candidates": [],
+        "surgery_single_switch_candidates": [],
+        "tetra_cycle_length": 8,
+        "valence": 4
+      }
+    ],
+    "n_abnormal": 1,
+    "variant": "a1b"
+  },
+  {
+    "case": "003_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "004_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "005_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "006_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "007_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "008_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "009_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "010_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "011_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "012_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "013_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "014_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "015_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "016_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "017_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "018_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "019_labels_filled",
+    "edges": [
+      {
+        "dist_to_0_stratum": Infinity,
+        "dist_to_1_stratum": 1.8708286933869707,
+        "edge": [
+          77,
+          961
+        ],
+        "edge_length": 8.306623862918075,
+        "endpoints_are_junction_samples": [
+          false,
+          false
+        ],
+        "interface_pairs": [
+          [
+            "0-1",
+            2
+          ],
+          [
+            "0-2",
+            2
+          ]
+        ],
+        "label_cycle": [
+          0,
+          1,
+          1,
+          0,
+          2,
+          2,
+          2
+        ],
+        "materials": [
+          0,
+          1,
+          2
+        ],
+        "max_multiplicity_within_3vox": 3,
+        "n_materials": 3,
+        "p1": [
+          79.0,
+          104.0,
+          133.0
+        ],
+        "p2": [
+          72.0,
+          106.0,
+          137.0
+        ],
+        "surgery_double_switch_candidates": [],
+        "surgery_single_switch_candidates": [],
+        "tetra_cycle_length": 7,
+        "valence": 4
+      }
+    ],
+    "n_abnormal": 1,
+    "variant": "a1b"
+  },
+  {
+    "case": "020_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "021_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "022_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "023_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "024_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "025_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "026_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "027_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "028_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "029_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "030_labels_filled",
+    "edges": [
+      {
+        "dist_to_0_stratum": 1.4142135623730951,
+        "dist_to_1_stratum": 1.7320508075688772,
+        "edge": [
+          16,
+          103
+        ],
+        "edge_length": 7.14142842854285,
+        "endpoints_are_junction_samples": [
+          false,
+          false
+        ],
+        "interface_pairs": [
+          [
+            "1-6",
+            1
+          ],
+          [
+            "1-8",
+            1
+          ],
+          [
+            "1-9",
+            2
+          ],
+          [
+            "6-8",
+            1
+          ]
+        ],
+        "label_cycle": [
+          8,
+          6,
+          1,
+          1,
+          9,
+          9,
+          9,
+          1
+        ],
+        "materials": [
+          1,
+          6,
+          8,
+          9
+        ],
+        "max_multiplicity_within_3vox": 4,
+        "n_materials": 4,
+        "p1": [
+          68.0,
+          81.0,
+          60.0
+        ],
+        "p2": [
+          69.0,
+          82.0,
+          67.0
+        ],
+        "surgery_double_switch_candidates": [],
+        "surgery_single_switch_candidates": [],
+        "tetra_cycle_length": 8,
+        "valence": 5
+      }
+    ],
+    "n_abnormal": 1,
+    "variant": "a1b"
+  },
+  {
+    "case": "031_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "032_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "033_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "034_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "035_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "036_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "037_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "038_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "039_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "040_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "041_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "042_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "043_labels_filled",
+    "edges": [
+      {
+        "dist_to_0_stratum": Infinity,
+        "dist_to_1_stratum": 0.7071067811865476,
+        "edge": [
+          189,
+          402
+        ],
+        "edge_length": 8.306623862918075,
+        "endpoints_are_junction_samples": [
+          false,
+          false
+        ],
+        "interface_pairs": [
+          [
+            "0-3",
+            2
+          ],
+          [
+            "0-7",
+            2
+          ]
+        ],
+        "label_cycle": [
+          7,
+          7,
+          0,
+          3,
+          3,
+          0
+        ],
+        "materials": [
+          0,
+          3,
+          7
+        ],
+        "max_multiplicity_within_3vox": 3,
+        "n_materials": 3,
+        "p1": [
+          41.0,
+          127.0,
+          96.0
+        ],
+        "p2": [
+          33.0,
+          125.0,
+          97.0
+        ],
+        "surgery_double_switch_candidates": [],
+        "surgery_single_switch_candidates": [],
+        "tetra_cycle_length": 6,
+        "valence": 4
+      }
+    ],
+    "n_abnormal": 1,
+    "variant": "a1b"
+  },
+  {
+    "case": "044_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  },
+  {
+    "case": "045_labels_filled",
+    "edges": [
+      {
+        "dist_to_0_stratum": 7.262919523166975,
+        "dist_to_1_stratum": 1.6583123951777,
+        "edge": [
+          10,
+          672
+        ],
+        "edge_length": 12.806248474865697,
+        "endpoints_are_junction_samples": [
+          false,
+          false
+        ],
+        "interface_pairs": [
+          [
+            "0-5",
+            2
+          ],
+          [
+            "5-7",
+            2
+          ]
+        ],
+        "label_cycle": [
+          7,
+          7,
+          7,
+          5,
+          0,
+          0,
+          5,
+          7,
+          7
+        ],
+        "materials": [
+          0,
+          5,
+          7
+        ],
+        "max_multiplicity_within_3vox": 3,
+        "n_materials": 3,
+        "p1": [
+          59.0,
+          112.0,
+          70.0
+        ],
+        "p2": [
+          59.0,
+          104.0,
+          80.0
+        ],
+        "surgery_double_switch_candidates": [],
+        "surgery_single_switch_candidates": [],
+        "tetra_cycle_length": 9,
+        "valence": 4
+      }
+    ],
+    "n_abnormal": 1,
+    "variant": "a1b"
+  },
+  {
+    "case": "046_labels_filled",
+    "edges": [],
+    "n_abnormal": 0,
+    "variant": "a1b"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "n_points": 364,
+  "n_triangles": 749,
+  "sorted_cell_volumes": [
+    753112.0,
+    756515.6666666667
+  ],
+  "sorted_interface_areas": [
+    11550.586142273978,
+    31285.45385679599,
+    34509.22284023138
+  ],
+  "sorted_junction_lengths": [
+    403.1894802004035
+  ]
+}

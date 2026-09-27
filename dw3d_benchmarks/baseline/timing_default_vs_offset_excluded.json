@@ -1,0 +1,225 @@
+{
+  "per_case": {
+    "000_labels_filled": {
+      "default": 2.280543874949217,
+      "offset_excluded": 2.2940124159213156
+    },
+    "001_labels_filled": {
+      "default": 1.804754458134994,
+      "offset_excluded": 1.7831786670722067
+    },
+    "002_labels_filled": {
+      "default": 0.9131308749783784,
+      "offset_excluded": 0.9241052500437945
+    },
+    "003_labels_filled": {
+      "default": 1.9471966670826077,
+      "offset_excluded": 1.9354901248589158
+    },
+    "004_labels_filled": {
+      "default": 1.8096187091432512,
+      "offset_excluded": 1.7946274580899626
+    },
+    "005_labels_filled": {
+      "default": 1.6393195420969278,
+      "offset_excluded": 1.6244499168824404
+    },
+    "006_labels_filled": {
+      "default": 1.6352724588941783,
+      "offset_excluded": 1.6421361670363694
+    },
+    "007_labels_filled": {
+      "default": 1.8654597499407828,
+      "offset_excluded": 1.8192820409312844
+    },
+    "008_labels_filled": {
+      "default": 1.2721202920656651,
+      "offset_excluded": 1.271925332956016
+    },
+    "009_labels_filled": {
+      "default": 1.6174495839513838,
+      "offset_excluded": 1.6944454580079764
+    },
+    "010_labels_filled": {
+      "default": 1.8144364170730114,
+      "offset_excluded": 1.8475713750813156
+    },
+    "011_labels_filled": {
+      "default": 1.8013644579332322,
+      "offset_excluded": 1.8240570002235472
+    },
+    "012_labels_filled": {
+      "default": 2.060928416904062,
+      "offset_excluded": 2.0972407499793917
+    },
+    "013_labels_filled": {
+      "default": 2.2954843749757856,
+      "offset_excluded": 2.287394082872197
+    },
+    "014_labels_filled": {
+      "default": 1.7070651249960065,
+      "offset_excluded": 1.7346286249812692
+    },
+    "015_labels_filled": {
+      "default": 1.5584027080330998,
+      "offset_excluded": 1.569769375026226
+    },
+    "016_labels_filled": {
+      "default": 1.5320562080014497,
+      "offset_excluded": 1.4980059580411762
+    },
+    "017_labels_filled": {
+      "default": 2.194150999886915,
+      "offset_excluded": 2.1721858331002295
+    },
+    "018_labels_filled": {
+      "default": 2.1133564999327064,
+      "offset_excluded": 2.130410499870777
+    },
+    "019_labels_filled": {
+      "default": 1.8644298329018056,
+      "offset_excluded": 1.8739757088478655
+    },
+    "020_labels_filled": {
+      "default": 2.0577898749615997,
+      "offset_excluded": 1.9194996668957174
+    },
+    "021_labels_filled": {
+      "default": 2.039928917074576,
+      "offset_excluded": 2.090221125166863
+    },
+    "022_labels_filled": {
+      "default": 2.404787207953632,
+      "offset_excluded": 2.375457749934867
+    },
+    "023_labels_filled": {
+      "default": 1.7161878340411931,
+      "offset_excluded": 1.6839712080545723
+    },
+    "024_labels_filled": {
+      "default": 1.4855680838227272,
+      "offset_excluded": 1.4385582499671727
+    },
+    "025_labels_filled": {
+      "default": 2.119072875007987,
+      "offset_excluded": 2.2364929169416428
+    },
+    "026_labels_filled": {
+      "default": 1.73746533296071,
+      "offset_excluded": 1.784765375079587
+    },
+    "027_labels_filled": {
+      "default": 1.9484554999507964,
+      "offset_excluded": 1.9382363751064986
+    },
+    "028_labels_filled": {
+      "default": 2.2460044999606907,
+      "offset_excluded": 2.2306574168615043
+    },
+    "029_labels_filled": {
+      "default": 0.9963797919917852,
+      "offset_excluded": 0.9899739581160247
+    },
+    "030_labels_filled": {
+      "default": 1.5924692500848323,
+      "offset_excluded": 1.6010528339538723
+    },
+    "031_labels_filled": {
+      "default": 1.3105304997880012,
+      "offset_excluded": 1.329417415894568
+    },
+    "032_labels_filled": {
+      "default": 2.516781667014584,
+      "offset_excluded": 2.466977666830644
+    },
+    "033_labels_filled": {
+      "default": 2.195656542200595,
+      "offset_excluded": 2.193501374917105
+    },
+    "034_labels_filled": {
+      "default": 1.7165047079324722,
+      "offset_excluded": 1.723941083997488
+    },
+    "035_labels_filled": {
+      "default": 2.0714623329695314,
+      "offset_excluded": 2.089189416030422
+    },
+    "036_labels_filled": {
+      "default": 2.093970000045374,
+      "offset_excluded": 2.1204209169372916
+    },
+    "037_labels_filled": {
+      "default": 1.902333791833371,
+      "offset_excluded": 1.9258113750256598
+    },
+    "038_labels_filled": {
+      "default": 1.6142048330511898,
+      "offset_excluded": 1.6164965420030057
+    },
+    "039_labels_filled": {
+      "default": 1.9957931670360267,
+      "offset_excluded": 2.012072333134711
+    },
+    "040_labels_filled": {
+      "default": 2.3336875829845667,
+      "offset_excluded": 2.321507125161588
+    },
+    "041_labels_filled": {
+      "default": 2.429237792035565,
+      "offset_excluded": 2.4492521251086146
+    },
+    "042_labels_filled": {
+      "default": 1.5678197909146547,
+      "offset_excluded": 1.55138049996458
+    },
+    "043_labels_filled": {
+      "default": 2.0766592079307884,
+      "offset_excluded": 2.07300933287479
+    },
+    "044_labels_filled": {
+      "default": 2.3681722909677774,
+      "offset_excluded": 2.278175000101328
+    },
+    "045_labels_filled": {
+      "default": 2.508792458102107,
+      "offset_excluded": 2.5454683338757604
+    },
+    "046_labels_filled": {
+      "default": 1.378949916921556,
+      "offset_excluded": 1.4025864170398563
+    },
+    "1": {
+      "default": 1.5218761248979717,
+      "offset_excluded": 1.4977255000267178
+    },
+    "2": {
+      "default": 1.4750732500106096,
+      "offset_excluded": 1.4455756659153849
+    },
+    "3": {
+      "default": 2.070512874983251,
+      "offset_excluded": 2.05297320894897
+    },
+    "4": {
+      "default": 1.9807208750862628,
+      "offset_excluded": 1.9921622909605503
+    }
+  },
+  "summary": {
+    "n_cases": 51,
+    "n_cases_above_1_20": 0,
+    "ratio_max": 1.0554110447632497,
+    "ratio_median": 1.0014197138460328,
+    "ratio_min": 0.9327967302451311,
+    "ratio_of_totals": 0.9999583234122053,
+    "repeats": 2,
+    "totals_s": {
+      "default": 95.19939012639225,
+      "offset_excluded": 95.19542254065163
+    },
+    "variants": [
+      "default",
+      "offset_excluded"
+    ]
+  }
+}

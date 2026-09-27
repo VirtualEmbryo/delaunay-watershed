@@ -1,0 +1,46 @@
+[
+  {
+    "side": 128,
+    "n_voxels": 2097152,
+    "n_cells": 8,
+    "boundary_voxels": 224399,
+    "plateau_maxima_s": 0.11768208304420114,
+    "n_maxima": 1546,
+    "plateau_minima_s": 0.22326512495055795,
+    "n_minima": 3322,
+    "edt_s": 0.13746345904655755
+  },
+  {
+    "side": 192,
+    "n_voxels": 7077888,
+    "n_cells": 11,
+    "boundary_voxels": 581140,
+    "plateau_maxima_s": 0.3108822500798851,
+    "n_maxima": 3503,
+    "plateau_minima_s": 0.5229282081127167,
+    "n_minima": 8052,
+    "edt_s": 0.45473454194143414
+  },
+  {
+    "side": 256,
+    "n_voxels": 16777216,
+    "n_cells": 27,
+    "boundary_voxels": 1306314,
+    "plateau_maxima_s": 0.7259975410997868,
+    "n_maxima": 6570,
+    "plateau_minima_s": 1.087934915907681,
+    "n_minima": 15639,
+    "edt_s": 1.2162830410525203
+  },
+  {
+    "side": 320,
+    "n_voxels": 32768000,
+    "n_cells": 53,
+    "boundary_voxels": 2443061,
+    "plateau_maxima_s": 1.123095375020057,
+    "n_maxima": 9727,
+    "plateau_minima_s": 1.8411567090079188,
+    "n_minima": 26476,
+    "edt_s": 2.1852132088970393
+  }
+]

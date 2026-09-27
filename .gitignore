@@ -1,11 +1,30 @@
 data/
 *egg-info/
+.jj/
+build/
+.venv/
+.ruff_cache/
+.ty_cache/
+.pytest_cache/
+htmlcov/
+.coverage
 Examples/*.rec
 Examples/*.vtk
 Examples/*.tif
 Examples/*.npy
 Examples/*.py
 dist/
+build/
 .ipynb_checkpoints/
 imgui.ini
 .polyscope.ini
+__pycache__/
+.pytest_cache/
+AGENTS.md
+CLAUDE.md
+scratch_*.py
+*_scratch.py
+# Generated per-run outputs: the results JSON and per-case raw records regenerate on every
+# re-run and are handed to the user directly rather than accumulated in git history. The four
+# figures (figures/*.png, *.pdf) are small, checked-in deliverables and are not excluded here.
+dw3d_benchmarks/mesh_quality_comparison/results/
