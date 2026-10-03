@@ -4,14 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "delaunay-watershed-3d"
-version = "0.5.0"
+version = "0.5.1"
 description = "Geometrical reconstruction of cell assemblies from instance segmentations"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["License"]
-authors = [
-  { name = "Sacha Ichbiah", email = "sacha.ichbiah@college-de-france.fr" },
-]
+authors = [{ name = "Turlier lab", email = "virtualembryo@gmail.com" }]
 maintainers = [{ name = "Matthieu Perez", email = "matthieu.perez@cnrs.fr" }]
 requires-python = ">=3.11"
 classifiers = [

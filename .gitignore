@@ -20,8 +20,6 @@ imgui.ini
 .polyscope.ini
 __pycache__/
 .pytest_cache/
-AGENTS.md
-CLAUDE.md
 scratch_*.py
 *_scratch.py
 # Generated per-run outputs: the results JSON and per-case raw records regenerate on every

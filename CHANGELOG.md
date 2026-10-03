@@ -2,6 +2,19 @@
 
 User-facing changes only, organised by what a user experiences.
 
+## 0.5.1
+
+**0.5.1 republishes 0.5.0 as tagged on GitHub.** The 0.5.0 wheel and source archive on PyPI were built
+from an earlier snapshot of the release: their licence metadata says CC BY-NC-SA 4.0 instead of
+GPL-3.0-or-later, the `viewing` extra still installs napari, and `dw3d.viewing` still has the napari
+viewer that 0.5.0 removed. Install 0.5.1 instead; 0.5.0 is withdrawn from PyPI (yanked).
+
+Nothing else changes: the code is 0.5.0's. The package metadata names the Turlier lab as author
+(Matthieu Perez remains the maintainer), and the README's links point to the 0.5.1 tag. Two stale lock
+files that 0.5.0 carried, `uv.lock` (version 0.4.1, from a package index users cannot reach) and
+`locked-requirements.txt` (a 2024 dependency tree), are removed; the supported dependency ranges are
+those in `pyproject.toml`.
+
 ## 0.5.0
 
 **New licence: from 0.5.0, `delaunay-watershed-3d` is licensed under the GNU General Public License, version 3

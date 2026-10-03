@@ -3,7 +3,7 @@
 [![GPL-3.0-or-later][gpl-shield]][gpl]
 [![DOI](https://zenodo.org/badge/634561229.svg)](https://zenodo.org/badge/latestdoi/634561229)
 
-<img src="https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.0/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
+<img src="https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
 
 
 **Delaunay-Watershed-3D** is an algorithm designed to reconstruct *in 3D* a sparse surface mesh representation of the geometry of multicellular structures or nuclei from instance segmentations. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualization of data**. We provide as well visualization tools based on [polyscope](https://polyscope.run).
@@ -22,8 +22,8 @@ This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo
 ### What's new in 0.5.0
 
 0.5.0 is the first release on PyPI since 0.3.6. In short (the full list is in the
-[CHANGELOG](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/CHANGELOG.md), and what can mislead you is in the
-[release notes](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/RELEASE_NOTES.md)):
+[CHANGELOG](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/CHANGELOG.md), and what can mislead you is in the
+[release notes](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/RELEASE_NOTES.md)):
 
 - **Every reconstructed mesh is different**: its trijunction vertices are now moved onto the
   junction curves the mask itself gives. Triangles and labels are unchanged. Set
@@ -195,28 +195,28 @@ while a leading one breaks parsing outright. Fields:
   saved before this feature existed has no appendix.
 
 For more examples and documentation, see the notebooks:
-- [Mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/Examples/example_1_mesh_reconstruction_visualisation.ipynb),
-- [Mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/Examples/example_2_mask_compression_reconstruction.ipynb).
+- [Mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_1_mesh_reconstruction_visualisation.ipynb),
+- [Mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_2_mask_compression_reconstruction.ipynb).
 
-There is also an advanced notebook if you want to tinker with the algorithm: [Advanced use](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/Examples/example_3_advanced_use.ipynb).
+There is also an advanced notebook if you want to tinker with the algorithm: [Advanced use](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_3_advanced_use.ipynb).
 
 
 ---
 ### Biological examples
 
 #### Geometrical reconstruction of cell interfaces in the *P. mammillata* embryo
-See the [notebook on mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/Examples/example_1_mesh_reconstruction_visualisation.ipynb).
+See the [notebook on mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_1_mesh_reconstruction_visualisation.ipynb).
 
-![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.0/Figures_readme/DW_3d.png "Mesh reconstruction.")
+![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/DW_3d.png "Mesh reconstruction.")
 
 Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
 
 
 #### Geometrical reconstruction of cell nuclei
 
-See the [notebook on mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.0/Examples/example_2_mask_compression_reconstruction.ipynb).
+See the [notebook on mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_2_mask_compression_reconstruction.ipynb).
 
-![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.0/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
+![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
 
 Segmentation masks from [Stardist](https://github.com/stardist/stardist)
 

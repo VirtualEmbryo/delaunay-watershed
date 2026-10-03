@@ -1,3 +1,13 @@
+# Release notes — 0.5.1
+
+**0.5.1 is 0.5.0 as tagged on GitHub, published again.** The 0.5.0 wheel and source archive on PyPI were
+built from an earlier snapshot of the release: their licence metadata says CC BY-NC-SA 4.0 instead of
+GPL-3.0-or-later, the `viewing` extra still installs napari, and `dw3d.viewing` still has the napari viewer.
+Install 0.5.1 (`pip install --upgrade delaunay-watershed-3d`); 0.5.0 is withdrawn from PyPI (yanked).
+Reconstruction is unchanged: a mesh from 0.5.1 is the mesh 0.5.0 gives. Only the version, the author
+metadata (the Turlier lab) and the README's links (to the 0.5.1 tag) differ, and two stale lock files are
+gone from the repository. The 0.5.0 notes below apply to 0.5.1 as they are.
+
 # Release notes — 0.5.0
 
 `delaunay-watershed-3d` (this repository) and `foambryo` ship together as 0.5.0; foambryo 0.5.0
