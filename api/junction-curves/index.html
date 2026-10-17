@@ -1,0 +1,2937 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multimaterial meshes of cell aggregates from their segmentation">
+      
+      
+      
+      
+        <link rel="prev" href="../junction-relocation/">
+      
+      
+        <link rel="next" href="../cell-volume-agreement/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Junction curves - Delaunay-Watershed 3D</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#junction-curves" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Delaunay-Watershed 3D" class="md-header__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delaunay-Watershed 3D
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Junction curves
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Delaunay-Watershed 3D" class="md-nav__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Delaunay-Watershed 3D
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/reconstruction-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/cropped-tissues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cropped tissues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/anisotropic-voxels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/rec-metadata-appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The .rec metadata appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mesh-reconstruction-and-visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh reconstruction and visualisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mask-compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mask compression and reconstruction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/advanced-use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced use: custom reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves read from the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/default-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Default junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/anisotropic-voxels-and-crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels and crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../package/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw3d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mask-preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic masks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--what-this-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--where-the-criterion-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the criterion comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--the-measured-advantage-and-the-measured-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The measured advantage, and the measured limitation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionCurve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionCurves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JunctionCurves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurves.all_curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        all_curves
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.mesh_trijunction_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mesh_trijunction_components
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.mesh_junction_spacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mesh_junction_spacing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.dual_label_sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dual_label_sets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.subsample_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subsample_indices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.detect_junction_spines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        detect_junction_spines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.extract_junction_curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_junction_curves
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cell-volume-agreement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cell volumes against the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../triangle-intersection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-intersections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mesh-utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../viewing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Polyscope viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--what-this-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this is
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--where-the-criterion-comes-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where the criterion comes from
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--the-measured-advantage-and-the-measured-limitation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The measured advantage, and the measured limitation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--coordinates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves--provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurve" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionCurve
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionCurves
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JunctionCurves">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.JunctionCurves.all_curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        all_curves
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.mesh_trijunction_components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mesh_trijunction_components
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.mesh_junction_spacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        mesh_junction_spacing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.dual_label_sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dual_label_sets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.subsample_indices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        subsample_indices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.detect_junction_spines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        detect_junction_spines
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw3d.junction_curves.extract_junction_curves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        extract_junction_curves
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="junction-curves">Junction curves<a class="headerlink" href="#junction-curves" title="Permanent link">&para;</a></h1>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Trijunction curves read from the label mask and keyed to a reconstructed mesh's own junctions.</p>
+<h3 id="dw3d.junction_curves--what-this-is">What this is<a class="headerlink" href="#dw3d.junction_curves--what-this-is" title="Permanent link">&para;</a></h3>
+<p><code>extract_junction_curves</code> returns one polyline per material triple <code>(a, b, c)</code>, computed from
+the segmentation mask, and says for each whether the reconstructed mesh has exactly one
+trijunction of that same triple. The curves are more accurate than the mesh's own junction
+lines and less complete than them; both halves are measured, and the API keeps them apart so a
+caller cannot get one while thinking it got the other.</p>
+<p><strong>Nothing in the reconstruction pipeline calls this and no default changes.</strong> It is an
+additional read of the same mask the mesh was built from.</p>
+<h3 id="dw3d.junction_curves--where-the-criterion-comes-from">Where the criterion comes from<a class="headerlink" href="#dw3d.junction_curves--where-the-criterion-comes-from" title="Permanent link">&para;</a></h3>
+<p>A dual-lattice point -- the corner shared by eight voxels -- lies on the junction line of
+<code>(a, b, c)</code> <strong>iff those eight voxels contain all three labels</strong>. <code>junctions.junction_strata</code>
+already computes exactly this predicate (<code>|L| == 3</code>) for point placement; what this module adds
+is the split by material triple, the attribution of points carrying four or more labels to
+<em>every</em> triple they contain (which carries a line into its quadruple point rather than stopping
+a lattice step short), and the reduction of each 26-connected component to one ordered polyline
+by the minimum spanning tree's diameter path. Label <code>0</code> is an ordinary material: the outer
+medium's contact lines with the cells are genuine trijunctions.</p>
+<h3 id="dw3d.junction_curves--the-measured-advantage-and-the-measured-limitation">The measured advantage, and the measured limitation<a class="headerlink" href="#dw3d.junction_curves--the-measured-advantage-and-the-measured-limitation" title="Permanent link">&para;</a></h3>
+<p>These curves were measured against a registered reference mesh on the 47-case synthetic
+benchmark, reading each variant at its own median junction-edge spacing so that the comparison is
+not a comparison of reading resolutions. The position error below is the median distance in voxels
+from a curve's vertices to the reference polyline; lower is better.</p>
+<table>
+<thead>
+<tr>
+<th>dw3d <code>min_distance</code></th>
+<th style="text-align: right;">these curves</th>
+<th style="text-align: right;">the mesh's own lines</th>
+<th style="text-align: right;">advantage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2</td>
+<td style="text-align: right;">0.5595</td>
+<td style="text-align: right;">0.7862</td>
+<td style="text-align: right;">1.41x</td>
+</tr>
+<tr>
+<td>3</td>
+<td style="text-align: right;">0.5855</td>
+<td style="text-align: right;">0.8642</td>
+<td style="text-align: right;">1.48x</td>
+</tr>
+<tr>
+<td>4</td>
+<td style="text-align: right;">0.6173</td>
+<td style="text-align: right;">0.9277</td>
+<td style="text-align: right;">1.50x</td>
+</tr>
+<tr>
+<td>7</td>
+<td style="text-align: right;">0.6817</td>
+<td style="text-align: right;">1.2942</td>
+<td style="text-align: right;">1.90x</td>
+</tr>
+</tbody>
+</table>
+<p>On the 42 equilibrium cases, all 30 paired comparisons -- five values of <code>min_distance</code> times six
+geometric metrics -- favour the extraction, in a fraction 1.000 of 10,000 case-level bootstrap
+draws. At <code>min_distance = 3</code>, relative to the value the reference line itself scores when
+subsampled at the same spacing, the curves read tortuosity at 1.001 (the mesh: 1.034), curvature
+at 1.013 (1.172) and tangent error at 1.957x (4.529x).</p>
+<p><strong>They are better geometry, not correct geometry.</strong> The mask's own identifiability floor -- the best any
+mask-based method can do -- is 0.107 voxels (<code>BENCHMARKS.md</code>, "Junction curves"). These curves sit at 0.5855,
+a factor of <strong>4.8</strong> above it, and that gap is open.</p>
+<h3 id="dw3d.junction_curves--coordinates">Coordinates<a class="headerlink" href="#dw3d.junction_curves--coordinates" title="Permanent link">&para;</a></h3>
+<p>Everything is in mask voxel units. A dual-lattice point <code>(i, j, k)</code> is emitted at
+<code>(i + 0.5, j + 0.5, k + 0.5)</code>, in the frame a reconstructed <code>dw3d</code> mesh's <code>points</code> live in
+(<code>construct_mesh_from_segmentation_mask</code>; not a mesh scaled by <code>set_pixel_size</code> or built by
+<code>construct_mesh_in_physical_units</code>). <code>extract_junction_curves</code> checks that the mesh it is given
+lies inside the mask's extent (no coordinate below -1 or above the mask's size along its axis)
+and refuses otherwise, because a permuted axis order would put every curve tens of voxels away
+and the result would silently measure the permutation. The check sees only the extent: a mesh
+scaled down into it, or permuted on a mask whose sides are nearly equal, passes it.</p>
+<h3 id="dw3d.junction_curves--provenance">Provenance<a class="headerlink" href="#dw3d.junction_curves--provenance" title="Permanent link">&para;</a></h3>
+<p>The detection, the MST-diameter spine and the endpoint-preserving three-point filter, the per-case
+reading spacing, the identity rule against the mesh's own trijunctions and the consistency test
+were developed and validated on the benchmark (<code>BENCHMARKS.md</code>, "Junction curves"). The sub-voxel
+estimator lives in <code>junction_curve_estimator</code>.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw3d.junction_curves.JunctionCurve" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JunctionCurve</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dw3d.junction_curves.JunctionCurve" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">JunctionCurve</span><span class="p">(</span><span class="n">triple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">arclength</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">matched</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">identity</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">component</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_estimated</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_estimator_refusals</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>One trijunction polyline read from the mask.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.triple">triple</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>, <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the sorted material triple <code>(a, b, c)</code>, with label <code>0</code> an ordinary material.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.points">points</span></code></td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the ordered polyline, shape <code>(n, 3)</code>, in mask voxel coordinates.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.arclength">arclength</span></code></td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the polyline's total discrete arc length, in voxels.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.matched">matched</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>whether the mesh has exactly one trijunction component of this same triple and
+this is the only component the mask gives for it.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.identity">identity</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>"matched"</code>, <code>"invented"</code> (no mesh trijunction of this triple at all),
+<code>"split"</code> (one mesh component, several here), <code>"merged"</code> (several mesh components,
+one here) or <code>"ambiguous"</code> (several on both sides).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.component">component</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>index of this component within its triple, ordered by decreasing arclength.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.n_estimated">n_estimated</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>how many of <code>points</code> the sub-voxel estimator moved. Zero under the
+default <code>"plain"</code> estimator, which runs no linear program.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurve.n_estimator_refusals">n_estimator_refusals</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>how many it refused, leaving the detected position in place.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw3d.junction_curves.JunctionCurves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JunctionCurves</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dw3d.junction_curves.JunctionCurves" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">JunctionCurves</span><span class="p">(</span><span class="n">matched</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">JunctionCurve</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">invented</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">JunctionCurve</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">fragmented</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">JunctionCurve</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">match_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">spacing_voxels</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">estimator</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">diagnostics</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">())</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Every trijunction curve of one case, split by whether the mesh agrees it exists.</p>
+<p><code>matched</code> is the set a caller wanting usable geometry wants: its curves were measured a
+median 0.68 voxels from all three of their own interfaces at once, with a p99 of 4.50. The
+<code>invented</code> curves are structurally different -- median 4.32 voxels and <strong>0 of 16 within one
+voxel</strong> -- so they are never merged into the same list. <code>fragmented</code> holds the rest: real
+trijunctions the mask resolves as several pieces, or the reverse.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.matched">matched</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="JunctionCurve
+
+
+  
+      dataclass
+   (dw3d.junction_curves.JunctionCurve)" href="#dw3d.junction_curves.JunctionCurve">JunctionCurve</a>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>curves one-to-one with a mesh trijunction.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.invented">invented</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="JunctionCurve
+
+
+  
+      dataclass
+   (dw3d.junction_curves.JunctionCurve)" href="#dw3d.junction_curves.JunctionCurve">JunctionCurve</a>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>curves whose material triple is not a trijunction of the mesh at all.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.fragmented">fragmented</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="JunctionCurve
+
+
+  
+      dataclass
+   (dw3d.junction_curves.JunctionCurve)" href="#dw3d.junction_curves.JunctionCurve">JunctionCurve</a>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>curves that are <code>split</code>, <code>merged</code> or <code>ambiguous</code> against the mesh.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.match_rate">match_rate</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>matched mesh trijunctions over all mesh trijunctions. Measured 0.900 at
+<code>min_distance = 3</code> and 0.908 at <code>4</code>, with zero missed.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.counts">counts</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>matched</code>, <code>missed</code>, <code>invented</code>, <code>split</code>, <code>merged</code>, <code>ambiguous</code>, plus
+<code>mesh_triples</code> and <code>extracted_triples</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.spacing_voxels">spacing_voxels</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the reading spacing the polylines were resampled at -- the mesh's own
+median junction-edge length, so the curves are read at the resolution the mesh is.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.estimator">estimator</span></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>which sub-voxel estimator ran -- <code>"plain"</code>, <code>"anchor"</code> or <code>"centroid"</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.junction_curves.JunctionCurves.diagnostics">diagnostics</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>dropped components, estimator statuses, timings and the frame check.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw3d.junction_curves.JunctionCurves.all_curves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">all_curves</span>
+
+
+<a href="#dw3d.junction_curves.JunctionCurves.all_curves" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">all_curves</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">JunctionCurve</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Every curve, matched first. Use <code>matched</code> unless completeness is what you need.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<a class="autorefs autorefs-internal" title="JunctionCurve
+
+
+  
+      dataclass
+   (dw3d.junction_curves.JunctionCurve)" href="#dw3d.junction_curves.JunctionCurve">JunctionCurve</a>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>tuple[JunctionCurve, ...]: the matched, then fragmented, then invented curves.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.mesh_trijunction_components" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">mesh_trijunction_components</span>
+
+
+<a href="#dw3d.junction_curves.mesh_trijunction_components" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">mesh_trijunction_components</span><span class="p">(</span><span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">triangles</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The mesh's own trijunctions, grouped by material triple and split into components.</p>
+<p>A trijunction edge is one shared by <strong>exactly three triangles spanning exactly three
+distinct materials</strong> -- Plateau's rule for a dry foam, and the same predicate
+<code>dw3d_benchmarks.metrics.edge_topology_stats</code> and <code>attributed_triple_line_angles</code> apply, so
+a valence-&gt;=4 defect contributes nothing here rather than contributing nonsense. This is the
+line identity the reconstruction's own angle metrics are keyed to, which is why the
+extracted curves are keyed to it too.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>points</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>mesh vertex coordinates, <code>(n_points, 3)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>triangles</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>triangle vertex indices, <code>(n_triangles, 3)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>labels</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the two materials each triangle separates, <code>(n_triangles, 2)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>, <span title="int">int</span>], <span title="list">list</span>[<span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>dict[tuple[int, int, int], list[dict]]: per sorted triple, its connected components,</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>, <span title="int">int</span>], <span title="list">list</span>[<span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>each <code>{"vertices", "edges", "points", "length"}</code>, ordered by decreasing length then by</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="dict">dict</span>[<span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>, <span title="int">int</span>], <span title="list">list</span>[<span title="dict">dict</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>smallest vertex index so the ordering does not depend on dictionary iteration order.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.mesh_junction_spacing" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">mesh_junction_spacing</span>
+
+
+<a href="#dw3d.junction_curves.mesh_junction_spacing" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">mesh_junction_spacing</span><span class="p">(</span><span class="n">components</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The mesh's own median trijunction-edge length, in voxels.</p>
+<p>This is the resolution at which the mesh states its junction lines, and therefore the
+resolution at which a competing curve must be read for the comparison to be about accuracy
+rather than about how finely each side was sampled. It is derived from the mesh alone: no
+reference, no mask, no parameter.</p>
+<p>The statistic is the median over components of each component's own median edge length,
+which is the statistic the junction-curve validation computed from its per-line rows.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>components</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>mesh_trijunction_components</code>'s output.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>float | None: the spacing in voxels, or <code>None</code> when the mesh has no trijunction edge.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.dual_label_sets" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">dual_label_sets</span>
+
+
+<a href="#dw3d.junction_curves.dual_label_sets" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">dual_label_sets</span><span class="p">(</span><span class="n">segmented_mask</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">uint</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Per dual-lattice point, an index into a table of the distinct labels around it.</p>
+<p>A dual point <code>(i, j, k)</code> is the corner shared by the eight voxels
+<code>segmented_mask[i:i+2, j:j+2, k:k+2]</code>. Points with fewer than three distinct labels are not
+junctions and carry <code>-1</code>.</p>
+<p>The detection itself runs slab by slab (<code>_dual_junction_points</code>); only the returned <code>codes</code>
+array spans the whole volume, at 8 bytes per dual point. Code <code>c</code> is assigned in the order in
+which its label set is first met in C order of the dual lattice.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>segmented_mask</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.uint">uint</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the label image.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>tuple[NDArray[np.int64], list[frozenset[int]]]: <code>codes</code> of shape <code>(X-1, Y-1, Z-1)</code> and a</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="list">list</span>[<span title="frozenset">frozenset</span>[<span title="int">int</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>table where <code>table[c]</code> is the frozenset of labels around a point carrying code <code>c</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.subsample_indices" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">subsample_indices</span>
+
+
+<a href="#dw3d.junction_curves.subsample_indices" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">subsample_indices</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">spacing</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Indices of a subset of a polyline's own vertices, spaced by about <code>spacing</code> in arclength.</p>
+<p>Every retained point lies exactly on the original polyline, so this coarsens the reading
+without adding positional error. Targets are laid out at exact multiples of <code>spacing</code> and
+the <em>nearest</em> own-vertex is taken for each; taking the first vertex past each threshold
+systematically overshoots the requested spacing.</p>
+<p>Indices rather than points, because the sub-voxel estimator has to read its line direction
+from the <em>un</em>-coarsened polyline -- at an 8-voxel spacing a three-voxel chord between
+retained vertices does not exist.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>path</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the polyline, shape <code>(n, 3)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>spacing</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the target spacing in voxels; <code>&lt;= 0</code> keeps every vertex.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>NDArray[np.int64]: ascending indices into <code>path</code>, always including its two ends.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.detect_junction_spines" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">detect_junction_spines</span>
+
+
+<a href="#dw3d.junction_curves.detect_junction_spines" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">detect_junction_spines</span><span class="p">(</span><span class="n">segmented_mask</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">uint</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MIN_POINTS</span><span class="p">,</span> <span class="n">smooth_passes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">SMOOTH_PASSES</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Every material triple's smoothed lattice spine, before any reading spacing is chosen.</p>
+<p>This is the detection half of <code>extract_junction_curves</code>, exposed on its own because it is
+the part that reads the mask and nothing else.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>segmented_mask</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.uint">uint</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the label image.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>min_points</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>components with fewer dual points than this are dropped and counted.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dw3d.junction_curves.MIN_POINTS">MIN_POINTS</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>smooth_passes</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>passes of the three-point filter. Defaults to <code>SMOOTH_PASSES</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dw3d.junction_curves.SMOOTH_PASSES">SMOOTH_PASSES</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>dict</code></td>            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>by_triple</code> (triple -&gt; list of polylines, longest first), <code>diagnostics</code> (one record</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>per component) and <code>n_dual_junction_points</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw3d.junction_curves.extract_junction_curves" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">extract_junction_curves</span>
+
+
+<a href="#dw3d.junction_curves.extract_junction_curves" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">extract_junction_curves</span><span class="p">(</span><span class="n">segmented_mask</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">uint</span><span class="p">],</span> <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">triangles</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">estimator</span><span class="p">:</span> <span class="n">Estimator</span> <span class="o">=</span> <span class="s1">'plain'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JunctionCurves</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Trijunction curves from the mask, keyed to the mesh's own trijunctions.</p>
+<p>The one line a user writes::</p>
+<div class="highlight"><pre><span></span><code>curves = extract_junction_curves(mask, *load_rec("000_mesh.rec"))
+</code></pre></div>
+<p><code>curves.matched</code> is the usable set. Every one of its members has exactly one counterpart
+among the mesh's own trijunctions of the same material triple, so it can be joined to the
+interfaces and the dihedral angles the reconstruction already reports.
+<code>curves.invented</code> is everything the mask says is a junction and the mesh does not have;
+<strong>0 of 16</strong> of those were measured within one voxel of all three of their interfaces, against
+a median of 0.68 voxels for the matched ones, so they are kept apart rather than merged.
+<code>curves.fragmented</code> holds real trijunctions the mask resolves as several pieces.</p>
+<p>Reading spacing is not a parameter: the polylines are resampled at the mesh's <strong>own</strong> median
+trijunction-edge length, so accuracy is compared at the resolution the mesh states its lines
+at rather than at whatever resolution the lattice happens to give.</p>
+<p><strong>Cost, and why <code>"plain"</code> is the default.</strong> <code>"plain"</code> is detection only -- no linear
+program -- and costs about 0.8 s per benchmark case against the 1.49 s dw3d spends
+reconstructing that case. <code>"anchor"</code> solves one small linear program per returned vertex and
+costs roughly fifteen times as much, about eight times the whole reconstruction it
+annotates, and buys 9-11 % of the position error. Nobody meshing a large tissue should pay that by default,
+so they do not.</p>
+<p><code>"anchor"</code>'s real argument is not that 9 %: it is that the polytope's deepest interior point
+carries <strong>only</strong> the irreducible narrow-wedge term (a) of the mask's identifiability floor,
+where the detected position and the centroid both carry more. Reach for it when a
+systematic bias against narrow wedges would corrupt what you are inferring, not to shave
+a tenth of a voxel.
+<code>"centroid"</code> is kept for comparison only: it was
+measured carrying (a) <strong>+</strong> (b), so it is the larger systematic, not the smaller one, and it costs about
+thirty times the anchor's linear programs on top.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>segmented_mask</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.uint">uint</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the label image the mesh was reconstructed from.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>points</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>mesh vertex coordinates in mask voxel units, <code>(n, 3)</code>, in the
+mask's index order, as <code>construct_mesh_from_segmentation_mask</code> returns them.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>triangles</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>triangle vertex indices, <code>(m, 3)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>labels</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the two materials each triangle separates, <code>(m, 2)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>estimator</code>
+            </td>
+            <td>
+                  <code><span title="dw3d.junction_curves.Estimator">Estimator</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>"plain"</code> (default, no linear program), <code>"anchor"</code> or
+<code>"centroid"</code>. See the cost paragraph above before changing it.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;plain&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if <code>estimator</code> is not one of the three, or if the mesh's coordinates do not
+lie inside the mask's extent.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>JunctionCurves</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="JunctionCurves
+
+
+  
+      dataclass
+   (dw3d.junction_curves.JunctionCurves)" href="#dw3d.junction_curves.JunctionCurves">JunctionCurves</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the curves, the match rate, the identity counts and the diagnostics.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      GPL-3.0-or-later, Turlier lab
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

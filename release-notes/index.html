@@ -1,0 +1,1547 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multimaterial meshes of cell aggregates from their segmentation">
+      
+      
+      
+      
+        <link rel="prev" href="../changelog/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Release notes - Delaunay-Watershed 3D</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#release-notes-070-17-october-2026" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Delaunay-Watershed 3D" class="md-header__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delaunay-Watershed 3D
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Release notes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Delaunay-Watershed 3D" class="md-nav__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Delaunay-Watershed 3D
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/reconstruction-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/cropped-tissues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cropped tissues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/anisotropic-voxels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/rec-metadata-appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The .rec metadata appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/mesh-reconstruction-and-visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh reconstruction and visualisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/mask-compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mask compression and reconstruction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/advanced-use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced use: custom reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves read from the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/default-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Default junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/anisotropic-voxels-and-crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels and crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/package/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw3d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mask-preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic masks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cell-volume-agreement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cell volumes against the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/triangle-intersection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-intersections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mesh-utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/viewing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Polyscope viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-changes-for-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changes for you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-mislead-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What can mislead you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-changes-for-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changes for you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-can-mislead-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What can mislead you
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Credits
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="release-notes-070-17-october-2026">Release notes — 0.7.0, 17 October 2026<a class="headerlink" href="#release-notes-070-17-october-2026" title="Permanent link">&para;</a></h1>
+<p><code>delaunay-watershed-3d</code> (this repository) and <code>foambryo</code> ship together as 0.7.0, the first release on PyPI since 0.5.1. 0.6.0 was prepared but not published; its changes are part of 0.7.0 and are included below. This is what changes for you and what can mislead you; <code>CHANGELOG.md</code> has the full list, and foambryo's <code>RELEASE_NOTES.md</code> covers the inference side. Install with <code>pip install --upgrade delaunay-watershed-3d foambryo</code>.</p>
+<h2 id="what-changes-for-you">What changes for you<a class="headerlink" href="#what-changes-for-you" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong><code>set_pixel_size</code> scaled the wrong axes; results change when the xy and z sizes differ.</strong> dw3d's mesh points are in the mask's index order, <code>(z, y, x)</code> for a microscope stack, so column 0 is z. <code>set_pixel_size</code> (the function in <code>dw3d.mesh_utilities</code>, the reconstruction method and <code>dw3d.set_points_pixel_size</code>) now scales column 0 by the z size and columns 1 and 2 by the xy size. Before, z was multiplied by the xy size and x by the z size. <strong>Re-run any analysis that called it with different xy and z sizes</strong>; with equal sizes nothing changes. A mask stored as <code>(x, y, z)</code> was scaled correctly before and is not now: transpose it to <code>(z, y, x)</code> before meshing.</li>
+<li><strong>Meshes of cells that touch the image border change, and were wrong before.</strong> The triangles that close a cell along the image border were wound the wrong way, so such a cell read too small a volume, often a negative one, and any tension or pressure computed from its mesh was wrong. On ten benchmark masks cut through their middle, 38 of the 54 cells on the cut had a negative volume before the fix and none after; the tensions foambryo infers from those meshes changed by up to 199 %, and every cell pressure by 37–139 %. <strong>Reconstruct again any mesh whose cells touch the image border</strong>, above all tissue cropped through its cells. Only the vertex order of the border triangles changes, and meshes whose cells stay clear of the border are unchanged (542 of 543 uncut masks bit-for-bit; the exception has two border triangles on one cell).</li>
+<li><strong>A few triangles lying on flat tetrahedra change orientation</strong> (10 triangles in 8 cells on the 47 benchmark masks), so that every cell's volume now equals that of the tetrahedra it is made of.</li>
+<li><strong>Junction relocation can no longer turn a very small cell inside out.</strong> Its guard now also refuses a move that would leave a cell it touches with a volume of zero or less; <code>relocation_report</code> counts these refusals and names the cells. No mesh of the 47 benchmark masks, the resolution sweep, the cut masks or 484 embryo timepoints changes.</li>
+<li><strong>New warning, <code>CellVolumeDisagreementWarning</code>.</strong> After every reconstruction, the cells whose mesh volume is outside 0.5–1.5 times their voxel count, non-positive, or missing are listed in <code>cell_volume_report</code>. The interfaces of a listed cell are missing or misplaced, and a pressure inferred for it is not a measurement. Expect it on masks that hold many very small labels.</li>
+<li><strong>Faster on large tissues, with the same meshes.</strong> Seed extraction, the relocation guard and the trijunction-curve detection were rewritten; every mesh measured is bit-for-bit identical. On a 1 866-cell tissue meshed on its native grid, from mask to tensions with foambryo's sparse tension solve: 9.5 min instead of 47.5 min with 0.5.1, and a peak memory of 30.9 GiB instead of 54.7 GiB (one machine, nothing else running). The peak is now relocation's whole-mesh self-intersection check. The same tissue resampled to cubic voxels first (<code>construct_mesh_in_physical_units</code>) costs more: its reconstruction takes about 13.5 min and 38 GiB.</li>
+<li><strong>No lock files.</strong> <code>uv.lock</code> and <code>locked-requirements.txt</code> are gone; the supported dependency ranges are those in <code>pyproject.toml</code>.</li>
+<li><strong>Viewing a mesh no longer rescales it.</strong> <code>plot_cells_polyscope(..., anisotropy_factor=...)</code> with a factor other than 1 multiplied the reconstruction's own z column, so a mesh saved after viewing was scaled: reconstruct and save it again. Also: <code>load_meshio_mesh</code> refuses a file without labels with a <code>ValueError</code> (it raised <code>KeyError</code>), a binary <code>.rec</code> file always stores its points as float64, and a reconstruction no longer prints a SciPy deprecation warning. Reconstructions are unchanged, bit for bit (<code>CHANGELOG.md</code>).</li>
+<li><strong>Three deprecated names are removed.</strong> <code>get_offset_included_mesh_reconstruction_algorithm</code>, <code>get_offset_excluded_mesh_reconstruction_algorithm</code> and <code>get_cubic_score_mesh_reconstruction_algorithm</code> (and the factory's methods of the same names), deprecated since 0.5.0, are gone. Call <code>get_junction_protected_mesh_reconstruction_algorithm()</code>, the same with <code>exclude_offsets_from_surface=True</code>, or the same with <code>spline_order=3</code>: the meshes are identical, bit for bit.</li>
+<li><strong>Higher minimum versions</strong>: numpy 2.0.0, scipy 1.13.0, scikit-image 0.23.1, edt 2.4.1, meshio 5.3.5 (polyscope 2.2.0 and matplotlib 3.8.4 for viewing), the oldest with which the test suite passes. Older numpy releases give slightly different meshes.</li>
+</ol>
+<h2 id="new">New<a class="headerlink" href="#new" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Masks with voxels longer along z</strong>: <code>algorithm.construct_mesh_in_physical_units(mask, spacing)</code> resamples the mask to cubic voxels of the shortest spacing by shape-based interpolation, meshes it, and returns the mesh in the unit of <code>spacing</code>; <code>save_to_rec_mesh</code> records the frame, the spacing and the resampling. Measured on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size and down-sampled along z, against the same tissues meshed at full resolution: +0.83, +0.71 and +1.17 degrees of contact-angle error at z/xy ratios of 5/3, 2 and 3, against +1.38, +1.97 and +4.10 for meshing the native grid and scaling the mesh.</li>
+<li><strong>Crop faces and cut cells</strong>: <code>algorithm.crop_faces</code>, <code>algorithm.cut_cells</code>, <code>algorithm.crop_face_report</code>, <code>physical_image_faces</code>; <code>.rec</code> and <code>.vtk</code> files keep them. The mesh is unchanged, bit for bit.</li>
+<li><strong>A lighter distance transform and a faster tesselation graph; the meshes are bit for bit the same.</strong> The distance transform builds its masks in <code>uint8</code> and its field in <code>float32</code> (still returned as <code>float64</code>), and the tesselation graph is built without Python loops. Measured on one machine, on a 1 866-cell tissue: the distance transform's peak memory goes from 21.0 to 14.9 GiB (38.1 to 28.1 GiB when the mask is first resampled to cubic voxels), the face table and pairing from 7.8 to 1.8 s, the graph from 5.5 to 3.0 s; on a 2 000-cell synthetic foam the whole reconstruction goes from 200 to 186 s. The meshes, crop faces and cut cells of 481 masks and of two large tissues are bitwise identical before and after. Contributed by Wenhong Li and Adam L. Taylor.</li>
+</ul>
+<h2 id="what-can-mislead-you">What can mislead you<a class="headerlink" href="#what-can-mislead-you" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>Above a z/xy ratio of 3 nothing was measured</strong>: <code>UnmeasuredAnisotropyWarning</code>, and the mesh is built anyway.</li>
+<li><strong><code>min_distance</code> counts voxels of the resampled, cubic grid</strong> in <code>construct_mesh_in_physical_units</code>: the mesh, its time and its memory are those of a mask acquired at the short spacing, so they grow with the ratio.</li>
+<li><strong>A crop face is not contact with the medium.</strong> A program that does not read the crop-face key of a <code>.rec</code> file reads a valid mesh in which the crop faces look like medium contact.</li>
+<li>The limitations listed for 0.5.0 below still hold, except 7, which concerns foambryo and is fixed in its 0.7.0, and the end of 8: the faster neighbour search planned for 0.5.1 is in 0.7.0 (item 6 above), and on a 1 866-cell tissue the relocation guard takes 45 s instead of 6.6 min, with the same meshes (<code>CHANGELOG.md</code>).</li>
+</ol>
+<h2 id="credits">Credits<a class="headerlink" href="#credits" title="Permanent link">&para;</a></h2>
+<p>Recent work on dw3d and foambryo is part of a collaboration with Alejandro Aguilera Castrejon (Janelia Research Campus, Howard Hughes Medical Institute). We thank him and his Janelia colleagues Adam L. Taylor, Wenhong Li and Francesco Roncato. Adam L. Taylor found the border-triangle winding defect fixed in 0.6.0 and pointed us to the seed-extraction and dense tension-solve bottlenecks on large tissues.</p>
+<h1 id="release-notes-051">Release notes — 0.5.1<a class="headerlink" href="#release-notes-051" title="Permanent link">&para;</a></h1>
+<p><strong>0.5.1 is the final 0.5.0 (as on GitHub's <code>master</code> since 27 September), published again.</strong> The 0.5.0 wheel and source archive on PyPI were built from an earlier snapshot of the release: their licence metadata says CC BY-NC-SA 4.0 instead of GPL-3.0-or-later, the <code>viewing</code> extra still installs napari, and <code>dw3d.viewing</code> still has the napari viewer. GitHub's <code>v0.5.0</code> tag points at that earlier snapshot too. Install 0.5.1 (<code>pip install --upgrade delaunay-watershed-3d</code>); 0.5.0 is withdrawn from PyPI (yanked). Reconstruction is unchanged: a mesh from 0.5.1 is the mesh the final 0.5.0 gives. The 0.5.0 notes below apply to 0.5.1 as they are.</p>
+<h1 id="release-notes-050">Release notes — 0.5.0<a class="headerlink" href="#release-notes-050" title="Permanent link">&para;</a></h1>
+<p><code>delaunay-watershed-3d</code> (this repository) and <code>foambryo</code> ship together as 0.5.0; foambryo 0.5.0 requires <code>delaunay-watershed-3d&gt;=0.5.0</code>. This is what changes for you and what can mislead you; <code>CHANGELOG.md</code> has the full list, and foambryo's <code>RELEASE_NOTES.md</code> covers the inference side.</p>
+<p>0.5.0 is the first release on PyPI since 0.3.6; <code>CHANGELOG.md</code> also lists the changes of 0.4.0–0.4.2, which were never published there.</p>
+<h2 id="licence">Licence<a class="headerlink" href="#licence" title="Permanent link">&para;</a></h2>
+<p>From 0.5.0 <code>delaunay-watershed-3d</code> is licensed under the <strong>GNU General Public License, version 3 or (at your option) any later version</strong> (SPDX <code>GPL-3.0-or-later</code>), replacing CC BY-NC-SA 4.0: commercial use is allowed, under the GPL's conditions. Earlier releases keep the licence they were published under.</p>
+<h2 id="the-one-change-that-affects-every-mesh">The one change that affects every mesh<a class="headerlink" href="#the-one-change-that-affects-every-mesh" title="Permanent link">&para;</a></h2>
+<p><strong>Junction relocation is on by default, in every reconstruction configuration.</strong> After the mesh is built, its trijunction vertices are moved onto the trijunction curves the segmentation mask itself gives, under a guard that cannot create a self-intersection anywhere in the mesh. Triangles and material labels are unchanged; vertex positions on trijunction lines are not. Measured over 40 equilibrium benchmark cases, four spacings and four point samplers: junction-line position, tangent and curvature errors all improve with their confidence intervals clear of zero, and no mesh-validity number changes.</p>
+<p><strong>To get the 0.4 meshes back exactly</strong>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">algorithm</span> <span class="o">=</span> <span class="n">get_default_mesh_reconstruction_algorithm</span><span class="p">()</span>
+<span class="n">algorithm</span><span class="o">.</span><span class="n">relocate_junctions</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+<p>or <code>MeshReconstructionAlgorithmFactory().set_junction_relocation(False)</code>, or <code>MeshReconstructionAlgorithm(..., relocate_junctions=False)</code>. Whether relocation ran on your mesh is in <code>algorithm.relocation_provenance</code>.</p>
+<p><strong>At <code>min_distance &gt;= 5</code> you will see <code>CoarseSpacingRelocationWarning</code></strong>, once per reconstruction: at that spacing the check on surface-tangent contact angles showed a small drift within its own noise, and larger spacings are unmeasured; facet-based angles improve. If tangent-based angles matter for your analysis, compare with <code>relocate_junctions=False</code>.</p>
+<h2 id="names-removed-and-deprecated">Names removed and deprecated<a class="headerlink" href="#names-removed-and-deprecated" title="Permanent link">&para;</a></h2>
+<p>Removed: <code>get_v0_3_algorithm</code>, <code>get_a1b_algorithm</code>, <code>get_a3_a5_algorithm</code> (use <code>get_dithered_algorithm</code>, <code>get_deterministic_algorithm</code>, <code>get_junction_protected_algorithm</code>). Removed without a deprecation period: <code>dw3d.viewing.plot_in_napari</code>, which already failed with napari 0.9.1; napari is no longer part of the <code>viewing</code> extra (Polyscope and matplotlib only). Deprecated, removed in 0.6.0: <code>get_offset_included_algorithm</code>, <code>get_offset_excluded_algorithm</code>, <code>get_cubic_score_algorithm</code> — exact synonyms of keyword calls on <code>get_junction_protected_algorithm</code>, which their warnings name.</p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
+<p>Every item is measured; each is one sentence and its number.</p>
+<ol>
+<li><strong>The benchmark under-rewards tangent-based improvements.</strong> Its ground-truth meshes are facet-equilibrated (Surface Evolver), so an improvement in the surface-<em>tangent</em> description of a contact angle is scored against a facet-based truth and can read as no change.</li>
+<li><strong>The second-order angle reader has its own floor, and it cannot resolve junction relocation's effect.</strong> On a perfectly smooth analytic surface it reads contact angles with a floor of <strong>0.245°</strong>, and at every point spacing measured (0 of 32 spacing-by-variant cells) its check could not resolve the effect of junction relocation on tangent-based angles, in either direction.</li>
+<li><strong>On real embryos, do not use second-order line means at sub-degree scale.</strong> The second-order reader covers a median <strong>0.804</strong> of incident trijunction faces on real embryo meshes (minimum <strong>0.454</strong>), and its line means move by <strong>1.75° [1.41, 2.17]</strong> when uncovered faces are excluded instead of filled by the chord reading.</li>
+<li><strong>Real embryo cells are small in voxels, so every benchmark statement is about one spacing step optimistic for them.</strong> Their equivalent radius at trijunctions is a median <strong>17.6</strong> voxels against <strong>38.2</strong> in the benchmark, so real data at <code>min_distance 3</code> sits where the benchmark sits at <code>min_distance 4</code>; for cells this small, consider a smaller <code>min_distance</code>.</li>
+<li><strong>Folded trijunctions on real meshes are mostly real geometry.</strong> Real embryo meshes carry <strong>3.2×</strong> the benchmark's fraction of reflex (folded) trijunctional edges, and more than half of them sit where the segmentation mask's own wedge already exceeds 180°.</li>
+<li><strong>The force-balance residual <code>rho_free</code> alarms on every reconstructed mesh.</strong> Its median is <strong>0.578</strong> on reconstructed meshes against <strong>0.0118</strong> on the reference meshes, so a high value on your mesh is expected and is not by itself a sign of a bad segmentation.</li>
+<li><strong><code>ForceBalanceMAP</code> is not scale-invariant</strong>, contrary to its docstring: rescaling a mesh moves its relative tensions by up to <strong>43 %</strong>; plain <code>ForceBalance</code> is exact under rescaling.</li>
+<li><strong>Junction relocation, now on by default, has a cost that grows faster than linearly with mesh size.</strong> It adds about <strong>+0.75 s</strong> to a ~5 s benchmark reconstruction (<strong>+15 %</strong>) and <strong>0.1–1.5 s</strong> per timepoint to a ~0.6 s real-embryo reconstruction (median <strong>0.34 s</strong> and <strong>0.48 s</strong> on two developmental time series, about 65 s per 154-timepoint series); within one real series it grows with triangle count with a fitted exponent of <strong>2.68</strong> over a 2.2-fold range of mesh sizes, which is not a tissue-scale law. <strong>A faster neighbour search is planned for 0.5.1</strong>, and will leave every relocated mesh bit-for-bit unchanged.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      GPL-3.0-or-later, Turlier lab
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
