@@ -31,7 +31,8 @@ default is `dithered` again**, so its reference values are the ones in the first
 unchanged.
 
 The fourth section pins the **offset-included configuration the link-checked flip
-demoted**, against `get_offset_included_mesh_reconstruction_algorithm`. Only two numbers
+demoted**, against `get_junction_protected_mesh_reconstruction_algorithm` at its defaults
+(named `get_offset_included_mesh_reconstruction_algorithm` until 0.7.0). Only two numbers
 separate it from the third section — the mesh point and triangle counts — because the
 link-condition-checked collapse changes the *extraction* and nothing upstream of it.
 Keeping both on the same case is what makes that claim checkable rather than asserted:
@@ -83,7 +84,7 @@ def reconstruction_3tif_link_checked():
 
 @pytest.fixture(scope="module")
 def reconstruction_3tif_offset_included():
-    # The configuration the deprecated synonym `get_offset_included_...` names.
+    # The configuration `get_offset_included_...` named until its removal in 0.7.0.
     return _reconstruct(get_junction_protected_mesh_reconstruction_algorithm)
 
 

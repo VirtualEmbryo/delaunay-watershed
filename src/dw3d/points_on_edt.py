@@ -155,7 +155,7 @@ step — and the ablation bears that out: dropping it takes
 valence->=4 edges from 33 to 52 and abnormal non-manifold edges from 2 to 20 over the
 11-case screen, whereas dropping the *weights* changes neither.
 
-**2. `h_J = 2*min_distance + 1`, not `min_distance`.** The original specification was `h_J <= h_S`,
+**2. `h_J = 2*min_distance + 1`, not `min_distance`.** The first design had `h_J <= h_S`,
 the interface spacing. The determinism fix measured that `dw3d`'s *effective* interface spacing is
 `2*min_distance + 1` (7 at `min_distance = 3`), not `min_distance` — the parameter does not
 mean what its name says (see *Why `s = 2*min_distance+1`* above). Sampling 1-junctions at

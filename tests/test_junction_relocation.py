@@ -51,10 +51,7 @@ _FACTORY_ENTRY_POINTS = (
     "get_dithered_algorithm",
     "get_deterministic_algorithm",
     "get_boundary_layer_algorithm",
-    "get_offset_included_algorithm",
     "get_junction_protected_algorithm",
-    "get_cubic_score_algorithm",
-    "get_offset_excluded_algorithm",
     "get_link_checked_algorithm",
 )
 

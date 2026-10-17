@@ -315,10 +315,10 @@ def find_self_intersections(
         triangles (NDArray[np.integer]): triangle vertex indices, `(m, 3)`.
 
     Returns:
-        dict: the six counts of :data:`VALIDITY_KEYS` plus `intersecting_pairs` and
-        `touching_pairs`, each an `(k, 2)` array of indices **into the input `triangles`**, so a
-        caller can draw or diagnose a specific crossing. Degenerate triangles are excluded from the
-        test and counted.
+        dict: the six counts of :data:`SELF_INTERSECTION_KEYS` plus `intersecting_pairs` and
+            `touching_pairs`, each an `(k, 2)` array of indices **into the input `triangles`**, so a
+            caller can draw or diagnose a specific crossing. Degenerate triangles are excluded from
+            the test and counted.
     """
     points = np.asarray(points, dtype=np.float64)
     triangles = np.asarray(triangles, dtype=np.int64)

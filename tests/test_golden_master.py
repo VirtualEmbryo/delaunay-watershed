@@ -27,7 +27,8 @@ as the opt-in "revised meshing" variant (see
 checkable record of that configuration regardless of what the default points at.
 
 `tests/golden/junction_protected/` — boundary layer + junction protection, a former
-default (`e598909`), and what `get_offset_included_mesh_reconstruction_algorithm` returns.
+default (`e598909`), and what `get_offset_included_mesh_reconstruction_algorithm` returned
+until that name was removed in 0.7.0.
 It is kept, and its own test kept green, because it is the configuration carrying the
 +15.7 % interface-area regression the link-checked flip removes: a regression that can be
 re-measured is worth more than one that is only described.
@@ -74,7 +75,6 @@ from dw3d import (
     get_dithered_mesh_reconstruction_algorithm,
     get_junction_protected_mesh_reconstruction_algorithm,
     get_link_checked_mesh_reconstruction_algorithm,
-    get_offset_included_mesh_reconstruction_algorithm,
 )
 from tests.conftest import (
     BOUNDARY_LAYER_GOLDEN_DIR,
@@ -90,8 +90,8 @@ from tests.conftest import (
     load_image_or_skip,
 )
 
-# The keyword calls the deprecated synonyms `get_cubic_score_...` and `get_offset_excluded_...`
-# stand for; tests/test_deprecated_aliases.py pins that each synonym reproduces its call exactly.
+# The keyword calls that replace `get_cubic_score_...` and `get_offset_excluded_...`, removed in
+# 0.7.0 (exact synonyms of these calls since 0.5.0).
 get_cubic_score = partial(get_junction_protected_mesh_reconstruction_algorithm, spline_order=3)
 get_offset_excluded = partial(get_junction_protected_mesh_reconstruction_algorithm, exclude_offsets_from_surface=True)
 
@@ -229,33 +229,6 @@ def test_junction_protected_algorithm_reproduces_its_fixture(image_name, min_dis
     record = _compute_golden_record(
         image_name, min_distance, get_junction_protected_mesh_reconstruction_algorithm, relocate_junctions,
     )
-    _assert_matches_fixture(
-        record,
-        _golden(JUNCTION_PROTECTED_GOLDEN_DIR, image_name, min_distance, relocate_junctions),
-        rtol=1e-10,
-    )
-
-
-@pytest.mark.parametrize("image_name", IMAGE_NAMES)
-@pytest.mark.parametrize("min_distance", MIN_DISTANCES)
-@RELOCATION
-def test_offset_included_algorithm_reproduces_the_junction_protected_fixture(
-    image_name,
-    min_distance,
-    relocate_junctions,
-):
-    """`get_offset_included_algorithm` and `get_junction_protected_algorithm` are one configuration.
-
-    Two names, one code path: `offset_included` is what the configuration *is* (and what
-    the link-checked flip demoted), `junction_protected` is the mechanism it is built from
-    and the key its 51-case records are stored under. If they ever diverge — say a later
-    change gives one of them a different parameter — this fails and forces the divergence
-    to be declared instead of leaving two names quietly meaning two things.
-    """
-    with pytest.warns(DeprecationWarning, match="0.6.0"):
-        record = _compute_golden_record(
-            image_name, min_distance, get_offset_included_mesh_reconstruction_algorithm, relocate_junctions,
-        )
     _assert_matches_fixture(
         record,
         _golden(JUNCTION_PROTECTED_GOLDEN_DIR, image_name, min_distance, relocate_junctions),
@@ -412,7 +385,7 @@ def test_link_checked_kept_the_cell_volumes_and_shrank_the_interface_areas_of_of
     Not about the default any more — both configurations compared here are opt-in
     variants. The collapse changes only which tesselation vertices may become surface
     vertices, so, relative to boundary layer + junction protection
-    (`get_offset_included_algorithm`):
+    (`get_junction_protected_algorithm` at its defaults):
 
     * **cell volumes are bit-identical** — they are computed from the tetrahedra, which the
       collapse never touches;

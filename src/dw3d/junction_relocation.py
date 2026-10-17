@@ -21,7 +21,17 @@ Two guards, and why both are needed
 configuration *as it stands* rather than against the original, so two neighbouring junction vertices
 cannot both be accepted on the strength of a geometry neither will end up in. A move is accepted
 only if every triangle incident to that vertex keeps its normal orientation and keeps its area above
-:data:`MIN_TRIANGLE_AREA`. A rejected move is **dropped, never repaired**.
+:data:`MIN_TRIANGLE_AREA`, and if it leaves no cell on either side of those triangles with a signed
+volume of zero or less (a cell that already had one before the pass is not constrained). A rejected
+move is **dropped, never repaired**: the vertex stays where it was.
+
+The cell clause exists because the triangle clause is blind to it: on a real embryo timepoint a cell
+made of a single tetrahedron had one vertex moved 6.7 voxels across the opposite face, every incident
+triangle kept a normal within 49 degrees of its previous one, and the cell's volume went from +35 to
+-5.8 cubic voxels. Its surface stayed closed, oriented, manifold and free of crossings, so no other
+check in the package saw it. The clause tests only the sign, deliberately: a floor at a fraction of the
+cell's volume before relocation was tried and refused more, because for the small cells that need it
+that volume is itself wrong, and a refused move freezes a vertex shared by several cells.
 
 **Nonlocal.** A local guard cannot certify a nonlocal property. A move can drive one sheet of the
 mesh through a distant sheet while every triangle incident to the moved vertex stays perfectly
@@ -67,8 +77,9 @@ Units and conventions
 ---------------------
 All coordinates are mask voxel units -- the frame a reconstructed ``dw3d`` mesh's ``points`` live in
 and the frame :func:`~dw3d.junction_curves.extract_junction_curves` emits its polylines in. That
-extractor refuses a mesh whose coordinates do not lie inside the mask's extent, so a permuted axis
-order cannot pass silently. Areas are square voxels. Vertex order, array shape and dtype are
+extractor refuses a mesh whose coordinates do not lie inside the mask's extent, which catches most
+permuted axis orders; a mesh scaled down into the extent, or permuted on a mask whose sides are
+nearly equal, passes that check. Areas are square voxels. Vertex order, array shape and dtype are
 preserved exactly.
 
 Failure modes
@@ -108,6 +119,18 @@ MIN_TRIANGLE_AREA = 1e-9
 #: larger value only enlarges a superset, and testing a pair that cannot change costs time and
 #: changes no answer.
 _DISPLACEMENT_INFLATION = 3.0
+
+#: The neighbour search of :func:`build_vertex_pair_sets` groups triangles by their reach into bins
+#: whose upper bound grows by this factor, and searches each bin with that bin's largest reach, so a
+#: query is never inflated by the single largest triangle of the mesh. Fixed, not a tuning
+#: parameter: the pair sets are filtered by the exact criterion afterwards and do not depend on it.
+_REACH_BIN_RATIO = 2.0
+
+#: Relative and absolute padding of each neighbour-search radius, so that the k-d tree's own
+#: rounding can never drop a pair the exact criterion keeps. The search only proposes candidates;
+#: a larger radius changes no answer.
+_SEARCH_RADIUS_RELATIVE_PAD = 1e-9
+_SEARCH_RADIUS_ABSOLUTE_PAD = 1e-12
 
 #: A junction vertex lying on this many or more distinct material triples is a quadruple point.
 _QUADRUPLE_TRIPLE_COUNT = 2
@@ -164,6 +187,11 @@ class JunctionRelocationReport:
         n_rejected_inversion: moves dropped because an incident triangle would have flipped.
         n_rejected_degenerate: moves dropped because an incident triangle would have collapsed.
         n_rejected_self_intersection: moves the local guard accepted and the nonlocal guard refused.
+        n_rejected_cell_inversion: moves the triangle clauses accepted and the cell clause refused,
+            because a cell they touch would have been left with a signed volume of zero or less.
+        cells_kept_from_inverting: the labels for which at least one move was refused, ascending.
+        n_cells_not_positive_before_relocation: non-zero labels whose signed volume was already zero
+            or less before the pass, to which the cell clause therefore does not apply.
         proposed_displacement_voxels: the distance every target asked for, one per target.
         applied_displacement_voxels: the distance every accepted move actually travelled.
         n_self_intersections_before: whole-mesh crossings before the pass, or `None` when
@@ -190,6 +218,9 @@ class JunctionRelocationReport:
     n_rejected_inversion: int = 0
     n_rejected_degenerate: int = 0
     n_rejected_self_intersection: int = 0
+    n_rejected_cell_inversion: int = 0
+    cells_kept_from_inverting: list[int] = field(default_factory=list)
+    n_cells_not_positive_before_relocation: int = 0
     proposed_displacement_voxels: NDArray[np.float64] = field(
         default_factory=lambda: np.zeros(0, dtype=np.float64),
     )
@@ -237,6 +268,9 @@ class JunctionRelocationReport:
             "n_rejected_inversion": self.n_rejected_inversion,
             "n_rejected_degenerate": self.n_rejected_degenerate,
             "n_rejected_self_intersection": self.n_rejected_self_intersection,
+            "n_rejected_cell_inversion": self.n_rejected_cell_inversion,
+            "cells_kept_from_inverting": list(self.cells_kept_from_inverting),
+            "n_cells_not_positive_before_relocation": self.n_cells_not_positive_before_relocation,
             "accepted_fraction": (self.n_accepted / self.n_targets) if self.n_targets else None,
             **quantiles(self.proposed_displacement_voxels, "proposed_displacement"),
             **quantiles(self.applied_displacement_voxels, "applied_displacement"),
@@ -331,7 +365,7 @@ def matched_curve_targets(
     disagree, so it is excluded here and counted.
 
     Args:
-        curves: the extractor's output for this `(mask, mesh)`.
+        curves (JunctionCurves): the extractor's output for this `(mask, mesh)`.
         points (NDArray[np.float64]): mesh vertex coordinates, voxel units.
         triangles (NDArray[np.integer]): triangle vertex indices.
         labels (NDArray[np.integer]): the two materials each triangle separates.
@@ -399,11 +433,19 @@ def build_vertex_pair_sets(
     """For each vertex with a target, a superset of the pairs its move can change the status of.
 
     The superset is built from the *base* centroids with an inflation that covers every displacement
-    the pass can ever propose, so one static tree serves the whole pass: a triangle's centroid moves
-    by at most the largest displacement `d` of its own three vertices, its radius about that
+    the pass can ever propose, so one static index serves the whole pass: a triangle's centroid
+    moves by at most the largest displacement `d` of its own three vertices, its radius about that
     centroid grows by at most `2 d`, and two triangles can meet only when their centroids lie within
     the sum of their radii. A pair that can ever meet therefore satisfies
-    `|c_f - c_t| <= r_f + r_t + 3 (d_f + d_t)` at base.
+    `|c_f - c_t| <= r_f + r_t + 3 (d_f + d_t)` at base. Writing `reach = r + 3 d`, the pairs of a
+    vertex are every `(f, t)` with `f` incident to the vertex, `t != f`,
+    `|c_f - c_t| <= reach_f + reach_t` (evaluated as `np.linalg.norm` of the centroid difference),
+    and `f` and `t` sharing no vertex.
+
+    The neighbour search is one batched k-d tree search per pair of reach bins
+    (:func:`_neighbours_within_reach`) rather than one ball query per triangle inflated by the
+    mesh's largest reach; the exact criterion above then decides, so the pair sets are the same
+    whatever the search proposes.
 
     Args:
         points (NDArray[np.float64]): the base vertex coordinates, voxel units.
@@ -412,9 +454,10 @@ def build_vertex_pair_sets(
             vertices move, and their displacements set the inflation.
 
     Returns:
-        tuple: `(pairs_by_vertex, seconds)`. Each value is a `(k, 2)` array of triangle index pairs
-        with adjacency already removed, ready for the exact predicate. A vertex whose move can
-        change nothing maps to an empty array.
+        tuple: `(pairs_by_vertex, seconds)`. Each value is a `(k, 2)` `int64` array of triangle
+        index pairs, each row `(smaller, larger)`, rows in ascending lexicographic order, with
+        adjacency already removed, ready for the exact predicate. A vertex whose move can change
+        nothing maps to an empty `(0, 2)` array.
     """
     clock = time.perf_counter()
     points = np.asarray(points, dtype=np.float64)
@@ -426,38 +469,95 @@ def build_vertex_pair_sets(
         displacement[vertex] = float(np.linalg.norm(np.asarray(target) - points[vertex]))
     reach = radii + _DISPLACEMENT_INFLATION * displacement[triangles].max(axis=1)
 
-    tree = cKDTree(centroids)
     incident = vertex_incidence(triangles, len(points))
-    worst_partner_reach = float(reach.max()) if len(reach) else 0.0
+    vertices = sorted(targets)
+    # `np.unique`: a triangle with a repeated vertex is listed twice in that vertex's incidence.
+    faces_of = [np.unique(np.asarray(incident[vertex], dtype=np.int64)) for vertex in vertices]
+    queried = np.unique(np.concatenate(faces_of)) if faces_of else np.zeros(0, dtype=np.int64)
+    face_rows, partners = _neighbours_within_reach(centroids, reach, queried)
+
+    # Per queried face, its partners (CSR layout over `queried`).
+    order = np.argsort(face_rows, kind="stable")
+    face_rows, partners = face_rows[order], partners[order]
+    bounds = np.searchsorted(face_rows, np.arange(len(queried) + 1))
 
     pairs_by_vertex: dict[int, NDArray[np.int64]] = {}
-    neighbours_of_triangle: dict[int, NDArray[np.int64]] = {}
-    for vertex in sorted(targets):
-        faces = incident[vertex]
-        collected: list[NDArray[np.int64]] = []
-        for face in faces:
-            cached = neighbours_of_triangle.get(face)
-            if cached is None:
-                found = np.asarray(
-                    tree.query_ball_point(centroids[face], reach[face] + worst_partner_reach),
-                    dtype=np.int64,
-                )
-                if len(found):
-                    # exact filter against each partner's own reach, so the superset stays tight
-                    separation = np.linalg.norm(centroids[found] - centroids[face], axis=1)
-                    found = found[separation <= reach[face] + reach[found]]
-                cached = found[found != face]
-                neighbours_of_triangle[face] = cached
-            if len(cached):
-                collected.append(
-                    np.stack([np.full(len(cached), face, dtype=np.int64), cached], axis=1),
-                )
-        if not collected:
+    for vertex, faces in zip(vertices, faces_of, strict=True):
+        if not len(faces):
             pairs_by_vertex[vertex] = np.zeros((0, 2), dtype=np.int64)
             continue
-        pairs = np.unique(np.sort(np.concatenate(collected, axis=0), axis=1), axis=0)
-        pairs_by_vertex[vertex] = drop_adjacent_pairs(pairs, triangles)
+        rows = np.searchsorted(queried, faces)
+        counts = bounds[rows + 1] - bounds[rows]
+        if not counts.sum():
+            pairs_by_vertex[vertex] = np.zeros((0, 2), dtype=np.int64)
+            continue
+        own = np.repeat(faces, counts)
+        other = np.concatenate([partners[bounds[r]:bounds[r + 1]] for r in rows])
+        pairs = np.stack([np.minimum(own, other), np.maximum(own, other)], axis=1)
+        # A pair is listed twice only when both triangles are incident to this vertex, and those
+        # share it, so dropping adjacency also removes every repeat; what remains is sorted.
+        pairs = drop_adjacent_pairs(pairs, triangles)
+        pairs = pairs[np.lexsort((pairs[:, 1], pairs[:, 0]))]
+        pairs_by_vertex[vertex] = pairs
     return pairs_by_vertex, time.perf_counter() - clock
+
+
+def _neighbours_within_reach(
+    centroids: NDArray[np.float64],
+    reach: NDArray[np.float64],
+    queried: NDArray[np.int64],
+) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+    """Every `(f, t)` with `f` in `queried`, `t != f` and `|c_f - c_t| <= reach_f + reach_t`.
+
+    Triangles are grouped into bins of reach whose upper bounds grow by `_REACH_BIN_RATIO`; for
+    each pair of a queried bin and a partner bin, one k-d tree search at the sum of the two bins'
+    largest reaches (padded by `_SEARCH_RADIUS_*_PAD`) proposes candidates, and the exact criterion,
+    `np.linalg.norm(c_t - c_f) <= reach_f + reach_t`, keeps them.
+
+    Args:
+        centroids (NDArray[np.float64]): `(m, 3)` triangle centroids.
+        reach (NDArray[np.float64]): `(m,)` non-negative reach per triangle.
+        queried (NDArray[np.int64]): sorted distinct triangle indices to find partners for.
+
+    Returns:
+        tuple: `(rows, partners)`, two `int64` arrays of equal length: `queried[rows[i]]` and
+        `partners[i]` form one pair. Each pair appears once; their order is unspecified.
+    """
+    empty = np.zeros(0, dtype=np.int64)
+    if not len(queried) or not len(centroids):
+        return empty, empty
+    positive = reach[reach > 0]
+    floor = float(positive.min()) if len(positive) else 1.0
+    bins = np.floor(np.log(np.maximum(reach, floor) / floor) / np.log(_REACH_BIN_RATIO)).astype(np.int64)
+    bins = np.maximum(bins, 0)
+    rows_out: list[NDArray[np.int64]] = []
+    partners_out: list[NDArray[np.int64]] = []
+    query_bins = bins[queried]
+    query_groups = []
+    for query_bin in np.unique(query_bins):
+        local_rows = np.flatnonzero(query_bins == query_bin)
+        faces = queried[local_rows]
+        query_groups.append((local_rows, float(reach[faces].max()), cKDTree(centroids[faces])))
+    for partner_bin in np.unique(bins):
+        members = np.flatnonzero(bins == partner_bin)
+        partner_tree = cKDTree(centroids[members])
+        partner_reach = float(reach[members].max())
+        for local_rows, query_reach, query_tree in query_groups:
+            radius = (query_reach + partner_reach) * (1.0 + _SEARCH_RADIUS_RELATIVE_PAD)
+            radius += _SEARCH_RADIUS_ABSOLUTE_PAD
+            candidates = query_tree.sparse_distance_matrix(partner_tree, radius, output_type="ndarray")
+            if not len(candidates):
+                continue
+            row = local_rows[candidates["i"].astype(np.int64)]
+            partner = members[candidates["j"].astype(np.int64)]
+            face = queried[row]
+            separation = np.linalg.norm(centroids[partner] - centroids[face], axis=1)
+            keep = (separation <= reach[face] + reach[partner]) & (partner != face)
+            rows_out.append(row[keep])
+            partners_out.append(partner[keep])
+    if not rows_out:
+        return empty, empty
+    return np.concatenate(rows_out), np.concatenate(partners_out)
 
 
 def _crossing_count(
@@ -465,10 +565,15 @@ def _crossing_count(
     triangles: NDArray[np.int64],
     pairs: NDArray[np.int64],
 ) -> tuple[int, int]:
-    """Intersections among an explicit pair list, and how many of its triangles are degenerate."""
+    """Intersections among an explicit pair list, and how many of its triangles are degenerate.
+
+    Only the triangles the pairs involve are gathered: the predicate reads each pair's own six
+    corners and nothing else, so the result is the same as on the whole mesh's corner array.
+    """
     involved = np.unique(pairs)
-    n_degenerate = int((twice_areas(points[triangles[involved]]) <= DEGENERATE_TWICE_AREA).sum())
-    intersects, _touching = pair_intersection_flags(points[triangles], pairs)
+    corners = points[triangles[involved]]
+    n_degenerate = int((twice_areas(corners) <= DEGENERATE_TWICE_AREA).sum())
+    intersects, _touching = pair_intersection_flags(corners, np.searchsorted(involved, pairs))
     return int(intersects.sum()), n_degenerate
 
 
@@ -478,11 +583,30 @@ def _apply_moves(
     targets: dict[int, NDArray[np.float64]],
     pairs_by_vertex: dict[int, NDArray[np.int64]],
     report: JunctionRelocationReport,
+    labels: NDArray[np.integer] | None = None,
 ) -> NDArray[np.float64]:
-    """Apply each move only if it keeps every incident triangle valid and creates no crossing.
+    """Apply each move only if it keeps its triangles valid, turns no cell inside out and creates no crossing.
 
-    The nonlocal clause is evaluated **after** the local one because it is the expensive one, and a
-    move the local clause already refuses need not be certified.
+    The clauses run cheapest first: the triangle clauses (area, then orientation), the cell clause,
+    then the nonlocal one, which is the expensive one; a move an earlier clause refuses need not be
+    certified by a later one.
+
+    **The cell clause.** Each label's signed volume is taken at the start of the pass by the
+    divergence theorem with the package's winding (`+det(p0, p1, p2) / 6` to a triangle's first label,
+    `-det / 6` to its second; cubic voxels, the mesh in mask voxel units), and kept current as moves
+    are accepted. A move changes only the determinants of the triangles incident to the moved vertex,
+    so the volume after it is the current volume plus their change. The move is refused when any
+    non-zero label on either side of those triangles, whose volume before the pass was positive, would
+    have a volume `<= 0` after it (zero counts as inverted). The medium (label 0) and labels whose
+    volume before the pass is already `<= 0` are not constrained, and counted. Where the clause never
+    refuses a move, the result is bitwise the result without it: it reads the geometry and changes
+    nothing. Its cost is one pass over the triangles to start, then a handful of operations per
+    candidate move, on the triangles incident to the moved vertex.
+
+    Failure modes: a refused move leaves its vertex where it was, so that junction vertex is not
+    relocated, and the cell keeps the volume it had; the clause does not judge whether that volume is
+    right (a cell whose mesh is far from its mask before relocation stays so). The test is on the
+    floating-point sum, so a cell whose true volume is within rounding of zero is decided by rounding.
 
     Args:
         points (NDArray[np.float64]): vertex coordinates; not modified in place.
@@ -490,6 +614,8 @@ def _apply_moves(
         targets (dict[int, NDArray[np.float64]]): vertex index to proposed position.
         pairs_by_vertex (dict[int, NDArray[np.int64]]): :func:`build_vertex_pair_sets`' output.
         report (JunctionRelocationReport): filled in place with every count this pass produces.
+        labels (NDArray[np.integer] | None): the two materials each triangle separates, `(m, 2)`.
+            `None` switches the cell clause off.
 
     Returns:
         NDArray[np.float64]: the moved vertex coordinates, same shape, dtype and order as `points`.
@@ -499,6 +625,9 @@ def _apply_moves(
     incident = vertex_incidence(triangles, len(moved))
     baseline_normals = triangle_normals(moved, triangles)
     applied: list[float] = []
+    volumes = _CellVolumes(moved, triangles, labels)
+    report.n_cells_not_positive_before_relocation = volumes.n_unconstrained
+    protected: set[int] = set()
 
     for vertex in sorted(targets):
         faces = incident[vertex]
@@ -524,6 +653,12 @@ def _apply_moves(
             moved[vertex] = original
             report.n_rejected_inversion += 1
             continue
+        inverted = volumes.cells_inverted_by(moved, faces)
+        if inverted:
+            moved[vertex] = original
+            report.n_rejected_cell_inversion += 1
+            protected.update(inverted)
+            continue
 
         pairs = pairs_by_vertex.get(vertex)
         if pairs is not None and len(pairs):
@@ -542,9 +677,81 @@ def _apply_moves(
         report.n_accepted += 1
         applied.append(float(np.linalg.norm(targets[vertex] - original)))
         baseline_normals[faces] = candidate_normals
+        volumes.accept(moved, faces)
 
     report.applied_displacement_voxels = np.asarray(applied, dtype=np.float64)
+    report.cells_kept_from_inverting = sorted(protected)
     return moved
+
+
+class _CellVolumes:
+    """Each label's signed volume, kept current through a sequence of single-vertex moves.
+
+    Volumes follow the package's winding (`+det(p0, p1, p2) / 6` to a triangle's first label,
+    `-det / 6` to its second), in cubic voxels. Only the triangles incident to a moved vertex change
+    their determinant, so a candidate volume is the current one plus those triangles' change. Built
+    with `labels=None`, it constrains nothing and records nothing.
+    """
+
+    def __init__(
+        self,
+        points: NDArray[np.float64],
+        triangles: NDArray[np.int64],
+        labels: NDArray[np.integer] | None,
+    ) -> None:
+        self.enabled = labels is not None
+        if not self.enabled:
+            labels = np.zeros((0, 2), dtype=np.int64)
+            triangles = triangles[:0]
+        labels = np.asarray(labels, dtype=np.int64)
+        self.triangles = triangles
+        self.labels = labels
+        self.determinants = self._determinants(points, triangles)
+        present, inverse = np.unique(labels, return_inverse=True)
+        self.index = {int(label): i for i, label in enumerate(present.tolist())}
+        inverse = inverse.reshape(labels.shape)
+        volume = np.bincount(inverse[:, 0], weights=self.determinants, minlength=len(present))
+        volume -= np.bincount(inverse[:, 1], weights=self.determinants, minlength=len(present))
+        self.current = volume / 6.0
+        self.constrained = (present != 0) & (self.current > 0)
+        self.n_unconstrained = int(((present != 0) & ~(self.current > 0)).sum())
+
+    @staticmethod
+    def _determinants(points: NDArray[np.float64], triangles: NDArray[np.int64]) -> NDArray[np.float64]:
+        corners = points[triangles]
+        return np.einsum("ij,ij->i", corners[:, 0], np.cross(corners[:, 1], corners[:, 2]))
+
+    def _change(self, points: NDArray[np.float64], faces: list[int]) -> tuple[NDArray[np.float64], dict[int, float]]:
+        # `np.unique`: a triangle with a repeated vertex is listed twice in that vertex's incidence.
+        faces_array = np.unique(np.asarray(faces, dtype=np.int64))
+        new = self._determinants(points, self.triangles[faces_array])
+        delta = new - self.determinants[faces_array]
+        change: dict[int, float] = {}
+        for (first, second), d in zip(self.labels[faces_array].tolist(), delta.tolist(), strict=True):
+            change[first] = change.get(first, 0.0) + d / 6.0
+            change[second] = change.get(second, 0.0) - d / 6.0
+        return new, change
+
+    def cells_inverted_by(self, points: NDArray[np.float64], faces: list[int]) -> list[int]:
+        """The constrained labels the candidate configuration leaves with a volume of zero or less."""
+        if not self.enabled:
+            return []
+        _, change = self._change(points, faces)
+        inverted = []
+        for label, d in change.items():
+            i = self.index[label]
+            if self.constrained[i] and self.current[i] + d <= 0:
+                inverted.append(label)
+        return inverted
+
+    def accept(self, points: NDArray[np.float64], faces: list[int]) -> None:
+        """Make the candidate configuration of `faces` the current one."""
+        if not self.enabled:
+            return
+        new, change = self._change(points, faces)
+        self.determinants[np.unique(np.asarray(faces, dtype=np.int64))] = new
+        for label, d in change.items():
+            self.current[self.index[label]] += d
 
 
 def relocate_junction_vertices(
@@ -566,22 +773,25 @@ def relocate_junction_vertices(
 
     Args:
         segmented_mask (NDArray[np.uint]): the label image the mesh was reconstructed from.
-        points (NDArray[np.float64]): mesh vertex coordinates in mask voxel units, `(n, 3)`.
+        points (NDArray[np.float64]): mesh vertex coordinates in mask voxel units, `(n, 3)`, in the
+            mask's index order, as `construct_mesh_from_segmentation_mask` returns them.
         triangles (NDArray[np.integer]): triangle vertex indices, `(m, 3)`.
         labels (NDArray[np.integer]): the two materials each triangle separates, `(m, 2)`.
         estimator (Estimator): which sub-voxel estimator
             :func:`~dw3d.junction_curves.extract_junction_curves` runs. `"plain"` is the default
             this construction was specified and measured against; `"anchor"` costs roughly fifteen
             times as much for 9-11 % of the line-position gain.
-        curves: a precomputed :class:`~dw3d.junction_curves.JunctionCurves` for this `(mask, mesh)`,
-            to avoid extracting twice when several treatments share one base mesh.
+        curves (JunctionCurves | None): a precomputed :class:`~dw3d.junction_curves.JunctionCurves`
+            for this `(mask, mesh)`, to avoid extracting twice when several treatments share one base
+            mesh. Defaults to None, which extracts them.
         verify (bool): run the whole-mesh self-intersection certificate before and after and record
             both counts. Adds about 0.08 s per benchmark mesh. Leave it on unless the certificate is
             already being run by the caller.
 
     Returns:
-        tuple: `(moved_points, report)`. `moved_points` has the same shape, dtype and vertex order
-        as `points`.
+        tuple: `(moved_points, report)`. `moved_points` is a new float64 array with the same shape
+            and vertex order as `points`; `points` is not modified. `report` is a
+            `JunctionRelocationReport`.
 
     Raises:
         ValueError: propagated from the extractor if the mesh does not lie in the mask's frame.
@@ -623,7 +833,7 @@ def relocate_junction_vertices(
         ]
 
     pairs_by_vertex, report.index_seconds = build_vertex_pair_sets(points, triangles, targets)
-    moved = _apply_moves(points, triangles, targets, pairs_by_vertex, report)
+    moved = _apply_moves(points, triangles, targets, pairs_by_vertex, report, labels)
 
     if verify:
         report.n_self_intersections_after = find_self_intersections(moved, triangles)[

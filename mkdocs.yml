@@ -1,0 +1,85 @@
+# The documentation website. Build it with mkdocs-material and mkdocstrings[python] installed:
+#     mkdocs build -d <an output folder outside the repository>
+site_name: Delaunay-Watershed 3D
+site_description: Multimaterial meshes of cell aggregates from their segmentation
+repo_url: https://github.com/VirtualEmbryo/delaunay-watershed
+copyright: GPL-3.0-or-later, Turlier lab
+site_dir: site
+strict: false
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle: {icon: material/brightness-7, name: Dark mode}
+    - scheme: slate
+      toggle: {icon: material/brightness-4, name: Light mode}
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.arithmatex: {generic: true}
+  - pymdownx.snippets: {base_path: ["."], check_paths: true}
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: false
+            show_root_toc_entry: false
+            members_order: source
+            filters: ["!^_"]
+            heading_level: 2
+            merge_init_into_class: true
+            show_signature_annotations: true
+            separate_signature: true
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - User guide:
+      - Reconstruction variants: user-guide/reconstruction-variants.md
+      - Junction relocation: user-guide/junction-relocation.md
+      - Cropped tissues: user-guide/cropped-tissues.md
+      - Anisotropic voxels: user-guide/anisotropic-voxels.md
+      - The .rec metadata appendix: user-guide/rec-metadata-appendix.md
+  - Examples:
+      - examples/index.md
+      - examples/mesh-reconstruction-and-visualisation.md
+      - examples/mask-compression.md
+      - examples/advanced-use.md
+      - examples/junction-curves.md
+      - examples/default-junction-relocation.md
+      - examples/anisotropic-voxels-and-crop-faces.md
+  - API reference:
+      - api/index.md
+      - api/package.md
+      - api/reconstruction.md
+      - api/mask-preprocessing.md
+      - api/crop-faces.md
+      - api/junction-relocation.md
+      - api/junction-curves.md
+      - api/cell-volume-agreement.md
+      - api/triangle-intersection.md
+      - api/io.md
+      - api/mesh-utilities.md
+      - api/mask-reconstruction.md
+      - api/viewing.md
+  - Changelog: changelog.md
+  - Release notes: release-notes.md

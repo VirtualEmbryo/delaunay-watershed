@@ -1,6 +1,7 @@
-"""This module gathers all optional viewing utilities for debugging.
+"""Optional Polyscope viewer for a reconstructed mesh, for inspection and debugging.
 
-Install them with the [viewing] option.
+Install it with the `viewing` extra (`pip install "delaunay-watershed-3d[viewing]"`), which brings
+Polyscope and matplotlib. Calling the viewer opens a Polyscope window.
 
 Matthieu Perez, 2024.
 """
@@ -27,20 +28,29 @@ def plot_cells_polyscope(
 ) -> None:
     """Plot separated cells of the mesh in a polyscope viewer.
 
+    Each cell (every label but the medium 0) is shown as its own surface, in a random colour
+    (fixed seed). The points are shown in their own frame, in the mask's index order.
+
     Args:
-        reconstruct (GeometryReconstruction3D): geometric reconstruction object containing the mesh to show.
-        anisotropy_factor (float, optional): Multiply the x-axis of points by this factor. Defaults to 1.0.
+        reconstruct (MeshReconstructionAlgorithm): the algorithm whose last constructed mesh to show.
+        anisotropy_factor (float, optional): Multiply column 0 of the points, the mask's axis 0 (z for a
+            `(z, y, x)` stack), by this factor, for display only: a scaled copy is shown, and the reconstruction's
+            own mesh is left unchanged. Defaults to 1.0. To build a mesh in physical units from a mask whose voxels
+            are longer along z, use `MeshReconstructionAlgorithm.construct_mesh_in_physical_units` instead.
         clean_before (bool, optional): Clean viewer before the function. Defaults to True.
         clean_after (bool, optional): Clean viewer after the function. Defaults to True.
         transparency (bool, optional): Allow transparency in viewer. Defaults to False.
         show (bool, optional): Show viewer. Defaults to True.
         view (str, optional): "Simple" or "Scattered", scatter different cells or not. Defaults to "Simple".
         scattering_coeff (float, optional): If "Scattered" mode, Coefficient of scattering. Defaults to 0.5.
+
+    Raises:
+        ImportError: if Polyscope is not installed (the `viewing` extra).
     """
     import polyscope as ps
 
     points, triangles, labels = reconstruct.last_constructed_mesh
-    points[:, 0] *= anisotropy_factor
+    points = points * np.array([anisotropy_factor, 1.0, 1.0])  # a copy: never scale the stored mesh
 
     clusters = _separate_faces_dict(triangles, labels)
     del clusters[0]  # we don't want to see the exterior

@@ -265,7 +265,7 @@ def mask():
 
 # The control these tests compare against is the **unexcluded** surface, which since the
 # link-checked default flip is no longer `get_default_...` -- the default *is* the excluded
-# one. It is `get_offset_included_...`, the boundary layer + junction protection
+# one. It is the former `get_offset_included_...`, the boundary layer + junction protection
 # configuration that was a former default. Pointing it at the default would make every
 # "offset exclusion removes the offsets" assertion below compare a mesh against itself and
 # pass vacuously.

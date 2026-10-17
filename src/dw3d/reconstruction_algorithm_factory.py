@@ -1,16 +1,18 @@
-"""Module for factory class MeshReconstructionAlgorithmFactory.
+"""Build mesh reconstruction algorithms: the named configurations and a factory for custom ones.
 
-This class allows to build custom algorithms for mesh reconstruction from segmentation masks.
+`MeshReconstructionAlgorithmFactory`'s static `get_*_algorithm` methods return the named
+configurations (`get_default_algorithm` is the one to use for tension inference); an instance of
+the factory combines the steps one by one and `make_algorithm` builds the result.
 
 Matthieu Perez 2024
 """
 
-import warnings
 from functools import partial
 from typing import Self
 
 import numpy as np
 
+from dw3d.crop_faces import normalise_physical_image_faces
 from dw3d.edt import compute_edt_boundary_bias, compute_edt_classical, compute_edt_float32, compute_edt_tiled
 from dw3d.mesh_utilities import LINK_CONDITION, WELD
 from dw3d.points_on_edt import (
@@ -37,10 +39,26 @@ from dw3d.tesselation import simple_delaunay_tesselation, weighted_delaunay_tess
 
 
 class MeshReconstructionAlgorithmFactory:
-    """Factory to build custom algorithms for mesh reconstruction from segmentation masks."""
+    """Factory to build custom algorithms for mesh reconstruction from segmentation masks.
+
+    Each `set_*` method chooses one step and returns the factory, so calls can be chained;
+    `make_algorithm` builds the algorithm.
+    """
 
     def __init__(self, print_info: bool = False, perform_mesh_postprocess_surgery: bool = True) -> None:
-        """Initialize the factory."""
+        """Initialize the factory with the steps of the deterministic configuration.
+
+        A new factory's `make_algorithm` builds what `get_deterministic_algorithm` returns: the
+        classical EDT, deterministic EDT extrema with `min_distance=3`, plain Delaunay
+        tesselation, max-value face scores, mesh surgery, junction relocation on and no physical
+        image face. This is **not** `get_default_algorithm`, which places its points with the
+        dithered rule (`set_dithered_peak_local_points_placement_method`).
+
+        Args:
+            print_info (bool, optional): print the timing of each step. Defaults to False.
+            perform_mesh_postprocess_surgery (bool, optional): try to detect and fix problems on the
+                output mesh. Defaults to True.
+        """
         self.print_info = print_info
         self._edt_creation_function: EdtCreationFunction = _edt_creation_function_classical(print_info=print_info)
         self._point_placing_function: PointPlacingFunction = _point_placing_function_peak_local(print_info=print_info)
@@ -48,6 +66,30 @@ class MeshReconstructionAlgorithmFactory:
         self._score_computation_function: ScoreComputationFunction = compute_scores_by_max_value
         self.perform_mesh_postprocess_surgery = perform_mesh_postprocess_surgery
         self.relocate_junctions = True
+        self.physical_image_faces: tuple[str, ...] = ()
+
+    def set_physical_image_faces(self, *faces: str) -> Self:
+        """Declare faces of the image box where the tissue really ends, for example on a coverslip.
+
+        By default every face of the image box is a crop: a cell surface lying on it is a crop
+        face, not contact with the medium, and the cell is a cut cell (see `dw3d.crop_faces` and
+        the algorithm's `crop_faces` and `cut_cells`). A face declared here is physical: the
+        cell surfaces on it are contact with the medium, as they were before crop faces were
+        recorded. The mesh itself is the same either way.
+
+        Args:
+            *faces (str): names among `dw3d.crop_faces.IMAGE_FACES`, `"axis0_low"` (index 0
+                along the mask's first axis) to `"axis2_high"` (the last index along its third).
+                No argument declares none, the default.
+
+        Returns:
+            Self: this factory, for chaining.
+
+        Raises:
+            ValueError: if a name is not an image face.
+        """
+        self.physical_image_faces = normalise_physical_image_faces(faces)
+        return self
 
     def set_junction_relocation(self, enabled: bool = True) -> Self:
         """Choose whether the finished mesh's trijunction vertices move onto the mask's own trijunction curves.
@@ -84,12 +126,20 @@ class MeshReconstructionAlgorithmFactory:
         return self
 
     def set_classical_edt_method(self) -> Self:
-        """Use the classical method to create the Euclidean Distance Transform from a segmentation mask."""
+        """Use the classical method to create the Euclidean Distance Transform from a segmentation mask (the default).
+
+        Returns:
+            Self: this factory, for chaining.
+        """
         self._edt_creation_function = _edt_creation_function_classical(self.print_info)
         return self
 
     def set_edt_boundary_bias_method(self) -> Self:
-        """Use the biased method to create the Euclidean Distance Transform from a segmentation mask."""
+        """Use the biased method to create the Euclidean Distance Transform from a segmentation mask.
+
+        Returns:
+            Self: this factory, for chaining.
+        """
         self._edt_creation_function = _edt_creation_function_boundary_bias(self.print_info)
         return self
 
@@ -103,6 +153,9 @@ class MeshReconstructionAlgorithmFactory:
         Args:
             parallel (int, optional): Threads for `edt.edt`. `1` matches the classical path
                 and keeps the timing comparison honest; the result does not depend on it.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._edt_creation_function = partial(
             compute_edt_float32,
@@ -131,8 +184,7 @@ class MeshReconstructionAlgorithmFactory:
         interpolation), so the finished reconstruction moves on 8 of 8 in-repo configurations —
         see `tests/test_edt_dtype_composition.py`. Passing
         `dtype=np.float64` gives a field that reproduces the default bit for bit
-        (`tests/test_edt_float64_tiling.py`) at 8 bytes/voxel instead of 4, which is the trade
-        measured when the tiled EDT's memory/precision trade-off was characterized.
+        (`tests/test_edt_float64_tiling.py`) at 8 bytes/voxel instead of 4.
 
         Args:
             tile_size (int, optional): Core side length. Keep it well above the cells'
@@ -143,6 +195,9 @@ class MeshReconstructionAlgorithmFactory:
             dtype (type, optional): `np.float32` (this EDT's own contract) or `np.float64`
                 (composes with the current default). Defaults to `np.float32`, so this
                 method's existing behaviour and every fixture pinned to it are unchanged.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._edt_creation_function = partial(
             compute_edt_tiled,
@@ -155,10 +210,16 @@ class MeshReconstructionAlgorithmFactory:
         return self
 
     def set_peak_local_points_placement_method(self, min_distance: int = 3) -> Self:
-        """Place points on the EDT image using local extrema of the EDT (and corners).
+        """Place points on the EDT image using local extrema of the EDT (and corners), deterministically.
+
+        This is the placement of `get_deterministic_algorithm` and of a new factory.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels of the grid
+                the mask is meshed on. Defaults to 3.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._point_placing_function = _point_placing_function_peak_local(min_distance, self.print_info)
         return self
@@ -166,14 +227,18 @@ class MeshReconstructionAlgorithmFactory:
     def set_dithered_peak_local_points_placement_method(self, min_distance: int = 3, seed: int = 42) -> Self:
         """Place points using the randomly dithered EDT (dw3d <= 0.3.6 behaviour).
 
-        Kept reachable so the seed-to-seed determinism sweep and the dithered-configuration
-        golden masters can still be run; see `dw3d.points_on_edt` for why it is no longer
-        the default point-placement rule for the deterministic configuration.
+        This is the placement of `get_dithered_algorithm`, which `get_default_algorithm` returns;
+        a new factory uses the deterministic placement instead
+        (`set_peak_local_points_placement_method`). See `dw3d.points_on_edt` for the difference.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels of the grid
+                the mask is meshed on. Defaults to 3.
             seed (int, optional): Seed of the `U(0, 1e-5)` dither. Defaults to 42, the
                 value that was hard-wired before point placement was made deterministic.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._point_placing_function = _point_placing_function_peak_local_dithered(min_distance, seed, self.print_info)
         return self
@@ -183,13 +248,15 @@ class MeshReconstructionAlgorithmFactory:
 
         The deterministic extrema plus a structured layer of offset points a distance
         `delta` into each material adjacent to a genuine interface; see `dw3d.points_on_edt`
-        for the construction. Opt-in: the default remained the extrema-only rule until the
-        benchmark numbers justified making the junction-protected configuration the default.
+        for the construction. Opt-in: the default algorithm does not use it.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
             delta (float | None, optional): Offset distance into each material. Defaults to
                 `min_distance` (the interface spacing `h_S`) when None.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._point_placing_function = _point_placing_function_boundary_layer(min_distance, delta, self.print_info)
         return self
@@ -206,17 +273,25 @@ class MeshReconstructionAlgorithmFactory:
         The boundary layer plus 0-/1-junction detection, protecting balls and a junction
         boundary layer; see `dw3d.points_on_edt` for the construction. This scheme returns
         per-point weights, so pair it with `set_weighted_delaunay_tesselation_method` --
-        `get_junction_protected_algorithm` does that for you. Opt-in: the default is
-        unchanged by this alone.
+        `get_junction_protected_algorithm` does that for you. Opt-in: the default algorithm does
+        not use it.
+
+        Its defaults are those of the junction-protection scheme as first designed, not those of
+        `get_junction_protected_algorithm`: the junction boundary layer is on and the shell
+        coarsening is off (`get_junction_protected_algorithm` defaults to
+        `junction_boundary_layer=False` and `shell_coarsening=3`).
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
             delta (float | None, optional): Boundary-layer offset distance. Defaults to
                 `min_distance`.
             junction_spacing (float | None, optional): Arclength `h_J` between 1-junction
                 samples. Defaults to `2*min_distance + 1`, the effective interface spacing.
             shell_coarsening (int, optional): Re-pack the bounding-box / background shell
                 minima at this multiple of `2*min_distance + 1`. `1` is off. Defaults to 1.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._point_placing_function = _point_placing_function_junction_protected(
             min_distance=min_distance,
@@ -232,6 +307,9 @@ class MeshReconstructionAlgorithmFactory:
 
         Falls back to `simple_delaunay_tesselation` bit-for-bit when the point-placing
         function supplies no weights, or supplies all-zero ones (see `dw3d.tesselation`).
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._tesselation_creation_function = weighted_delaunay_tesselation
         return self
@@ -240,13 +318,20 @@ class MeshReconstructionAlgorithmFactory:
         """Place points on the EDT image using local extrema of the EDT (and corners) and boundaries.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._point_placing_function = _point_placing_function_peak_local_bias_boundaries(min_distance, self.print_info)
         return self
 
     def set_delaunay_tesselation_method(self) -> Self:
-        """Use Delaunay algorithm to create the tesselation from a list of points."""
+        """Use Delaunay algorithm to create the tesselation from a list of points (the default).
+
+        Returns:
+            Self: this factory, for chaining.
+        """
         self._tesselation_creation_function = simple_delaunay_tesselation
         return self
 
@@ -256,6 +341,9 @@ class MeshReconstructionAlgorithmFactory:
         Args:
             spline_order (int, optional): 1 for trilinear interpolation of the EDT (the
                 historical behaviour), 3 for the cubic B-spline interpolant. Defaults to 1.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._score_computation_function = (
             compute_scores_by_mean_value_cubic if spline_order == 3 else compute_scores_by_mean_value
@@ -271,6 +359,9 @@ class MeshReconstructionAlgorithmFactory:
                 The cubic interpolant is `C2` where trilinear is only `C0`, which both
                 smooths the score field and is a prerequisite for sub-voxel extremum
                 refinement (not implemented here). It changes the labelling, so it is opt-in.
+
+        Returns:
+            Self: this factory, for chaining.
         """
         self._score_computation_function = (
             compute_scores_by_max_value_cubic if spline_order == 3 else compute_scores_by_max_value
@@ -291,6 +382,7 @@ class MeshReconstructionAlgorithmFactory:
             score_computation_function=self._score_computation_function,
             perform_mesh_postprocess_surgery=self.perform_mesh_postprocess_surgery,
             relocate_junctions=self.relocate_junctions,
+            physical_image_faces=self.physical_image_faces,
         )
 
     @staticmethod
@@ -299,11 +391,11 @@ class MeshReconstructionAlgorithmFactory:
 
         **This is `get_dithered_algorithm` at its own defaults**: the published dw3d 0.3.6
         configuration. The default was for a time the junction-protected, offset-excluded
-        configuration (`get_link_checked_algorithm`); that was reverted here, on
-        H. Turlier's decision, because the end-to-end tension-inference accuracy that the
-        meshing pipeline exists to serve is *worse* with the revised meshing than with the
-        dithered configuration, on every method measured, despite the revised mesh's better
-        geometric quality in isolation:
+        configuration (`get_link_checked_algorithm`); it went back to the dithered one
+        because the end-to-end tension-inference accuracy that the meshing pipeline exists to
+        serve is *worse* with the revised meshing than with the dithered configuration, on
+        every method measured, despite the revised mesh's better geometric quality in
+        isolation:
 
         | method | dithered `E_total` (gauge-matched median) | revised (`link_checked`) `E_total` |
         |---|---:|---:|
@@ -317,15 +409,14 @@ class MeshReconstructionAlgorithmFactory:
         junction-protected and topologically cleaner than the dithered default by every
         meshing-only metric (interface-area bias, sliver fraction, score-gap degeneracy,
         non-manifold edges) -- it is kept, fully reachable, as
-        an opt-in variant: **`get_link_checked_algorithm`**, the name it already had, chosen
-        deliberately over introducing another synonym, because it already names the
-        mechanism (a link-condition-checked, topology-preserving offset collapse) rather than
-        the phase that produced it. Use it when meshing quality (junction placement, interface
-        smoothness, topology) matters more than today's downstream tension-inference accuracy;
-        use the default when tension inference is the goal, which is the common case.
+        an opt-in variant: **`get_link_checked_algorithm`**, a name that describes its
+        mechanism (a link-condition-checked, topology-preserving offset collapse). Use it when
+        meshing quality (junction placement, interface smoothness, topology) matters more than
+        today's downstream tension-inference accuracy; use the default when tension inference
+        is the goal, which is the common case.
 
-        Every configuration reachable from here keeps its own golden masters, fingerprints
-        and 51-case benchmark records:
+        Every configuration reachable from here keeps its own reference meshes and 51-case
+        benchmark records:
 
         * `get_link_checked_algorithm` -- boundary layer + junction protection + link-checked
           offset exclusion; the opt-in "revised" variant, see above.
@@ -333,16 +424,16 @@ class MeshReconstructionAlgorithmFactory:
           protection alone, with the boundary-layer offsets left in the extracted surface.
           **Carries a +15.7 % interface-area regression** against ground truth that the
           link-checked exclusion removes; kept so it can be benchmarked against. (Its synonym
-          `get_offset_included_algorithm` is deprecated since 0.5.0 and removed in 0.6.0.)
+          `get_offset_included_algorithm`, deprecated since 0.5.0, was removed in 0.7.0.)
+        * `get_deterministic_algorithm` -- deterministic EDT extrema only, plain Delaunay, no
+          boundary layer or junction protection: the baseline the boundary-layer and
+          junction-protection placements are measured against.
 
         Every configuration, this one included, relocates junction vertices by default since
         0.5.0; set `relocate_junctions = False` on the returned algorithm to reproduce 0.4.
-        * `get_deterministic_algorithm` -- deterministic EDT extrema only, plain Delaunay, no
-          boundary layer or junction protection. Every acceptance criterion for the
-          boundary-layer and junction-protection work is stated against it.
 
-        The EDT is `compute_edt_classical`. The tiled EDT (`set_tiled_edt_method`, merged in
-        `512fc05`, reachable here, not wired in) produces a field whose *values* are bit-identical
+        The EDT is `compute_edt_classical`. The tiled EDT (`set_tiled_edt_method`, reachable
+        from a factory instance, not used here) produces a field whose *values* are bit-identical
         at a third of the peak RSS, and it is the variant to prefer at scale. Composition with a
         given reconstruction algorithm depends on whether that algorithm reads the EDT field's
         last bits (`get_dithered_algorithm` and `get_deterministic_algorithm` do not;
@@ -353,59 +444,14 @@ class MeshReconstructionAlgorithmFactory:
         with them at 8 bytes/voxel instead of 4).
 
         Args:
-            min_distance (int, optional): Minimum distance (in pixels) between extrema when placing
-                tesselation points. Defaults to 3.
-            print_info (bool, optional): Print algorithm details while executing.
+            min_distance (int, optional): Minimum distance (in voxels of the grid the mask is meshed
+                on) between extrema when placing tesselation points. Defaults to 3.
+            print_info (bool, optional): Print algorithm details while executing. Defaults to False.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
         return MeshReconstructionAlgorithmFactory.get_dithered_algorithm(
-            min_distance=min_distance,
-            print_info=print_info,
-        )
-
-    @staticmethod
-    def get_offset_included_algorithm(min_distance: int = 3, print_info: bool = False) -> MeshReconstructionAlgorithm:
-        """Return the boundary-layer + junction-protection configuration, offsets left in the surface.
-
-        **This was `get_default_algorithm` for a time (`e598909`), before the link-checked
-        offset exclusion became the default.** It is the same code path as
-        `get_junction_protected_algorithm` at its own defaults -- `offset_included` is the
-        *configuration's* name, `junction_protected` the *mechanism's*, and
-        `tests/test_golden_master.py` pins that the two agree -- but it is registered
-        separately because it is now a **documented regression** with a commit to point at,
-        not merely a superseded default, and downstream work needs to benchmark with and
-        without it by name.
-
-        **What it costs, measured over the 47 ground-truth cases:** signed interface-area error
-        **+15.73 %**, with
-        **94.1 %** of all 677 interfaces over-estimated and every interface over-estimated on
-        25 of 47 whole cases; total reconstructed interface area **1.1616x** ground truth.
-        The mechanism is the boundary layer's offsets entering the surface as flap vertices;
-        it is a bias *plus* an 11-point spread (pooled p90 25.9 %), so it is **not**
-        absorbable downstream as a gauge factor.
-
-        **What it gains, and what the link-checked default keeps bit-identically:**
-        all-surface tetrahedra 39.9 % -> 0.81 %, slivers 5.97 % -> 5.70 %, score gaps < 1e-5
-        0.484 -> 0.202, junction length 1.2548x -> 1.0085x ground truth, valence->=4 edges
-        133 -> 115. None of that is traded away by excluding the offsets from the surface --
-        that step changes only which tesselation vertices are allowed to become *surface*
-        vertices.
-
-        Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
-            print_info (bool, optional): Print algorithm details while executing.
-
-        Deprecated:
-            Since 0.5.0, and removed in 0.6.0. This is an exact synonym of
-            `get_junction_protected_algorithm(min_distance=..., print_info=...)`: same code path,
-            same mesh, bit for bit. Call that instead.
-        """
-        warnings.warn(
-            "get_offset_included_algorithm is deprecated since 0.5.0 and will be removed in 0.6.0; it is an "
-            "exact synonym of get_junction_protected_algorithm(min_distance=..., print_info=...).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return MeshReconstructionAlgorithmFactory.get_junction_protected_algorithm(
             min_distance=min_distance,
             print_info=print_info,
         )
@@ -414,17 +460,20 @@ class MeshReconstructionAlgorithmFactory:
     def get_deterministic_algorithm(min_distance: int = 3, print_info: bool = False) -> MeshReconstructionAlgorithm:
         """Return the deterministic algorithm: EDT extrema only, no dither, plain Delaunay.
 
-        This was `get_default_algorithm` before the boundary-layer and junction-protection
-        work made the junction-protected configuration the default. It is kept as a named
-        variant, with its own golden masters (`tests/golden/deterministic/`), fingerprints
-        and 51-case benchmark records (`benchmarks/baseline/deterministic/`), because it is
-        the baseline every acceptance criterion for the boundary-layer and
-        junction-protection work is stated against -- dropping it would make those
-        measurements unreproducible.
+        This was `get_default_algorithm` for a time, between the dithered configuration and
+        the junction-protected one. It is kept as a named variant, with its own reference
+        meshes (`tests/golden/deterministic/`) and 51-case benchmark records
+        (`dw3d_benchmarks/baseline/deterministic/`), because it is the baseline the
+        boundary-layer and junction-protection placements are measured against -- dropping it
+        would make those measurements unreproducible. A new `MeshReconstructionAlgorithmFactory`
+        builds the same configuration.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
             print_info (bool, optional): Print algorithm details while executing.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
         return MeshReconstructionAlgorithm(
             print_info=print_info,
@@ -460,9 +509,12 @@ class MeshReconstructionAlgorithmFactory:
         bit-for-bit replica of published output.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
             print_info (bool, optional): Print algorithm details while executing.
             seed (int, optional): Seed of the dither. Defaults to 42, the historical value.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
         return MeshReconstructionAlgorithm(
             print_info=print_info,
@@ -485,16 +537,19 @@ class MeshReconstructionAlgorithmFactory:
     ) -> MeshReconstructionAlgorithm:
         """Return the boundary-layer reconstruction algorithm (opt-in, not the default).
 
-        Same as `get_default_algorithm` but with the boundary-layer point placement
-        (`set_boundary_layer_points_placement_method`). Kept as a named variant so its
-        golden masters, fingerprints and benchmark records live alongside the default's;
-        the recorded numbers are what decided whether this became the shipped default.
+        Same as `get_deterministic_algorithm` but with the boundary-layer point placement
+        (`set_boundary_layer_points_placement_method`): the deterministic extrema plus offset
+        points. Kept as a named variant so its reference meshes and benchmark records live
+        alongside the others'; it did not become the default.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
+            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
             print_info (bool, optional): Print algorithm details while executing.
             delta (float | None, optional): Offset distance into each material. Defaults to
                 `min_distance` when None.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
         return MeshReconstructionAlgorithm(
             print_info=print_info,
@@ -529,11 +584,11 @@ class MeshReconstructionAlgorithmFactory:
         """Return the junction-protected reconstruction algorithm.
 
         **This is the configuration `get_default_algorithm` returned for a time before the
-        link-checked offset exclusion became the default**; `get_offset_included_algorithm`
-        is the name that says so, and this one stays because it is the only way to reach the
-        ablation switches below and because the corresponding benchmark records are keyed on
-        it. Since the link-checked default, this configuration **plus** the offset exclusion
-        (`get_link_checked_algorithm`) is reachable from here as
+        link-checked offset exclusion became the default** (its former synonym
+        `get_offset_included_algorithm` was removed in 0.7.0). It is the only way to reach the
+        ablation switches below, and the corresponding benchmark records are keyed on it. This
+        configuration **plus** the link-checked offset exclusion (`get_link_checked_algorithm`)
+        is reachable from here as
         `exclude_offsets_from_surface=True, collapse_rule=LINK_CONDITION`.
 
         The boundary layer **plus** 0-/1-junction detection, protecting balls and shell
@@ -543,11 +598,11 @@ class MeshReconstructionAlgorithmFactory:
         `get_boundary_layer_algorithm` remains the boundary layer alone and
         `get_deterministic_algorithm` is the configuration that predates both.
 
-        **Two defaults differ from the original junction-protection specification, both on
+        **Two defaults differ from the junction-protection scheme as first designed, both on
         measured grounds:**
 
-        * `junction_boundary_layer=False`. The original specification asks for the boundary layer
-          around junction samples too, on the grounds that it prevents Perez's "more points
+        * `junction_boundary_layer=False`. The first design asks for the boundary layer
+          around junction samples too, on the grounds that it prevents the "more points
           locally -> more small tets" failure. Measured over 11 cases it *causes* that
           failure: it takes valence->=4 edges 33 -> 119 and abnormal non-manifold edges
           2 -> 91, essentially all of the added valence->=4 edges being the 3-material
@@ -576,17 +631,16 @@ class MeshReconstructionAlgorithmFactory:
             protect_junctions (bool, optional): Ablation switch; see
                 `dw3d.points_on_edt.junction_protected_families`. Defaults to True.
             junction_boundary_layer (bool, optional): Ablation switch; `True` restores the
-                original junction-protection specification. Defaults to False — see above.
+                junction-protection scheme as first designed. Defaults to False — see above.
             use_weights (bool, optional): Ablation switch — `False` tesselates the same
                 point set with plain Delaunay, isolating the regular triangulation's own
                 contribution. Defaults to True.
             spline_order (int, optional): EDT interpolation order for the watershed scores;
-                `3` selects the cubic B-spline (`get_cubic_score_algorithm`). Defaults to 1,
-                trilinear, which is what the default algorithm uses. See
+                `3` selects the cubic B-spline. Defaults to 1, trilinear, which is what the
+                default algorithm uses. See
                 `dw3d.score_computation`.
             exclude_offsets_from_surface (bool, optional): Keep the boundary-layer offsets in
-                the tesselation and out of the extracted surface. `True` is what
-                `get_offset_excluded_algorithm` returns. The tesselation, the watershed and
+                the tesselation and out of the extracted surface. The tesselation, the watershed and
                 the labelling are bit-identical either way. Defaults to False.
             guard_duplicate_faces (bool, optional): Offset-exclusion ablation switch —
                 refuse the merges that would duplicate a face. `False` reproduces the
@@ -600,6 +654,9 @@ class MeshReconstructionAlgorithmFactory:
                 `dw3d.mesh_utilities.exclude_offsets_from_surface`. Defaults to `"weld"` so
                 that the unconditional-merge benchmark records stay reproducible;
                 `get_link_checked_algorithm` is the link-condition configuration.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
         return MeshReconstructionAlgorithm(
             print_info=print_info,
@@ -628,76 +685,6 @@ class MeshReconstructionAlgorithmFactory:
         )
 
     @staticmethod
-    def get_offset_excluded_algorithm(
-        min_distance: int = 3,
-        print_info: bool = False,
-        spline_order: int = 1,
-        guard_duplicate_faces: bool = True,
-        collapse_rule: str = WELD,
-    ) -> MeshReconstructionAlgorithm:
-        """Return the offset-excluded variant: junction-protected with the boundary layer kept off the surface.
-
-        Identical to `get_offset_included_algorithm` — same EDT, same point set, same
-        regular triangulation, same watershed, same mesh surgery — except that the
-        *extracted surface* is not allowed to use the boundary layer's offsets as vertices.
-        Each offset is merged onto the interface sample it displaces and the triangles that
-        collapse are dropped; see `dw3d.mesh_utilities.exclude_offsets_from_surface`.
-
-        **Not the default.** Its default `collapse_rule="weld"` is the unconditional merge
-        rule, which regressed valence->=4 edges 115 -> 184 and abnormal non-manifold edges
-        7 -> 76 over the 51-case benchmark. `get_link_checked_algorithm` is the same
-        exclusion with the collapse rule that cannot do that, and **it** is the opt-in
-        "revised meshing" variant (the default for a time, no longer the default -- see
-        `get_default_algorithm`'s docstring for why). This getter is kept so the
-        unconditional-merge measurement stays reproducible as the ablation that motivated
-        the link-condition-checked collapse.
-
-        **Why this exists.** The extraction is primal, so every mesh vertex is a seed point,
-        and the boundary layer's offsets sit `delta` voxels off the surface by construction.
-        Measurement found them at 30-35 % of mesh vertices carrying **90 % of `epsilon^2`**,
-        the vertex-to-surface error that drives the junction-angle error through
-        `error = C * epsilon / ell` with `C = 33.2 +- 1.2` deg.
-        They are scaffolding for the tetrahedra, not geometry.
-
-        Opt-in, with its own golden masters and 51-case records: it changes the surface on
-        every case.
-
-        Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
-            print_info (bool, optional): Print algorithm details while executing.
-            spline_order (int, optional): EDT interpolation order for the watershed scores;
-                `3` composes this exclusion with the cubic B-spline. Defaults to 1, matching
-                `get_link_checked_algorithm`.
-            guard_duplicate_faces (bool, optional): Ablation switch; `False` gives the
-                unguarded merge. Defaults to True. See
-                `dw3d.mesh_utilities.exclude_offsets_from_surface`.
-            collapse_rule (str, optional): `"link_condition"` is what
-                `get_link_checked_algorithm` returns. Defaults to `"weld"`, the
-                unconditional-merge rule.
-
-        Deprecated:
-            Since 0.5.0, and removed in 0.6.0. This is an exact synonym of
-            `get_junction_protected_algorithm(min_distance=..., print_info=...,
-            exclude_offsets_from_surface=True, spline_order=..., guard_duplicate_faces=...,
-            collapse_rule=...)`: same code path, same mesh, bit for bit. Call that instead.
-        """
-        warnings.warn(
-            "get_offset_excluded_algorithm is deprecated since 0.5.0 and will be removed in 0.6.0; it is an "
-            "exact synonym of get_junction_protected_algorithm(min_distance=..., print_info=..., "
-            "exclude_offsets_from_surface=True, spline_order=..., guard_duplicate_faces=..., collapse_rule=...).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return MeshReconstructionAlgorithmFactory.get_junction_protected_algorithm(
-            min_distance=min_distance,
-            print_info=print_info,
-            spline_order=spline_order,
-            exclude_offsets_from_surface=True,
-            guard_duplicate_faces=guard_duplicate_faces,
-            collapse_rule=collapse_rule,
-        )
-
-    @staticmethod
     def get_link_checked_algorithm(
         min_distance: int = 3,
         print_info: bool = False,
@@ -705,22 +692,19 @@ class MeshReconstructionAlgorithmFactory:
     ) -> MeshReconstructionAlgorithm:
         """Return the "revised meshing" variant: junction-protected with a topology-preserving offset collapse.
 
-        **This was `get_default_algorithm` for a time**, when the default reverted to the
+        **This was `get_default_algorithm` for a time**, until the default went back to the
         dithered configuration because end-to-end tension-inference accuracy is worse with
         this pipeline than with the dithered one on every method measured, despite its
         better mesh quality in isolation (interface-area bias, sliver fraction, junction
         placement, topology -- see `get_default_algorithm`'s docstring for the numbers). It
         is deterministic, junction-protected and topologically corrected relative to the
-        dithered configuration, and stays fully reachable under this name -- chosen
-        deliberately over a new alias, since "link-checked" already names the mechanism (a
-        link-condition-checked, topology-preserving offset collapse) rather than the phase
-        that produced it. Use it when mesh geometry and topology matter more than today's
-        downstream tension-inference accuracy. It stays a named getter so that the
-        corresponding benchmark records, keyed on the variant name
-        `offset_excluded_linkcheck`, remain readable.
+        dithered configuration; "link-checked" names its mechanism (a link-condition-checked,
+        topology-preserving offset collapse). Use it when mesh geometry and topology matter
+        more than today's downstream tension-inference accuracy. Its benchmark records are
+        keyed on the variant name `offset_excluded_linkcheck`.
 
-        Identical to `get_offset_excluded_algorithm` except that each offset is removed from
-        the surface by a **link-condition-checked edge contraction** rather than an
+        Identical to `get_junction_protected_algorithm(exclude_offsets_from_surface=True)` except
+        that each offset is removed from the surface by a **link-condition-checked edge contraction** rather than an
         unconditional weld. Same EDT, same point set, same regular triangulation, same
         watershed, same mesh surgery, same set of *candidate* merges — only the test that
         decides which candidates are taken differs.
@@ -745,53 +729,18 @@ class MeshReconstructionAlgorithmFactory:
             print_info (bool, optional): Print algorithm details while executing.
             spline_order (int, optional): EDT interpolation order for the watershed scores;
                 `3` composes this collapse rule with the cubic B-spline. Defaults to 1.
+
+        Returns:
+            MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
-        # Called directly rather than through the deprecated get_offset_excluded_algorithm, with
-        # exactly the arguments that synonym would pass (guard_duplicate_faces keeps its default).
+        # The offset exclusion with the link-condition collapse rule (guard_duplicate_faces keeps
+        # its default).
         return MeshReconstructionAlgorithmFactory.get_junction_protected_algorithm(
             min_distance=min_distance,
             print_info=print_info,
             spline_order=spline_order,
             exclude_offsets_from_surface=True,
             collapse_rule=LINK_CONDITION,
-        )
-
-    @staticmethod
-    def get_cubic_score_algorithm(min_distance: int = 3, print_info: bool = False) -> MeshReconstructionAlgorithm:
-        """Return the cubic-interpolation variant: junction-protected, with cubic B-spline EDT interpolation.
-
-        Identical to `get_offset_included_algorithm` except that the watershed's face scores
-        are read from a `C2` cubic B-spline of the EDT instead of a `C0` trilinear one
-        (`dw3d.score_computation`). Opt-in: it changes the scores, hence the labelling,
-        hence the mesh, so it carries its own golden masters until a benchmark justifies
-        flipping the default again.
-
-        **Note it composes with `offset_included`, not with the current default.** It was
-        written when `offset_included` *was* the default and its golden masters and 51-case
-        records were measured in that configuration; re-pointing it at the current default
-        would silently invalidate them. Composing it with the link-checked exclusion is
-        reachable (`get_link_checked_algorithm(spline_order=3)`) and has **never been
-        benchmarked**; whether that composition helps is an open question.
-
-        Args:
-            min_distance (int, optional): Minimum distance between extrema. Defaults to 3.
-            print_info (bool, optional): Print algorithm details while executing.
-
-        Deprecated:
-            Since 0.5.0, and removed in 0.6.0. This is an exact synonym of
-            `get_junction_protected_algorithm(min_distance=...,
-            print_info=..., spline_order=3)`: same code path, same mesh, bit for bit. Call that instead.
-        """
-        warnings.warn(
-            "get_cubic_score_algorithm is deprecated since 0.5.0 and will be removed in 0.6.0; it is an "
-            "exact synonym of get_junction_protected_algorithm(min_distance=..., print_info=..., spline_order=3).",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return MeshReconstructionAlgorithmFactory.get_junction_protected_algorithm(
-            min_distance=min_distance,
-            print_info=print_info,
-            spline_order=3,
         )
 
 

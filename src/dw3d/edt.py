@@ -24,8 +24,10 @@ variants below write each voxel exactly once instead of forming `(edt_1 + M) * m
 inv * mask_2` out of seven whole-volume temporaries.
 
 **float32 is not an approximation here, it is the field's actual precision.** `edt.edt`
-returns `float32`; `compute_edt_classical` is `float64` only because `mask_1 = 1 - b`
-inherits `find_boundaries`' `int32`, and `float32 * int32` promotes to `float64` in numpy.
+returns `float32`; `compute_edt_classical` was `float64` only because `mask_1 = 1 - b`
+inherited `find_boundaries`' `int32`, and `float32 * int32` promotes to `float64` in numpy.
+It now builds `uint8` masks and a `float32` field and casts that field to `float64` once,
+because the default configuration reads the dtype (`tests/test_edt_dtype_composition.py`).
 Every value in the returned `float64` array is therefore exactly float32-representable --
 asserted on all four in-repo images and 10 `benchmarking-dataset` cases in
 `tests/test_edt_scaling.py`. So `compute_edt_float32` is **bit-identical** to
@@ -102,23 +104,38 @@ def compute_edt_classical(segmentation_mask: NDArray[np.uint], print_info: bool 
     """Compute the Euclidean Distance Transorm of a segmented image.
 
     It will be 0 at borders and cells boundaries. Bigger when getting far from these points.
+
+    The two masks are `uint8` and the field is assembled in `float32`, the precision `edt.edt`
+    returns; the result is cast to `float64` once, at the end. Each voxel takes exactly one of
+    the two terms (the masks are disjoint), so every product is by 0 or 1 and every sum adds an
+    exact zero: the values are those of the historical `int32`-mask construction bit for bit,
+    and the `float64` dtype is kept because the default configuration reads the field's dtype
+    (`tests/test_edt_dtype_composition.py`).
+
+    Args:
+        segmentation_mask (NDArray[np.uint]): 3D label image, one integer label per material.
+        print_info (bool, optional): Print the run time. Defaults to False.
+
+    Returns:
+        NDArray[np.float64]: the field, in voxels, with the shape of `segmentation_mask`.
     """
     if print_info:
         print("Computing EDT ...")
     t1 = time()
 
-    b = _StandardLabelToBoundary()(segmentation_mask)[0]  # "thick" boundaries are marked by 1, 0 outside
+    # "thick" boundaries are marked by 1, 0 outside
+    b = _StandardLabelToBoundary().get_boundaries(segmentation_mask)
     mask_2 = b
     edt_2 = euclidean_dt(mask_2)  # EDT of the thick boundaries (0 elsewhere)
     b = _pad_mask(b)  # exterior bbox is marked as 1
     mask_1 = 1 - b  # 1 everywhere except bbox and boundaries
-    edt_1 = euclidean_dt(
-        mask_1,
-    )  # main part of the final EDT. Both inside cells and outside cells. 0 in boundaries & bbox
-    inv = (
-        np.amax(edt_2) - edt_2
-    )  # max EDT2 everywhere except on thick boundaries where it decreases to 0 on the mid of boundaries
-    total_edt = (edt_1 + np.amax(edt_2)) * mask_1 + inv * mask_2  # total EDT is valid also on thick boundaries
+    # main part of the final EDT. Both inside cells and outside cells. 0 in boundaries & bbox
+    edt_1 = euclidean_dt(mask_1)
+    edt_2_max = np.amax(edt_2)
+    # max EDT2 everywhere except on thick boundaries where it decreases to 0 on the mid of boundaries
+    inv = edt_2_max - edt_2
+    # total EDT is valid also on thick boundaries
+    total_edt = ((edt_1 + edt_2_max) * mask_1 + inv * mask_2).astype(np.float64)
 
     # # Matthieu Perez try 2: augment constrast in EDT
     # Total_EDT = 255 * ((Total_EDT / 255) ** 0.5)
@@ -131,10 +148,10 @@ def compute_edt_classical(segmentation_mask: NDArray[np.uint], print_info: bool 
 
 
 def _recover_ignore_index(
-    input_img: NDArray[np.uint],
+    input_img: NDArray[np.unsignedinteger],
     orig: NDArray[np.uint],
     ignore_index: None | int,
-) -> NDArray[np.uint]:
+) -> NDArray[np.unsignedinteger]:
     """Put back the ignored_index in input_image ?"""
     if ignore_index is not None:
         mask = orig == ignore_index
@@ -157,6 +174,7 @@ class _StandardLabelToBoundary:
 
         Args:
             ignore_index (int | None, optional): Consider the ignored index as the background ?. Defaults to None.
+                It is written into a `uint8` image, so it must lie in `0..255`.
             append_label (bool, optional): Append original input data to the result. Defaults to False.
             mode (str, optional): {'thick', 'inner', 'outer', 'subpixel'}
                 How to mark the boundaries:
@@ -170,11 +188,32 @@ class _StandardLabelToBoundary:
                           marked as boundary where appropriate.
                 Defaults to "thick".
             foreground (bool, optional): Extract the foreground and put it in the result. Defaults to False.
+
+        Raises:
+            ValueError: if `ignore_index` does not fit in a `uint8`.
         """
+        if ignore_index is not None and not 0 <= ignore_index <= np.iinfo(np.uint8).max:
+            msg = f"ignore_index must lie in 0..255 (the boundary image is uint8), got {ignore_index}"
+            raise ValueError(msg)
         self.ignore_index = ignore_index
         self.append_label = append_label
         self.mode = mode
         self.foreground = foreground
+
+    def get_boundaries(self, m: NDArray[np.uint]) -> NDArray[np.uint8]:
+        """Return the boundary image alone, without stacking it.
+
+        Args:
+            m (NDArray[np.uint]): 3D label image.
+
+        Returns:
+            NDArray[np.uint8]: 1 on the boundary voxels (`find_boundaries`, connectivity 2, in
+                `self.mode`), 0 elsewhere, and `ignore_index` where `m` equals it.
+        """
+        assert m.ndim == 3
+        boundaries = find_boundaries(m, connectivity=2, mode=self.mode)
+        boundaries = boundaries.astype(np.uint8, copy=False)
+        return _recover_ignore_index(boundaries, m, self.ignore_index)
 
     def __call__(self, m: NDArray[np.uint]) -> NDArray[np.uint]:
         """Call the function to extract pixels boundaries in a multi-labeled image.
@@ -183,15 +222,14 @@ class _StandardLabelToBoundary:
         """
         assert m.ndim == 3
 
-        boundaries = find_boundaries(m, connectivity=2, mode=self.mode)
-        boundaries = boundaries.astype("int32")
+        boundaries = self.get_boundaries(m)
 
         results = []
         if self.foreground:
-            foreground = (m > 0).astype("uint8")
+            foreground = (m > 0).astype(np.uint8, copy=False)
             results.append(_recover_ignore_index(foreground, m, self.ignore_index))
 
-        results.append(_recover_ignore_index(boundaries, m, self.ignore_index))
+        results.append(boundaries)
 
         if self.append_label:
             # append original input data
@@ -201,18 +239,29 @@ class _StandardLabelToBoundary:
 
 
 def _pad_mask(mask: NDArray[np.uint8], pad_size: int = 1) -> NDArray[np.uint8]:
-    """Pad a mask with ones on the borders."""
-    padded_mask = mask.copy()[
-        pad_size:-pad_size,
-        pad_size:-pad_size,
-        pad_size:-pad_size,
-    ]
-    padded_mask = np.pad(
-        padded_mask,
-        ((pad_size, pad_size), (pad_size, pad_size), (pad_size, pad_size)),
-        "constant",
-        constant_values=1,
-    )
+    """Return a copy of a mask with its outer shell of thickness `pad_size` set to 1.
+
+    The interior is copied into an array of ones, with no intermediate crop. Along an axis no
+    longer than `2 * pad_size` the shell is the whole axis, so the result is all ones, with the
+    shape of `mask`.
+
+    Args:
+        mask (NDArray[np.uint8]): 3D mask.
+        pad_size (int, optional): Shell thickness, in voxels, at least 1. Defaults to 1.
+
+    Returns:
+        NDArray[np.uint8]: a new array with the shape and dtype of `mask`.
+
+    Raises:
+        ValueError: if `pad_size` is smaller than 1.
+    """
+    if pad_size < 1:
+        msg = f"pad_size must be at least 1, got {pad_size}"
+        raise ValueError(msg)
+    padded_mask = np.ones_like(mask, dtype=mask.dtype)
+    if 2 * pad_size < min(mask.shape):
+        interior = (slice(pad_size, -pad_size),) * 3
+        padded_mask[interior] = mask[interior]
     return padded_mask
 
 
@@ -221,26 +270,22 @@ def compute_edt_boundary_bias(segmentation_mask: NDArray[np.uint], print_info: b
     """Compute a biased version of the Euclidean Distance Transform of a segmented image.
 
     It is biased towards the boundaries between interfaces.
+
+    Args:
+        segmentation_mask (NDArray[np.uint]): 3D label image, one integer label per material.
+        print_info (bool, optional): Print the run time. Defaults to False.
+
+    Returns:
+        NDArray[np.float64]: the field, in voxels, with the shape of `segmentation_mask`.
     """
     if print_info:
         print("Computing EDT (bias) ...")
     t1 = time()
 
-    region_indices = np.unique(segmentation_mask)
-    total_boundaries = np.zeros(segmentation_mask.shape)
-
-    for index in region_indices:
-        if index == 0:
-            region_labels = np.where(segmentation_mask == 0, 1, 0)
-        else:
-            region_labels = np.where(segmentation_mask == index, segmentation_mask, 0)
-        total_boundaries += _StandardLabelToBoundary()(region_labels)[0]
-
-    # total_boundaries *= 3
-    total_boundaries = np.amax(total_boundaries) - total_boundaries
+    total_boundaries = get_total_boundaries(segmentation_mask)
 
     # "thick" boundaries are marked by 1, 0 outside
-    b = _StandardLabelToBoundary()(segmentation_mask)[0]
+    b = _StandardLabelToBoundary().get_boundaries(segmentation_mask)
     mask_2 = b
     # EDT of the thick boundaries (0 elsewhere)
     edt_2 = euclidean_dt(mask_2)
@@ -265,19 +310,38 @@ def compute_edt_boundary_bias(segmentation_mask: NDArray[np.uint], print_info: b
 
 
 def get_total_boundaries(segmented_mask: NDArray[np.uint]) -> NDArray[np.float64]:
-    """Obtain pre-EDT on boundaries from segmentation mask."""
+    """Obtain pre-EDT on boundaries from segmentation mask.
+
+    For every label (0 included), the thick boundary of that label's own region is counted, and
+    the count is inverted as `max(count) - count`. One label image is reused for every label and
+    the count is accumulated in `float32`: it is a count of at most 27 per voxel, so it is exact,
+    and the result is cast to `float64` once, at the end.
+
+    Args:
+        segmented_mask (NDArray[np.uint]): 3D label image.
+
+    Returns:
+        NDArray[np.float64]: integer-valued, with the shape of `segmented_mask`; 0 where most
+            labels' boundaries meet.
+    """
     region_indices = np.unique(segmented_mask)
-    total_boundaries = np.zeros(segmented_mask.shape)
+    boundary_extractor = _StandardLabelToBoundary()
+
+    total_boundaries = np.zeros(segmented_mask.shape, dtype=np.float32)
+    region_labels = np.zeros(segmented_mask.shape, dtype=segmented_mask.dtype)
 
     for index in region_indices:
+        region_labels.fill(0)
         if index == 0:
-            region_labels = np.where(segmented_mask == 0, 1, 0)
+            region_labels[segmented_mask == 0] = 1
         else:
-            region_labels = np.where(segmented_mask == index, segmented_mask, 0)
-        total_boundaries += _StandardLabelToBoundary()(region_labels)[0]
+            mask = segmented_mask == index
+            region_labels[mask] = segmented_mask[mask]
+
+        total_boundaries += boundary_extractor.get_boundaries(region_labels)
 
     total_boundaries = np.amax(total_boundaries) - total_boundaries
-    return total_boundaries
+    return total_boundaries.astype(np.float64)
 
 
 # ---------------------------------------------------------------------------------------

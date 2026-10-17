@@ -1,238 +1,94 @@
 # Delaunay-Watershed 3D
 
-[![GPL-3.0-or-later][gpl-shield]][gpl]
-[![DOI](https://zenodo.org/badge/634561229.svg)](https://zenodo.org/badge/latestdoi/634561229)
+[![GPL-3.0-or-later][gpl-shield]][gpl] [![DOI](https://zenodo.org/badge/634561229.svg)](https://zenodo.org/badge/latestdoi/634561229)
 
-<img src="https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/Figure_logo_white_arrow.png" alt="drawing" width="300"/>
+<img src="https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.7.0/Figures_readme/Figure_logo_white_arrow.png" alt="Delaunay-Watershed logo" width="300"/>
 
+**Delaunay-Watershed-3D** (package `dw3d`) reconstructs, from a 3-D instance segmentation of cells or nuclei, a **multimaterial surface mesh**: one triangle mesh of every interface between two cells, or between a cell and the medium. Such meshes are small, and suited to storage, sharing, geometric analysis and visualisation. It is the reconstruction behind [foambryo](https://github.com/VirtualEmbryo/foambryo), which infers surface tensions and cell pressures from these meshes. A viewer based on [Polyscope](https://polyscope.run) is included.
 
-**Delaunay-Watershed-3D** is an algorithm designed to reconstruct *in 3D* a sparse surface mesh representation of the geometry of multicellular structures or nuclei from instance segmentations. It accomplishes this by building multimaterial meshes from segmentation masks. These multimaterial meshes are perfectly suited for **storage, geometrical analysis, sharing** and **visualization of data**. We provide as well visualization tools based on [polyscope](https://polyscope.run).
+Delaunay-Watershed was created by Sacha Ichbiah during his PhD in [Turlier Lab](https://www.turlierlab.com), and is improved and maintained by Matthieu Perez and Hervé Turlier. For support, please open an issue. If you use it in your work, please cite the [article](https://doi.org/10.1038/s41592-023-02084-7): Ichbiah S., Delbary F., McDougall A., Dumollard R., Turlier H. *Embryo mechanics cartography: inference of 3D force atlases from fluorescence microscopy.* Nature Methods **20**(12), 1989–1999 (2023).
 
-Delaunay-Watershed was created by Sacha Ichbiah during his PhD in [Turlier Lab](https://www.turlierlab.com), and is improved and maintained by Matthieu Perez and Hervé Turlier. For support, please open an issue.
-If you use this library in your work please cite the [article](https://doi.org/10.1038/s41592-023-02084-7):
-Ichbiah S., Delbary F., McDougall A., Dumollard R., Turlier H. *Embryo mechanics cartography: inference of 3D force atlases from fluorescence microscopy.* Nature Methods **20**(12), 1989–1999 (2023).
+For 2-D images and meshes, see [foambryo2D](https://github.com/VirtualEmbryo/foambryo2D).
 
-If you are interested in 2D images and meshes, please look at the [foambryo-2D](https://github.com/VirtualEmbryo/foambryo2D) package instead.
+The documentation (user guide, examples, API reference) is in [`docs/`][docs]; the full list of changes is in the [CHANGELOG][changelog], and what can mislead you in the [release notes][notes].
 
-Introductory notebooks are provided for two examples (cells or nuclei in multicellular aggregates).
-The algorithm takes as input 3D segmentation masks and returns multimaterial triangle meshes in 3D.
+## What's new in 0.7.0
 
-This method is used as a backend for [foambryo](https://github.com/VirtualEmbryo/foambryo), our 3D tension and pressure inference Python library.
+0.7.0 is the first release on PyPI since 0.5.1; it includes everything prepared for 0.6.0, which was not published.
 
-### What's new in 0.5.0
+- **Masks with voxels longer along z.** `algorithm.construct_mesh_in_physical_units(mask, spacing)` resamples the mask to cubic voxels before meshing and returns the mesh in physical units; the `.rec` file records the spacing.
+- **Cropped tissues.** Where a cell reaches the image box, the triangles that close it there are marked as *crop faces*, and the cells they touch as *cut cells*; the files keep the marks. The mesh itself is unchanged.
+- **Fixes that change results**: cells that touch the image border are closed by correctly wound triangles (they read too small a volume, often a negative one); a few triangles on flat tetrahedra are wound correctly; `set_pixel_size` now scales column 0 (z) by the z size — it used to swap z and x, so re-run any analysis that called it with different xy and z sizes.
+- **New checks**: the cells whose mesh volume disagrees with their mask are listed (`cell_volume_report`, with a `CellVolumeDisagreementWarning`), and junction relocation can no longer turn a very small cell inside out.
+- **Faster and lighter on large tissues, with bit-for-bit the same meshes**: on a 1 866-cell tissue meshed on its native grid, from mask to tensions, 9.5 min instead of 47.5 min with 0.5.1, and a peak memory of 30.9 GiB instead of 54.7 GiB. Resampled to cubic voxels first (`construct_mesh_in_physical_units`), the same tissue's reconstruction takes about 13.5 min and 38 GiB.
+- **A lighter distance transform and a faster tesselation graph, with bit-for-bit the same meshes.** On a 1 866-cell tissue the distance transform's peak memory goes from 21.0 to 14.9 GiB (38.1 to 28.1 GiB when the mask is first resampled to cubic voxels), the tesselation's face table and pairing take 1.8 s instead of 7.8 s and its graph 3.0 s instead of 5.5 s; a 2 000-cell synthetic foam is reconstructed in 186 s instead of 200 s. Contributed by Wenhong Li and Adam L. Taylor.
 
-0.5.0 is the first release on PyPI since 0.3.6. In short (the full list is in the
-[CHANGELOG](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/CHANGELOG.md), and what can mislead you is in the
-[release notes](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/RELEASE_NOTES.md)):
+## Installation
 
-- **Every reconstructed mesh is different**: its trijunction vertices are now moved onto the
-  junction curves the mask itself gives. Triangles and labels are unchanged. Set
-  `algorithm.relocate_junctions = False` to get the 0.4 meshes back exactly.
-- **The default reconstruction is still the published algorithm** (the one 0.3.6 shipped); other
-  reconstruction variants are available opt-in, among them `get_link_checked_mesh_reconstruction_algorithm`.
-- **New tools**: `extract_junction_curves` (trijunction curves read from the mask),
-  `count_self_intersections`, and an optional metadata appendix in `.rec`/`.arec` files.
-- **Old names removed**: `get_v0_3_algorithm`, `get_a1b_algorithm`, `get_a3_a5_algorithm` and their
-  `get_*_mesh_reconstruction_algorithm` aliases.
-- **New licence**, GPL-3.0 (see [License](#license)), and **Python 3.11 or later** is required.
-
-### Installation
-
-Delaunay-Watershed requires Python 3.11 or later. Tested for 0.5.0 on macOS 14.8.4 on Apple silicon (arm64), with Python 3.12. Other operating systems, and the other supported Python versions (3.11 or later), are expected to work but were not tested for this release.
-
-
-We recommend to install delaunay-watershed from the PyPI repository directly, in a virtual environment.
+Delaunay-Watershed needs Python 3.11 or later. Install it from PyPI, in a virtual environment:
 
 ```shell
-pip install delaunay-watershed-3d
+pip install delaunay-watershed-3d               # the library
+pip install "delaunay-watershed-3d[viewing]"    # and the Polyscope viewer
 ```
 
-If you want to use our visualization tools, install the package with the `viewing` option:
-```shell
-pip install "delaunay-watershed-3d[viewing]"
-```
+For development, clone the repository and `pip install -e "./delaunay-watershed[viewing]"`. Tested for 0.7.0 on macOS 14 on Apple silicon (arm64), with Python 3.12; other systems are expected to work but were not tested for this release.
 
-For developers, you may also install delaunay-watershed by cloning the source code and installing from the local directory
+## Quick start
 
-```shell
-git clone https://github.com/VirtualEmbryo/delaunay-watershed.git
-pip install ./delaunay-watershed
-```
-
-### Quick start example 
-
-Load an instance segmentation, construct its multimaterial mesh, save it to a file for later, and visualize it:
+The input is a 3-D array of integer labels, one per cell, 0 for the medium; axis 0 is z. The mesh's points are in the same order, `(z, y, x)`.
 
 ```py
+import tifffile
 from dw3d import get_default_mesh_reconstruction_algorithm
 from dw3d.viewing import plot_cells_polyscope
 
-# Get a mesh reconstruction algorithm
-mesh_reconstruction_algorithm = get_default_mesh_reconstruction_algorithm()
-
-# Load the segmentation image
-import skimage.io as io
-segmentation_mask = io.imread("data/Images/1.tif")  # in a clone of this repository
-
-# Reconstruct a multimaterial mesh from the mask using the mesh reconstruction algorithm
-mesh_reconstruction_algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
-
-# Save the last constructed mesh
-mesh_reconstruction_algorithm.save_to_vtk_mesh("mesh_from_segmentation.vtk", binary_mode=True)
-# Plot the last constructed mesh
-plot_cells_polyscope(mesh_reconstruction_algorithm)
-```
-
-Geometry can be analyzed later, in [foambryo](https://pypi.org/project/foambryo/) for example.
-
-### Reconstruction variants
-
-`get_default_mesh_reconstruction_algorithm` gives you the **default** reconstruction: the
-published algorithm (equivalent to dw3d 0.3.6). It is the more accurate one for downstream
-tension inference today, so it is what most users should start with.
-
-A **revised meshing pipeline** is also available, opt-in, as
-`get_link_checked_mesh_reconstruction_algorithm`. It is deterministic, protects triple
-junctions explicitly, and produces cleaner topology and lower interface-area bias than the
-default — but as measured on `foambryo`'s benchmarking dataset, meshes it produces currently
-give *worse* end-to-end tension-inference accuracy than the default, on every inference method
-tested (see `BENCHMARKS.md`). Reach for it when mesh geometry and topology matter more to you
-than today's downstream inference accuracy — for example, when the mesh itself, rather than
-inferred tensions, is the deliverable:
-
-```py
-from dw3d import get_link_checked_mesh_reconstruction_algorithm
-
-mesh_reconstruction_algorithm = get_link_checked_mesh_reconstruction_algorithm()
-mesh_reconstruction_algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
-```
-
-### Straightening the junction lines (on by default since 0.5.0)
-
-A reconstructed mesh's trijunction lines are ragged at voxel scale: the extraction places junction
-vertices wherever the tessellation happens to bracket them. Since 0.5.0 every reconstruction moves
-them onto the trijunction curves the mask itself gives, as a post-process on the finished mesh:
-
-```py
-from dw3d import get_default_mesh_reconstruction_algorithm
-
+mask = tifffile.imread("segmentation.tif")
 algorithm = get_default_mesh_reconstruction_algorithm()
-points, triangles, labels = algorithm.construct_mesh_from_segmentation_mask(segmentation_mask)
-print(algorithm.relocation_provenance)          # did it run, with which guard, did it warn
-print(algorithm.relocation_report.as_dict())    # what it moved
+
+# With the voxel size (dz, dy, dx): resampled to cubic voxels, mesh in um.
+points, triangles, labels = algorithm.construct_mesh_in_physical_units(mask, spacing=(1.0, 0.5, 0.5), spacing_unit="um")
+# Or on the voxel grid, mesh in voxel units:
+# points, triangles, labels = algorithm.construct_mesh_from_segmentation_mask(mask)
+
+algorithm.save_to_rec_mesh("mesh.rec")          # read it in foambryo with dcel_mesh_from_file
+plot_cells_polyscope(algorithm)                 # needs [viewing] and a display
 ```
 
-**To reproduce the 0.4 meshes, switch it off**: `algorithm.relocate_junctions = False` before
-reconstructing, or `MeshReconstructionAlgorithmFactory().set_junction_relocation(False)`. At a
-point-placement `min_distance` of 5 or more the reconstruction emits
-`dw3d.CoarseSpacingRelocationWarning` once: the effect on surface-tangent contact angles there lies
-within the check's own noise and larger spacings are unmeasured; facet-based angles improve.
+`points` are the vertices, `triangles` index them, and `labels` give the two materials on each side of each triangle (the normal points from the first label to the second). The notebooks in [`Examples/`][examples] show the rest.
 
-It can also be applied to a mesh you already have:
+## What the reconstruction does, and its options
 
-```py
-from dw3d import relocate_junction_vertices
-from dw3d.io import load_rec
+- **The default reconstruction** is the published algorithm (equivalent to dw3d 0.3.6), the more accurate one for tension inference today. Other variants are opt-in, among them the deterministic, link-checked `get_link_checked_mesh_reconstruction_algorithm`, cleaner in topology but worse for tension inference. See [reconstruction variants][variants].
+- **Junction relocation** (on by default since 0.5.0) moves the trijunction vertices onto the junction curves the mask gives, under a guard that can never make the mesh pass through itself; only vertices move. `algorithm.relocate_junctions = False` gives the 0.4 meshes. See [junction relocation][relocation].
+- **Cropped tissues.** `algorithm.crop_faces` (a boolean per triangle), `algorithm.cut_cells` and `algorithm.crop_face_report`. A tissue that really ends on an image face (a coverslip): `algorithm.physical_image_faces = ("axis0_low",)`. See [cropped tissues][cropped].
+- **Anisotropic voxels.** Measured on simulated tissues whose cells are as small as real ones, down-sampled along z, against the same tissues meshed at full resolution: resampling to cubic voxels first costs +0.83, +0.71 and +1.17 degrees of contact-angle error at a z/xy ratio of 5/3, 2 and 3, against +1.38, +1.97 and +4.10 for meshing the native grid and scaling the mesh. Above 3 nothing was measured, and `UnmeasuredAnisotropyWarning` says so. `min_distance` counts cubic voxels, so the cost is that of a mask acquired at the short spacing. See [anisotropic voxels][aniso].
+- **Files.** `.rec`/`.arec` (text or binary) and `.vtk`; a `.rec` file can carry a metadata appendix that records the coordinate frame, the spacing and the crop faces. See [the metadata appendix][appendix].
+- **Checks.** `cell_volume_report` lists the cells whose mesh volume is outside 0.5–1.5 times their voxel count; `count_self_intersections(points, triangles)` counts self-intersecting triangle pairs.
 
-points, triangles, labels = load_rec("mesh.rec")
-points, report = relocate_junction_vertices(segmentation_mask, points, triangles, labels)
-```
+## Biological examples
 
-**It moves vertices and nothing else.** Triangles and material labels come back untouched, so a
-treated mesh can be compared vertex-for-vertex with its own untreated original.
+### Cell interfaces in the *P. mammillata* embryo
 
-**What it buys**, measured over 40 benchmark cases at four reconstruction spacings and four point
-samplers: line position error, local tangent error and discrete curvature all improve at every
-spacing on every sampler, and no existing mesh-validity number changes on any case. If you are
-using a seed-free sampler (`get_deterministic_mesh_reconstruction_algorithm`) it also improves
-contact angles by 2.3–3.5 degrees and downstream tension error by 20–40 %, and brings the junction
-lines to the default sampler's own untreated accuracy or better. On the default's seeded sampler
-the lines improve and the contact angles do not move significantly. See `BENCHMARKS.md` (measured
-before relocation became the default).
+See the notebook [*Mesh reconstruction and visualisation*](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/Examples/example_1_mesh_reconstruction_visualisation.ipynb). Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
 
-**What it costs**: about +0.75 s on the benchmark meshes, whose reconstruction takes about 5 s
-(+15 %); 0.1–1.5 s per timepoint on real embryo volumes, whose reconstruction takes about 0.6 s
-(median 0.34 s and 0.48 s on two time series). Within one real series it grows faster than linearly
-with mesh size (fitted exponent 2.68 over a 2.2-fold range — not a tissue-scale law). A faster
-neighbour search is planned for 0.5.1.
+![Mesh of an ascidian embryo](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.7.0/Figures_readme/DW_3d.png "Mesh reconstruction.")
 
-**It cannot make the mesh pass through itself.** Every accepted move is checked against the whole
-mesh, not only the triangles around the vertex it moves, so the number of self-intersecting
-triangle pairs can never rise. That check is available on its own as
-`dw3d.count_self_intersections(points, triangles)`.
+### Cell nuclei
 
-### `.rec` / `.arec` metadata appendix
+See the notebook [*Mask compression and reconstruction*](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/Examples/example_2_mask_compression_reconstruction.ipynb). Segmentation masks from [StarDist](https://github.com/stardist/stardist).
 
-`save_rec`/`load_rec` (`dw3d.io`) read and write `.rec`/`.arec` multimaterial mesh files
-(points, triangles, and per-triangle material labels; text or binary). Optionally, a
-`.rec`/`.arec` file can carry a small metadata appendix: pass `metadata={...}` to
-`save_rec`, and read it back with `load_rec_appendix(filename)`.
+![Meshes of nuclei](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.7.0/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
 
-The appendix is a trailing block of ASCII `# key = value` lines, written after the
-geometry data — never before it, because every existing reader (this one included) reads
-a count and then exactly that many values, so a trailing block is invisible to them,
-while a leading one breaks parsing outright. Fields:
+## Repository layout
 
-```
-# rec-appendix 1
-# written_by = dw3d <version>
-# coordinate_frame = voxel_index
-# axis_order = zyx
-# spacing = 1.0 0.325 0.325
-# spacing_unit = um
-# source_shape = 194 200 199
-# crop_offset = 0 0 0
-```
+The development repository also holds the project's research record (working notes, exploratory scripts and their results), for provenance. It is not part of the distribution: `pip install` does not ship it, and nothing under `dw3d` imports from it.
 
-- `coordinate_frame` is `voxel_index`, `physical`, or `unknown` — this is the field the
-  appendix exists for, since spacing alone can't tell a reader whether coordinates are
-  raw voxel indices awaiting a scale or physical units that already have it applied.
-- `axis_order`, `spacing`/`spacing_unit`, `source_shape` and `crop_offset` record the
-  rest of the sampling geometry, `crop_offset` even when zero (it is what will later let
-  a reader distinguish a physical exterior boundary from a crop boundary).
-- **A file with no appendix must be treated as `coordinate_frame == "unknown"`, never as
-  isotropic spacing** — `load_rec_appendix` returns `None` in that case, and every file
-  saved before this feature existed has no appendix.
+## Credits, contact, citation
 
-For more examples and documentation, see the notebooks:
-- [Mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_1_mesh_reconstruction_visualisation.ipynb),
-- [Mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_2_mask_compression_reconstruction.ipynb).
+If you use this tool, please cite the associated article: Ichbiah S., Delbary F., McDougall A., Dumollard R., Turlier H. *Embryo mechanics cartography: inference of 3D force atlases from fluorescence microscopy.* Nature Methods **20**(12), 1989–1999 (2023), [doi:10.1038/s41592-023-02084-7](https://doi.org/10.1038/s41592-023-02084-7). Contact Matthieu Perez and Hervé Turlier for practical questions and applications.
 
-There is also an advanced notebook if you want to tinker with the algorithm: [Advanced use](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_3_advanced_use.ipynb).
-
-
----
-### Biological examples
-
-#### Geometrical reconstruction of cell interfaces in the *P. mammillata* embryo
-See the [notebook on mesh reconstruction and visualization](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_1_mesh_reconstruction_visualisation.ipynb).
-
-![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/DW_3d.png "Mesh reconstruction.")
-
-Segmentation masks from [Guignard et al.](https://www.science.org/doi/10.1126/science.aar5663)
-
-
-#### Geometrical reconstruction of cell nuclei
-
-See the [notebook on mask compression and reconstruction](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.5.1/Examples/example_2_mask_compression_reconstruction.ipynb).
-
-![](https://raw.githubusercontent.com/VirtualEmbryo/delaunay-watershed/v0.5.1/Figures_readme/DW_3d_nuclei.png "Mask reconstruction.")
-
-Segmentation masks from [Stardist](https://github.com/stardist/stardist)
-
-
----
-
-### Repository layout
-
-The project's development record (working notes, exploratory scripts and their results) is
-kept in the development repository for provenance and is not part of this distribution:
-`pip install` does not ship it, and nothing under `dw3d` imports from it.
-
-### Credits, contact, citations
-If you use this tool, please cite the associated article: Ichbiah S., Delbary F., McDougall A., Dumollard R., Turlier H. *Embryo mechanics cartography: inference of 3D force atlases from fluorescence microscopy.* Nature Methods **20**(12), 1989–1999 (2023), [doi:10.1038/s41592-023-02084-7](https://doi.org/10.1038/s41592-023-02084-7).
-Do not hesitate to contact Matthieu Perez and Hervé Turlier for practical questions and applications. 
-We hope that **Delaunay-Watershed** could help biologists and physicists to shed light on the mechanical aspects of early development.
+Recent work on dw3d and foambryo is part of a collaboration with Alejandro Aguilera Castrejon (Janelia Research Campus, Howard Hughes Medical Institute). We thank him and his Janelia colleagues Adam L. Taylor, Wenhong Li and Francesco Roncato. Adam L. Taylor found the border-triangle winding defect fixed in 0.6.0 and pointed us to the seed-extraction and dense tension-solve bottlenecks on large tissues.
 
 ```bibtex
 @article{Ichbiah2023,
@@ -251,15 +107,21 @@ We hope that **Delaunay-Watershed** could help biologists and physicists to shed
 }
 ```
 
-### License
+## Licence
 
-From version 0.5.0 this work is licensed under the [GNU General Public License][gpl], version 3
-of the License, or (at your option) any later version (SPDX `GPL-3.0-or-later`); the text of
-version 3 is in `License`.
-Earlier releases keep the licence they were published under (CC BY-NC-SA 4.0).
+Delaunay-Watershed is free software: you can redistribute it and modify it under the terms of the [GNU General Public License][gpl], version 3 or (at your option) any later version (SPDX `GPL-3.0-or-later`); the text is in `License`. This covers versions 0.5.0 and later; earlier releases keep the licence they were published under (CC BY-NC-SA 4.0).
 
 [![GPLv3][gpl-image]][gpl]
 
 [gpl]: https://www.gnu.org/licenses/gpl-3.0.html
 [gpl-image]: https://www.gnu.org/graphics/gplv3-127x51.png
 [gpl-shield]: https://img.shields.io/badge/License-GPLv3-blue.svg
+[docs]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/index.md
+[changelog]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/CHANGELOG.md
+[notes]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/RELEASE_NOTES.md
+[examples]: https://github.com/VirtualEmbryo/delaunay-watershed/tree/v0.7.0/Examples
+[variants]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/user-guide/reconstruction-variants.md
+[relocation]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/user-guide/junction-relocation.md
+[cropped]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/user-guide/cropped-tissues.md
+[aniso]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/user-guide/anisotropic-voxels.md
+[appendix]: https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/docs/user-guide/rec-metadata-appendix.md

@@ -26,3 +26,11 @@ scratch_*.py
 # re-run and are handed to the user directly rather than accumulated in git history. The four
 # figures (figures/*.png, *.pdf) are small, checked-in deliverables and are not excluded here.
 dw3d_benchmarks/mesh_quality_comparison/results/
+# Default output folder of the benchmark tools (for example abnormal_edge_patches.py): never
+# committed, and never the workspace root.
+dw3d_benchmarks/outputs/
+# The Justfile's `uv run` writes a lock file; the repository ships none (the dependency ranges
+# are in pyproject.toml), so a regenerated one stays local.
+uv.lock
+# The documentation website, when `mkdocs build` is run without -d.
+site/

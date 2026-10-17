@@ -49,11 +49,11 @@ junction-protection keywords, so the answer does not depend on what the variant 
 Usage (from `delaunay-watershed-3d/`)::
 
     PYTHONPATH="src:." .venv/bin/python -m benchmarks.abnormal_edge_patches \
-        --variant default --out ../abnormal_edge_diagnostics/default
+        --variant default --out dw3d_benchmarks/outputs/abnormal_edge_diagnostics/default
 
     # restrict to the cases a prior diagnosis already found defects in (much faster):
     PYTHONPATH="src:." .venv/bin/python -m benchmarks.abnormal_edge_patches \
-        --variant default --only 007 026 --out ../abnormal_edge_diagnostics/default
+        --variant default --only 007 026 --out dw3d_benchmarks/outputs/abnormal_edge_diagnostics/default
 """
 
 from __future__ import annotations
@@ -81,6 +81,8 @@ from dw3d.points_on_edt import junction_protected_families
 REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKSPACE_ROOT = REPO_ROOT.parent
 DATASET_DIR = WORKSPACE_ROOT / "benchmarking-dataset"
+#: Git-ignored (``dw3d_benchmarks/outputs/`` in .gitignore), so a run never writes into the workspace root.
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "dw3d_benchmarks" / "outputs" / "abnormal_edge_diagnostics" / "default"
 IN_REPO_IMAGES = [REPO_ROOT / "data" / "Images" / f"{i}.tif" for i in range(1, 5)]
 MIN_DISTANCE = 3
 
@@ -838,7 +840,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--variant", choices=tuple(VARIANT_GETTERS), default="default")
     parser.add_argument("--only", nargs="*", default=None, help="Case stems to restrict to.")
-    parser.add_argument("--out", type=Path, default=WORKSPACE_ROOT / "abnormal_edge_diagnostics" / "default")
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--no-png", action="store_true")
     parser.add_argument("--resolution", nargs=2, type=int, default=[1400, 1100])
     args = parser.parse_args()

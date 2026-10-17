@@ -1,0 +1,8 @@
+# The source distribution carries the test suite whole: the tests, their conftest and reference
+# data, and the benchmark package several of them import. The example images (data/) and the
+# benchmarking dataset are not shipped: the tests that need them skip. The changelog and the release notes are
+# shipped too: they are user documentation, and a test checks what they quote.
+include CHANGELOG.md RELEASE_NOTES.md
+graft tests
+graft dw3d_benchmarks
+global-exclude __pycache__/* *.py[cod] .DS_Store

@@ -1,4 +1,4 @@
-"""Module for Mesh creation and cleaning.
+"""Mesh extraction and cleaning, and the point-coordinate utilities (`set_pixel_size`, centring, scaling).
 
 Decoupling the surface vertex set from the tesselation point set
 ------------------------------------------------------------------
@@ -47,6 +47,10 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     from dw3d.tesselation_graph import TesselationGraph
 
+#: Marks the medium side of a border triangle, which lies outside the tesselation's hull
+#: and so has no tetrahedron. See `_reorient_triangles`.
+NO_TETRAHEDRON = -1
+
 
 #####
 #####
@@ -61,6 +65,13 @@ def labeled_mesh_from_labeled_graph(
 ) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
     """Extract a labeled mesh from a labeled tesselation graph.
 
+    **Winding convention.** Every returned triangle has `labels[i, 0] < labels[i, 1]`, and its
+    right-hand-rule normal `(p1 - p0) x (p2 - p0)` points *out of* the region `labels[i, 0]`
+    and *into* the region `labels[i, 1]`. This is the convention foambryo's cell volumes rely
+    on (`+det` to the first label, `-det` to the second, by the divergence theorem). A triangle
+    on the tesselation's hull (a *border triangle*, whose one tetrahedron carries a cell label)
+    has labels `(0, cell)`, so its normal points into the cell, i.e. into the hull.
+
     Args:
         tesselation_graph (TesselationGraph): TesselationGraph object
         map_label_to_nodes_ids (dict[int, list[int]]): Labels on this graph.
@@ -74,23 +85,23 @@ def labeled_mesh_from_labeled_graph(
         points,
         triangles,
         labels,
-        nodes_idx_in_graph_linked_to_triangle,
+        tetrahedron_on_each_label_side,
     ) = _retrieve_mesh_multimaterial_multitracker_format(
         tesselation_graph,
         map_label_to_nodes_ids,
     )
 
-    # sort label (and nodes)
+    # sort label (and the tetrahedra with them, so column k stays the side of label k)
     for i, label in enumerate(labels):
         if label[0] > label[1]:  # if label0 > label1 we swap them
             labels[i] = labels[i, [1, 0]]
-            nodes_idx_in_graph_linked_to_triangle[i] = nodes_idx_in_graph_linked_to_triangle[i][[1, 0]]
-    # reorient triangles to have coherent normals (for plotting mostly)
+            tetrahedron_on_each_label_side[i] = tetrahedron_on_each_label_side[i][[1, 0]]
+    # wind every triangle from its first label into its second
     triangles = _reorient_triangles(
         triangles,
         tesselation_graph.vertices,
         tesselation_graph.tetrahedrons,
-        nodes_idx_in_graph_linked_to_triangle,
+        tetrahedron_on_each_label_side,
     )
 
     return (points, triangles, labels)
@@ -99,7 +110,7 @@ def labeled_mesh_from_labeled_graph(
 def _retrieve_mesh_multimaterial_multitracker_format(
     tesselation_graph: "TesselationGraph",
     map_label_to_nodes: dict[int, list[int]],
-) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint], NDArray[np.uint]]:
+) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint], NDArray[np.int64]]:
     """Extract multi-material mesh from the tesselation graph with every nodes (tetrahedrons) marked with a material.
 
     The extracted surface mesh is composed of all triangles that are faces of 2 tetrahedrons with different materials.
@@ -110,11 +121,13 @@ def _retrieve_mesh_multimaterial_multitracker_format(
         map_label_to_nodes (dict[int, list[int]]): The map that links materials to tetrahedrons id.
 
     Returns:
-        tuple[NDArray[np.float64], NDArray[np.uint], list[int], NDArray[np.uint]]:
+        tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint], NDArray[np.int64]]:
             - an array of vertices of the mesh. Note that there are some unused points, to be filtered later.
             - an array of triangles (id p1, id p2, id p3)
             - an array of labels (material 1, material 2)
-            - the list of ids of nodes (tetrahedrons) in graph.nodes that are linked to selected triangles.
+            - per triangle, the tetrahedron (node id in graph.nodes) on the side of each label:
+              column k is the tetrahedron carrying `labels[:, k]`. A border triangle has no
+              tetrahedron on its medium side, and that entry is `NO_TETRAHEDRON` (-1).
     """
     # faces = triangles ; nodes = tetras, with map linking regions to list of tetra/node ids
     map_nodes_to_labels: dict[int, int] = {}
@@ -123,7 +136,7 @@ def _retrieve_mesh_multimaterial_multitracker_format(
             map_nodes_to_labels[node_idx] = key
     triangles: list[list[int]] = []  # p1, p2, p3, selected faces
     labels: list[list[int]] = []  # l1, l2 of selected faces
-    nodes_linked_by_face: list[list[int]] = []  # list nodes ids linked to triangles from selected graph faces
+    tetrahedron_on_each_label_side: list[list[int]] = []  # (tetra of labels[0], tetra of labels[1])
 
     for idx, face in enumerate(tesselation_graph.triangle_faces):
         # faces are triangles, nodes linked are the 2 adjacent tetrahedrons (nodes).
@@ -138,11 +151,13 @@ def _retrieve_mesh_multimaterial_multitracker_format(
             # some faces belong to 2 tetras of two different regions : those are the triangles in final mesh !
             triangles.append([face[0], face[1], face[2]])  # tri p1, p2, p3, label l1, l2
             labels.append([cells[0], cells[1]])
-            nodes_linked_by_face.append(nodes_linked)  # 2 tetras
+            tetrahedron_on_each_label_side.append([nodes_linked[0], nodes_linked[1]])  # 2 tetras
 
     # Matthieu Perez:
     # Apparently, there are triangles on only one tetra in the tesselation graph,
     # and sometimes they might belong to the mesh ? If segmented cell touches the border of the image ?
+    # A lone face lies on the tesselation's hull, which is the image box. Its one tetrahedron
+    # is on the cell side; the medium side is outside the hull and has no tetrahedron.
     for idx in range(len(tesselation_graph.lone_faces)):
         face = tesselation_graph.lone_faces[idx]
         node_linked = tesselation_graph.nodes_linked_by_lone_faces[idx]
@@ -152,7 +167,7 @@ def _retrieve_mesh_multimaterial_multitracker_format(
             cells = [0, cluster_1]
             triangles.append([face[0], face[1], face[2]])
             labels.append([cells[0], cells[1]])
-            nodes_linked_by_face.append(nodes_linked)
+            tetrahedron_on_each_label_side.append([NO_TETRAHEDRON, node_linked])
 
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
     # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
@@ -161,7 +176,7 @@ def _retrieve_mesh_multimaterial_multitracker_format(
         tesselation_graph.vertices,
         np.array(triangles, dtype=np.uint),
         np.array(labels, dtype=np.uint),
-        np.array(nodes_linked_by_face, dtype=np.uint),
+        np.array(tetrahedron_on_each_label_side, dtype=np.int64),
     )
 
 
@@ -616,7 +631,11 @@ def set_points_min_max(
     global_min: float,
     global_max: float,
 ) -> NDArray[np.float64]:
-    """Return a homogeneously scaled points array such that its min & max values are global_min and global_max."""
+    """Return a homogeneously scaled points array such that its min & max values are global_min and global_max.
+
+    The minimum and maximum are taken over all coordinates together, not per axis, so one factor
+    scales every axis and the shape is kept.
+    """
     current_min = points.min()
     current_max = points.max()
     new_points = (
@@ -631,19 +650,36 @@ def set_pixel_size(
     xy_pixel_size: float,
     z_pixel_size: float,
 ) -> NDArray[np.float64]:
-    """Return a scaled points array from pixel coordinates space to real coordinates.
+    """Return a scaled points array from voxel coordinates to physical coordinates.
 
-    Given microscope's xy and z pixel size.
+    Given the microscope's xy and z pixel sizes. The points are in the mask's index order: column `i` is the voxel
+    index along the mask's axis `i`. For a stack stored as `(z, y, x)`, the usual order of a microscope stack
+    and the one dw3d assumes, column 0 is scaled by `z_pixel_size` and columns 1 and 2 by `xy_pixel_size`.
+
+    Changed in 0.7.0: before, columns 0 and 1 were scaled by `xy_pixel_size` and column 2 by `z_pixel_size`,
+    which multiplied z by the xy size and x by the z size. Results differ only when the two sizes differ.
+
+    For a mask whose voxels are longer along z, prefer
+    `MeshReconstructionAlgorithm.construct_mesh_in_physical_units`: it resamples the mask to cubic voxels
+    before meshing, which is more accurate than meshing the native grid and scaling the mesh.
+
+    Args:
+        points (NDArray[np.float64]): `(n, 3)` points in voxel units, `(z, y, x)` order.
+        xy_pixel_size (float): the pixel size in the image plane, which multiplies columns 1 and 2.
+        z_pixel_size (float): the z step, which multiplies column 0.
+
+    Returns:
+        NDArray[np.float64]: a new `(n, 3)` array; `points` is not modified.
     """
     new_points = np.copy(points)
-    new_points[:, :2] *= xy_pixel_size
-    new_points[:, 2] *= z_pixel_size
+    new_points[:, 0] *= z_pixel_size
+    new_points[:, 1:] *= xy_pixel_size
 
     return new_points
 
 
 def center_around_origin(points: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Return a centered points array around 0."""
+    """Return a copy of the points translated so that the centre of their bounding box is the origin."""
     current_min = points.min(axis=0)
     current_max = points.max(axis=0)
 
@@ -654,41 +690,152 @@ def _reorient_triangles(
     triangles: NDArray[np.uint],
     vertices: NDArray[np.float64],
     tetrahedrons: NDArray[np.intc],
-    nodes_linked: NDArray[np.uint],
+    tetrahedron_on_each_label_side: NDArray[np.int64],
 ) -> NDArray[np.uint]:
-    """Swap point order in triangles such that all normals points in the same direction.
+    """Wind every triangle so that its normal points from its first label into its second.
+
+    Two cases, and neither relies on where a reference tetrahedron happens to lie:
+
+    * **a triangle with a tetrahedron on its first label's side** (column 0 of
+      `tetrahedron_on_each_label_side`): the normal is turned **away** from that tetrahedron's
+      centroid. A tetrahedron lies on its own side of each of its faces, and this one carries
+      the first label, so away from it is into the second. This is every triangle between two
+      tetrahedra except those of the third case, and the arithmetic is exactly the one used
+      before border triangles were handled, so the winding of those triangles is unchanged bit
+      for bit;
+    * **a border triangle** (column 0 is `NO_TETRAHEDRON`): a face of the tesselation's hull,
+      with the medium outside the hull and its cell inside. The normal is turned **towards a
+      point strictly inside the hull**, the mean of the vertices the tetrahedra use. The tesselation
+      is a Delaunay or regular triangulation, so it covers the convex hull of its vertices,
+      every face with a single tetrahedron lies on that hull, and the mean of the vertices is
+      a convex combination with positive weights of points spanning it: it is strictly on the
+      inner side of every hull face, by a macroscopic distance, so the sign cannot degenerate.
+
+    Why border triangles do not use their own tetrahedron: Qhull emits flat tetrahedra lying
+    in a hull face (four coplanar vertices on the image box, measured on masks cut through
+    their cells), and for those the centroid is in the triangle's plane and gives no side. And
+    why they need a rule of their own at all: the rule used to turn every normal away from the
+    first recorded tetrahedron, and for a hull face that was a stale one left over from the
+    previous loop. Any tetrahedron's centroid lies inside the convex hull, so turning away from
+    it made every border normal point out of the hull, out of its cell, and a cell bounded by
+    the image box read a smaller or negative volume.
 
     Args:
-        triangles (NDArray[np.uint]): Triangles of a multimaterial mesh.
+        triangles (NDArray[np.uint]): Triangles of a multimaterial mesh, `(n, 3)`.
         vertices (NDArray[np.float64]): Vertices of a 3D tesselation (geometry).
         tetrahedrons (NDArray[np.intc]): Tetrahedrons of the same 3D tesselation (topology).
-        nodes_linked (NDArray[np.uint]): Tetrahedrons id on the tesselation linked to each triangles of the mesh.
+        tetrahedron_on_each_label_side (NDArray[np.int64]): `(n, 2)`: for each triangle, the
+            tetrahedron carrying its first label and the one carrying its second, in the
+            same column order as the (already sorted) labels; `NO_TETRAHEDRON` where that side
+            has none. At least one of the two must be a tetrahedron.
 
     Returns:
-        NDArray[np.uint]: reoriented triangles.
+        NDArray[np.uint]: the triangles, with the last two vertices of some exchanged.
+
+    Raises:
+        ValueError: if a triangle has no tetrahedron on either side.
+
+    * **a triangle whose first-label tetrahedron is flat**: Qhull also emits flat tetrahedra inside
+      the hull (four coplanar lattice points), and a flat tetrahedron's centroid lies in the plane
+      of each of its faces, so the dot product the first case reads is a rounding residue of either
+      sign (measured -2.8e-14 on a benchmark mask), and about half of these triangles used to come
+      out wound the wrong way: 39 of 73 on three populations of masks, in 37 cells, each of which
+      then read a volume different from its tetrahedra's. The normal is turned **towards** the
+      centroid of the tetrahedron on the second label's side instead, which lies on that label's
+      side of the face. Flatness is decided by `_tetrahedra_are_flat`, on the tetrahedron's own
+      orientation determinant, never on the dot product. When the second-label tetrahedron is flat
+      too, the first case's rule is kept.
+
+    Failure modes: a zero-area triangle (normal `nan`) keeps the vertex order it was extracted
+    with. So does a triangle between two flat tetrahedra, whose winding is still decided by the
+    rounding residue of the first case's rule.
     """
     # Thumb rule for all the faces
 
     normals = _compute_normal_faces(vertices, triangles)
 
+    has_first_side = tetrahedron_on_each_label_side[:, 0] != NO_TETRAHEDRON
+    if not bool((has_first_side | (tetrahedron_on_each_label_side[:, 1] != NO_TETRAHEDRON)).all()):
+        message = "every triangle needs a tetrahedron on at least one of its two label sides"
+        raise ValueError(message)
+    # A flat first-label tetrahedron gives no side; read the second-label one when it is not flat.
+    tetrahedrons = np.asarray(tetrahedrons)
+    first, second = tetrahedron_on_each_label_side[:, 0], tetrahedron_on_each_label_side[:, 1]
+    use_second = np.zeros(len(triangles), dtype=bool)
+    candidates = np.flatnonzero(has_first_side & (second != NO_TETRAHEDRON))
+    if len(candidates):
+        flat_first = _tetrahedra_are_flat(vertices, tetrahedrons[first[candidates]])
+        candidates = candidates[flat_first]
+        use_second[candidates] = ~_tetrahedra_are_flat(vertices, tetrahedrons[second[candidates]])
+    away = has_first_side & ~use_second
+    reference = np.where(away, first, second)
+
     points = vertices[triangles]
     centroids_faces = np.mean(points, axis=1)  # center of tirangles
     centroids_nodes = np.mean(
-        vertices[tetrahedrons[nodes_linked[:, 0]]],
+        vertices[tetrahedrons[reference]],
         axis=1,
-    )  # center of "first" adjacent tetrahedron in Tesselation Graph
+    )  # center of the reference tetrahedron
+    if not has_first_side.all():
+        # border triangles: a point strictly inside the hull instead
+        used = np.zeros(len(vertices), dtype=bool)
+        used[np.asarray(tetrahedrons).ravel()] = True
+        centroids_nodes[~has_first_side] = vertices[used].mean(axis=0)
 
     vectors = centroids_nodes - centroids_faces
 
     dot_product = np.sum(np.multiply(vectors, normals), axis=1)
     normals_sign = np.sign(dot_product)
 
+    # Away from the first-label tetrahedron; towards the inside of the hull for a border triangle,
+    # and towards the second-label tetrahedron when the first-label one is flat.
+    flip = np.where(away, normals_sign > 0, normals_sign < 0)
+
     # Reorientation according to the normal sign
     reoriented_triangles = triangles.copy()
 
     # Matthieu Perez: one liner is quicker when there's more than 100 faces (ie. always)
-    reoriented_triangles[normals_sign > 0] = reoriented_triangles[normals_sign > 0][:, [0, 2, 1]]
+    reoriented_triangles[flip] = reoriented_triangles[flip][:, [0, 2, 1]]
     return reoriented_triangles
+
+
+#: Shewchuk's static error bound for the orientation determinant, `o3derrboundA = (7 + 56 eps) eps`
+#: with `eps = 2**-53`
+#: (J. R. Shewchuk, "Adaptive Precision Floating-Point Arithmetic and Fast Robust Geometric
+#: Predicates", Discrete Comput. Geom. 18, 1997). A determinant whose magnitude exceeds this times
+#: its permanent has the sign it was computed with.
+_ORIENTATION_ERROR_BOUND = (7.0 + 56.0 * 2.0**-53) * 2.0**-53
+
+
+def _tetrahedra_are_flat(vertices: NDArray[np.float64], tetrahedrons: NDArray[np.intc]) -> NDArray[np.bool_]:
+    """Whether each tetrahedron is flat: its orientation determinant has no certain sign.
+
+    The determinant is `det(a - d, b - d, c - d)`, six times the signed volume, evaluated as in
+    Shewchuk's `orient3d`; a tetrahedron is flat when its magnitude does not exceed
+    `_ORIENTATION_ERROR_BOUND` times the determinant's permanent. On integer (voxel lattice)
+    coordinates of the size of an image every product and sum here is exact, so the determinant is
+    the exact one and flat means exactly zero volume; the bound only matters off the lattice, where
+    it calls flat every tetrahedron whose computed orientation it cannot certify.
+
+    Args:
+        vertices (NDArray[np.float64]): `(n, 3)` coordinates.
+        tetrahedrons (NDArray[np.intc]): `(k, 4)` vertex indices.
+
+    Returns:
+        NDArray[np.bool_]: `(k,)`, True where the tetrahedron is flat.
+    """
+    corners = np.asarray(vertices, dtype=np.float64)[np.asarray(tetrahedrons, dtype=np.int64)]
+    ad, bd, cd = (corners[:, i] - corners[:, 3] for i in range(3))
+    bdxcdy, cdxbdy = bd[:, 0] * cd[:, 1], cd[:, 0] * bd[:, 1]
+    cdxady, adxcdy = cd[:, 0] * ad[:, 1], ad[:, 0] * cd[:, 1]
+    adxbdy, bdxady = ad[:, 0] * bd[:, 1], bd[:, 0] * ad[:, 1]
+    determinant = ad[:, 2] * (bdxcdy - cdxbdy) + bd[:, 2] * (cdxady - adxcdy) + cd[:, 2] * (adxbdy - bdxady)
+    permanent = (
+        (np.abs(bdxcdy) + np.abs(cdxbdy)) * np.abs(ad[:, 2])
+        + (np.abs(cdxady) + np.abs(adxcdy)) * np.abs(bd[:, 2])
+        + (np.abs(adxbdy) + np.abs(bdxady)) * np.abs(cd[:, 2])
+    )
+    return np.abs(determinant) <= _ORIENTATION_ERROR_BOUND * permanent
 
 
 def _compute_normal_faces(

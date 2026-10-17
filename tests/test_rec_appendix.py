@@ -46,6 +46,26 @@ def test_appendix_round_trip(tmp_path, binary_mode, suffix):
 
 
 @pytest.mark.parametrize("binary_mode", [False, True])
+def test_physical_frame_fields_come_back_typed(tmp_path, binary_mode):
+    """`resampled_spacing` comes back as a float (it came back as text before 0.7.0); `resampling` stays text."""
+    path = tmp_path / "mesh.rec"
+    metadata = {
+        "coordinate_frame": "physical",
+        "spacing": (0.9, 0.3, 0.3),
+        "resampling": "shape",
+        "resampled_spacing": 0.3,
+    }
+    save_rec(path, POINTS, TRIANGLES, LABELS, binary_mode=binary_mode, metadata=metadata)
+
+    appendix = load_rec_appendix(path)
+
+    assert appendix is not None
+    assert appendix["resampled_spacing"] == 0.3
+    assert isinstance(appendix["resampled_spacing"], float)
+    assert appendix["resampling"] == "shape"
+
+
+@pytest.mark.parametrize("binary_mode", [False, True])
 def test_legacy_file_has_no_appendix_and_reads_as_unknown(tmp_path, binary_mode):
     """A file written without metadata has no appendix, which must read as `unknown`.
 

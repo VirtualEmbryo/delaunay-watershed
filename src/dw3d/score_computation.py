@@ -30,7 +30,7 @@ review of `dw3d` asked for and the early defect-cleanup work deferred. See
 `_shrink_towards_origin` for why the clip could not be applied to the trilinear path without
 changing results.
 
-Sacha Ichibiah 2021
+Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
 

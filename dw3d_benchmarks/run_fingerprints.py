@@ -3,13 +3,13 @@
 
 This is the harness determinism is judged with. `tests/golden/` only asserts `rtol=1e-10`
 on summary statistics and would not see a pure labelling change; see
-`benchmarks/fingerprint.py` for why that matters here.
+`dw3d_benchmarks/fingerprint.py` for why that matters here.
 
 Usage::
 
-    python -m benchmarks.run_fingerprints --out /tmp/fp_after.json
-    python -m benchmarks.run_fingerprints --variant dithered --out /tmp/fp_dithered.json
-    python -m benchmarks.run_fingerprints --compare /tmp/fp_before.json /tmp/fp_after.json
+    python -m dw3d_benchmarks.run_fingerprints --out /tmp/fp_after.json
+    python -m dw3d_benchmarks.run_fingerprints --variant dithered --out /tmp/fp_dithered.json
+    python -m dw3d_benchmarks.run_fingerprints --compare /tmp/fp_before.json /tmp/fp_after.json
 
 `--variant dithered` selects the historical dithered point placement
 (`MeshReconstructionAlgorithmFactory.get_dithered_algorithm`); `--variant deterministic`
@@ -17,7 +17,7 @@ selects an earlier default, no dither and no boundary layer (`get_deterministic_
 `--variant boundary_layer` selects the boundary-layer scheme
 (`get_boundary_layer_algorithm`); `--variant offset_included` / `--variant
 junction_protected` select the boundary-layer + junction-protection scheme that was a
-former default (`get_offset_included_algorithm`); `--variant offset_excluded_linkcheck`
+former default (`get_junction_protected_algorithm`); `--variant offset_excluded_linkcheck`
 selects the link-checked collapse, which **is** the default, so `fingerprints.json` and
 `fingerprints_offset_excluded_linkcheck.json` must carry the same digests. On a tree
 that predates the requested variant that factory method does not exist, and the script

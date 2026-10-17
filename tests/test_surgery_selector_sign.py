@@ -3,8 +3,8 @@
 Every test here is **dataset-independent** -- it runs from plain integer label cycles,
 never from a reconstruction -- so it always runs rather than skipping when
 `benchmarking-dataset` is not beside the repository. That is deliberate:
-`test_aabb_surgery_rule.py` skips in a home-directory worktree, which is exactly where this
-work was done, and a regression test that skips where the work happens pins nothing.
+`test_aabb_surgery_rule.py` skips in a checkout without the dataset beside it, and a regression
+test that skips where the code is changed pins nothing.
 
 Carried across from an earlier lookahead-based fixture that measured this same reproducer
 but pinned it against a one-step lookahead later measurement showed to be unnecessary (arm

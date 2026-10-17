@@ -1,4 +1,8 @@
-"""Segmented image creation from generic surface mesh.
+"""Rebuild an approximate segmentation mask from a compressed segmentation (mesh, seeds and image shape).
+
+The mesh's surfaces are rasterised on the image grid and the regions between them are refilled by a
+seeded watershed from the stored seeds, so the result approximates the original mask; it is not a
+lossless copy.
 
 Sacha Ichbiah, 2021.
 Matthieu Perez, 2024.
@@ -79,7 +83,7 @@ def _create_mesh_instance_masks(
     triangles: NDArray[np.ulonglong],
     image_shape: NDArray[np.uint],
     seeds: NDArray[np.float64],
-) -> NDArray[np.uint8]:
+) -> NDArray[np.int64]:
     """Reconstruct a segmentation image from vertices, faces, seeds coords and desired image shape."""
     semantic_mask = _create_mesh_semantic_masks(points, triangles, image_shape).transpose(2, 1, 0)
     distance = ndi.distance_transform_edt(1 - semantic_mask)
@@ -91,18 +95,41 @@ def _create_mesh_instance_masks(
     return labels
 
 
-def reconstruct_mask_from_dict(dict_mask: dict[str]) -> NDArray[np.uint8]:
-    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape."""
+def reconstruct_mask_from_dict(dict_mask: dict[str]) -> NDArray[np.int64]:
+    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape.
+
+    Args:
+        dict_mask (dict[str]): the dictionary `MeshReconstructionAlgorithm.last_compressed_segmentation`
+            returns, with keys `points`, `triangles`, `seeds` and `image_shape`. The points must be in
+            voxel units of the mask, as the reconstruction returns them (not scaled by `set_pixel_size`
+            or built by `construct_mesh_in_physical_units`). After `construct_mesh_in_physical_units`, divide
+            the points by the resampled spacing (the shortest spacing) first: the seeds and `image_shape` are
+            those of the resampled cubic grid, and that is the mask this rebuilds.
+
+    Returns:
+        NDArray[np.int64]: the approximate mask, of shape `image_shape`, in the watershed's 64-bit integer labels
+            (not the original mask's dtype). Seed `k` (in the ascending label order of the
+            original mask, label 0 included when present) fills its region with label `k`, so the
+            labels are those of the original mask only when these were `0, 1, ..., n - 1`.
+    """
     points = dict_mask["points"]
     triangles = dict_mask["triangles"]
     seeds = dict_mask["seeds"]
     image_shape = dict_mask["image_shape"]
 
-    labels: NDArray[np.uint8] = _create_mesh_instance_masks(points, triangles, image_shape, seeds) - 1
+    labels: NDArray[np.int64] = _create_mesh_instance_masks(points, triangles, image_shape, seeds) - 1
     return labels
 
 
-def reconstruct_mask_from_saved_file_dict(filename_dict: str) -> NDArray[np.uint8]:
-    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape."""
+def reconstruct_mask_from_saved_file_dict(filename_dict: str) -> NDArray[np.int64]:
+    """Reconstruct a segmentation image from a saved dict of points, triangles, seeds coords and desired image shape.
+
+    Args:
+        filename_dict (str): a `.npy` file written by `dw3d.save_compressed_segmentation`. It is
+            unpickled (`allow_pickle=True`), so read only files you trust.
+
+    Returns:
+        NDArray[np.int64]: the approximate mask, as `reconstruct_mask_from_dict` returns it.
+    """
     dict_mask: dict[str, NDArray] = np.load(filename_dict, allow_pickle=True).item()
     return reconstruct_mask_from_dict(dict_mask)

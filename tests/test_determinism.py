@@ -3,7 +3,7 @@
 Golden masters cannot carry this. They assert `rtol=1e-10` on sorted interface areas,
 cell volumes and junction lengths, which says nothing at all about the watershed's
 tetrahedron labelling, the raw face scores or the tesselation-boundary bookkeeping. These
-tests work on the bit-exactness fingerprint instead (`benchmarks/fingerprint.py`), which
+tests work on the bit-exactness fingerprint instead (`dw3d_benchmarks/fingerprint.py`), which
 hashes all seven arrays.
 
 The properties pinned here, in order:
@@ -347,12 +347,20 @@ def _historical_aggregation(nx_graph, map_node_id_to_label: np.ndarray) -> np.nd
 def test_committed_fingerprints_reproduce():
     """The strongest regression net in the repo: bit-level, on all 8 configurations.
 
-    `benchmarks/baseline/fingerprints.json` is a committed artefact of the determinism
-    fix, taken on numpy 2.5.1 / scipy 1.18.0 / scikit-image 0.26.0 and verified identical
-    on numpy 1.26.1 / scipy 1.16.1 / scikit-image 0.22.0. Golden masters allow
-    `rtol=1e-10`; this allows nothing. Any future change that moves a number will fail
-    here first and must re-baseline deliberately, with
-    `python -m benchmarks.run_fingerprints --out ...`.
+    `dw3d_benchmarks/baseline/fingerprints.json` is a committed artefact of the determinism
+    fix. Golden masters allow `rtol=1e-10`; this allows nothing. Any future change that
+    moves a number will fail here first and must re-baseline deliberately, with
+    `python -m dw3d_benchmarks.run_fingerprints --repeats 2 --out dw3d_benchmarks/baseline/fingerprints.json`,
+    after finding the commit that moved each digest.
+
+    This test read a path that no longer existed from the rename of `benchmarks/` to
+    `dw3d_benchmarks/` on, and skipped. In that time three deliberate changes moved the
+    default reconstruction's output, and nothing else did: the label-switch surgery's wider
+    candidate search and its selector fix (labels and triangles at `min_distance=3`), and
+    junction relocation becoming the default (vertex positions everywhere). The face scores
+    and the border bookkeeping never moved. The file was regenerated after that tracing, on
+    numpy 2.5.2 / scipy 1.18.1 / scikit-image 0.26.0, and is identical on numpy 2.5.1 and on
+    numpy 2.4.6 under Python 3.11.
 
     Wall times are stored alongside the digests and are deliberately not compared.
     """
@@ -360,7 +368,7 @@ def test_committed_fingerprints_reproduce():
 
     from tests.conftest import REPO_ROOT
 
-    committed_path = REPO_ROOT / "benchmarks" / "baseline" / "fingerprints.json"
+    committed_path = REPO_ROOT / "dw3d_benchmarks" / "baseline" / "fingerprints.json"
     if not committed_path.exists():
         pytest.skip(f"{committed_path} not present")
     committed = json.loads(committed_path.read_text())

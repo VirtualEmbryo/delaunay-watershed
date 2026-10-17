@@ -1,16 +1,21 @@
 """Cross-repository provenance checks for `dw3d_benchmarks.mesh_quality_comparison`.
 
-This package restates (rather than imports) two things from a sibling `foambryo` checkout,
-specifically so it never needs a path outside its own repository at runtime: the figure
-palette, and the dataset cohort/equilibrium-split constants. These tests check the restated
-copies still agree with their source of truth -- but only when a sibling `foambryo` checkout
-happens to be present at the conventional workspace location, so a clean, standalone
-`delaunay-watershed-3d` checkout is never required to have one.
+This package restates (rather than imports) two things from `foambryo`, specifically so it
+never needs a path outside its own repository at runtime: the figure palette, and the dataset
+cohort/equilibrium-split constants. These tests check the restated copies still agree with their
+source of truth, in the foambryo checkout named by the environment variable
+`FOAMBRYO_REPOSITORY`. They skip when it is not set, and fail when it is set but does not hold
+the expected files.
+
+The checkout is never guessed from a sibling path: a guess once found an older foambryo checkout
+(a `v0.4.2` one, through a symlink) at the sibling location and compared against it without saying
+so.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
@@ -19,10 +24,23 @@ import pytest
 from dw3d_benchmarks.mesh_quality_comparison import bootstrap, case_metadata
 from dw3d_benchmarks.mesh_quality_comparison.figures import _style
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-WORKSPACE_ROOT = REPO_ROOT.parent
-SIBLING_FOAMBRYO_STYLE = WORKSPACE_ROOT / "foambryo" / "foambryo_benchmarks" / "figures" / "_style.py"
-SIBLING_CASE_GROUPS = WORKSPACE_ROOT / "foambryo" / "foambryo_benchmarks" / "case_groups.py"
+FOAMBRYO_REPOSITORY_VARIABLE = "FOAMBRYO_REPOSITORY"
+FOAMBRYO_STYLE = Path("foambryo_benchmarks") / "figures" / "_style.py"
+FOAMBRYO_CASE_GROUPS = Path("foambryo_benchmarks") / "case_groups.py"
+
+
+def _foambryo_file(relative: Path) -> Path:
+    """`relative` inside the foambryo checkout named by `FOAMBRYO_REPOSITORY`, or skip if it is unset."""
+    value = os.environ.get(FOAMBRYO_REPOSITORY_VARIABLE)
+    if not value:
+        pytest.skip(
+            f"{FOAMBRYO_REPOSITORY_VARIABLE} is not set: set it to the foambryo checkout to compare against "
+            "(it is never guessed from a sibling path)",
+        )
+    path = Path(value) / relative
+    if not path.is_file():
+        pytest.fail(f"{FOAMBRYO_REPOSITORY_VARIABLE}={value} has no {relative}")
+    return path
 
 
 def _load_module(path: Path, name: str):
@@ -33,9 +51,8 @@ def _load_module(path: Path, name: str):
     return module
 
 
-@pytest.mark.skipif(not SIBLING_FOAMBRYO_STYLE.exists(), reason="no sibling foambryo checkout in this workspace")
 def test_palette_matches_foambryo() -> None:
-    foambryo_style = _load_module(SIBLING_FOAMBRYO_STYLE, "_sibling_foambryo_figures_style")
+    foambryo_style = _load_module(_foambryo_file(FOAMBRYO_STYLE), "_foambryo_figures_style")
     assert _style.CATEGORICAL == foambryo_style.CATEGORICAL
     assert _style.SEQUENTIAL_BLUE == foambryo_style.SEQUENTIAL_BLUE
     assert _style.DIVERGING == foambryo_style.DIVERGING
@@ -45,11 +62,10 @@ def test_palette_matches_foambryo() -> None:
     assert _style.SURFACE == foambryo_style.SURFACE
 
 
-@pytest.mark.skipif(not SIBLING_CASE_GROUPS.exists(), reason="no sibling foambryo checkout in this workspace")
 def test_case_metadata_matches_foambryo() -> None:
-    sibling = _load_module(SIBLING_CASE_GROUPS, "_sibling_foambryo_case_groups")
-    assert case_metadata.NON_EQUILIBRIUM_CASE_IDS == sibling.NON_EQUILIBRIUM_CASE_IDS
-    assert case_metadata.INTEGRITY_FLAGGED_CASE_IDS == sibling.INTEGRITY_FLAGGED_CASE_IDS
+    foambryo_case_groups = _load_module(_foambryo_file(FOAMBRYO_CASE_GROUPS), "_foambryo_case_groups")
+    assert case_metadata.NON_EQUILIBRIUM_CASE_IDS == foambryo_case_groups.NON_EQUILIBRIUM_CASE_IDS
+    assert case_metadata.INTEGRITY_FLAGGED_CASE_IDS == foambryo_case_groups.INTEGRITY_FLAGGED_CASE_IDS
 
 
 def test_median_of_determined_refuses_partial_by_default() -> None:

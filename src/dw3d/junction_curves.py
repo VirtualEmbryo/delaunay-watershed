@@ -36,33 +36,33 @@ from a curve's vertices to the reference polyline; lower is better.
 | 4 | 0.6173 | 0.9277 | 1.50x |
 | 7 | 0.6817 | 1.2942 | 1.90x |
 
-All 30 head-to-head comparisons on the 42-case equilibrium population -- 5 rungs x 6 metrics --
-favour the extraction, on 1.000 of 10,000 case-level bootstrap draws. At `min_distance = 3` the
-curves read tortuosity at 1.001 of the matched-spacing floor (the mesh: 1.034), curvature at
-1.013 (1.172) and tangent error at 1.957x (4.529x).
+On the 42 equilibrium cases, all 30 paired comparisons -- five values of `min_distance` times six
+geometric metrics -- favour the extraction, in a fraction 1.000 of 10,000 case-level bootstrap
+draws. At `min_distance = 3`, relative to the value the reference line itself scores when
+subsampled at the same spacing, the curves read tortuosity at 1.001 (the mesh: 1.034), curvature
+at 1.013 (1.172) and tangent error at 1.957x (4.529x).
 
-**They are better geometry, not correct geometry.** The identifiability-floor work measured the mask's own
-identifiability
-floor -- the best any mask-based method can do -- at 0.107 voxels. These curves sit at 0.5855,
+**They are better geometry, not correct geometry.** The mask's own identifiability floor -- the best any
+mask-based method can do -- is 0.107 voxels (`BENCHMARKS.md`, "Junction curves"). These curves sit at 0.5855,
 a factor of **4.8** above it, and that gap is open.
 
 Coordinates
 -----------
 Everything is in mask voxel units. A dual-lattice point `(i, j, k)` is emitted at
-`(i + 0.5, j + 0.5, k + 0.5)`, which is the frame a reconstructed `dw3d` mesh's `points` live
-in; `extract_junction_curves` checks that the mesh it is given lies inside the mask's extent and
-refuses otherwise, because a permuted axis order would put every curve tens of voxels away and
-the result would silently measure the permutation.
+`(i + 0.5, j + 0.5, k + 0.5)`, in the frame a reconstructed `dw3d` mesh's `points` live in
+(`construct_mesh_from_segmentation_mask`; not a mesh scaled by `set_pixel_size` or built by
+`construct_mesh_in_physical_units`). `extract_junction_curves` checks that the mesh it is given
+lies inside the mask's extent (no coordinate below -1 or above the mask's size along its axis)
+and refuses otherwise, because a permuted axis order would put every curve tens of voxels away
+and the result would silently measure the permutation. The check sees only the extent: a mesh
+scaled down into it, or permuted on a mask whose sides are nearly equal, passes it.
 
 Provenance
 ----------
-The detection, the MST-diameter spine and the endpoint-preserving three-point filter are from
-the operating-point work (see the project's research history); the per-case reading spacing,
-the identity rule against the mesh's own trijunctions and the consistency test are from the
-junction-curve-extraction work (see the project's research history). The sub-voxel estimator
-lives in `junction_curve_estimator`. The project's research history records the port's
-reproduction of the junction-curve-extraction work's numbers and this module's own
-measurement.
+The detection, the MST-diameter spine and the endpoint-preserving three-point filter, the per-case
+reading spacing, the identity rule against the mesh's own trijunctions and the consistency test
+were developed and validated on the benchmark (`BENCHMARKS.md`, "Junction curves"). The sub-voxel
+estimator lives in `junction_curve_estimator`.
 """
 
 from __future__ import annotations
@@ -79,14 +79,14 @@ from scipy.sparse.csgraph import breadth_first_order, connected_components, mini
 
 from dw3d import junction_curve_estimator as estimator_module
 
-#: The operating-point work's filter: passes of an endpoint-preserving three-point moving
+#: The spine filter: passes of an endpoint-preserving three-point moving
 #: average over the lattice spine. Fixed at the value every published measurement used; not
 #: a tuning knob.
 SMOOTH_PASSES = 2
-#: The operating-point work's own drop rule: a component of fewer than this many dual points is not a curve.
+#: The drop rule: a component of fewer than this many dual points is not a curve.
 MIN_POINTS = 3
 #: Half-length, in voxels of arclength, of the chord the estimator's line direction is read
-#: from. The identifiability-floor work's window radius, so the tangent is read over the same scale the window spans.
+#: from. The estimator's window radius, so the tangent is read over the same scale the window spans.
 TANGENT_HALF_LENGTH_VOXELS = float(estimator_module.DEFAULT_RADIUS_VOXELS)
 
 #: The 13 forward 26-neighbour offsets; the backward 13 come free from the edge list's symmetry.
@@ -100,6 +100,10 @@ _FORWARD_OFFSETS: tuple[tuple[int, int, int], ...] = tuple(
 
 #: Plateau's rule for a dry foam: three films, three materials, three incident triangles.
 _THREE = 3
+#: Dual-lattice points handled per slab by `_dual_junction_points`. A slab's working arrays take
+#: about 80 bytes per dual point for an `int32` mask (the eight corner labels, their sorted copy, the
+#: distinct-label count), so about 0.7 GB. Fixed; the result does not depend on it.
+_DUAL_SLAB_POINTS = 2**23
 _MIN_POLYLINE_VERTICES = 2
 
 Estimator = Literal["plain", "anchor", "centroid"]
@@ -138,8 +142,7 @@ class JunctionCurve:
 class JunctionCurves:
     """Every trijunction curve of one case, split by whether the mesh agrees it exists.
 
-    `matched` is the set a caller wanting usable geometry wants: the junction-curve-extraction
-    work measured its curves a
+    `matched` is the set a caller wanting usable geometry wants: its curves were measured a
     median 0.68 voxels from all three of their own interfaces at once, with a p99 of 4.50. The
     `invented` curves are structurally different -- median 4.32 voxels and **0 of 16 within one
     voxel** -- so they are never merged into the same list. `fragmented` holds the rest: real
@@ -149,8 +152,7 @@ class JunctionCurves:
         matched: curves one-to-one with a mesh trijunction.
         invented: curves whose material triple is not a trijunction of the mesh at all.
         fragmented: curves that are `split`, `merged` or `ambiguous` against the mesh.
-        match_rate: matched mesh trijunctions over all mesh trijunctions. The
-            junction-curve-extraction work measured 0.900 at
+        match_rate: matched mesh trijunctions over all mesh trijunctions. Measured 0.900 at
             `min_distance = 3` and 0.908 at `4`, with zero missed.
         counts: `matched`, `missed`, `invented`, `split`, `merged`, `ambiguous`, plus
             `mesh_triples` and `extracted_triples`.
@@ -323,6 +325,10 @@ def dual_label_sets(segmented_mask: NDArray[np.uint]) -> tuple[NDArray[np.int64]
     `segmented_mask[i:i+2, j:j+2, k:k+2]`. Points with fewer than three distinct labels are not
     junctions and carry `-1`.
 
+    The detection itself runs slab by slab (`_dual_junction_points`); only the returned `codes`
+    array spans the whole volume, at 8 bytes per dual point. Code `c` is assigned in the order in
+    which its label set is first met in C order of the dual lattice.
+
     Args:
         segmented_mask (NDArray[np.uint]): the label image.
 
@@ -331,27 +337,83 @@ def dual_label_sets(segmented_mask: NDArray[np.uint]) -> tuple[NDArray[np.int64]
         table where `table[c]` is the frozenset of labels around a point carrying code `c`.
     """
     shape = segmented_mask.shape
-    corners = [
-        segmented_mask[a:, b:, c:][: shape[0] - 1, : shape[1] - 1, : shape[2] - 1]
-        for a in (0, 1)
-        for b in (0, 1)
-        for c in (0, 1)
-    ]
-    stacked = np.stack(corners, axis=-1)
-    stacked_sorted = np.sort(stacked, axis=-1)
-    n_distinct = 1 + (np.diff(stacked_sorted, axis=-1) != 0).sum(axis=-1)
-    codes = np.full(n_distinct.shape, -1, dtype=np.int64)
+    occupied, code_values, table = _dual_junction_points(segmented_mask)
+    codes = np.full((shape[0] - 1, shape[1] - 1, shape[2] - 1), -1, dtype=np.int64)
+    codes[occupied[:, 0], occupied[:, 1], occupied[:, 2]] = code_values
+    return codes, table
+
+
+def _dual_junction_points(
+    segmented_mask: NDArray[np.uint],
+) -> tuple[NDArray[np.int64], NDArray[np.int64], list[frozenset[int]]]:
+    """The junction points of the dual lattice, their codes and the code table, without the full grid.
+
+    The same detection as `dual_label_sets`, read slab by slab along axis 0: a slab of dual planes
+    `i0 <= i < i1` reads mask planes `i0 .. i1` (one plane of overlap with the next slab), so the
+    per-point working arrays never exist for more than `_DUAL_SLAB_POINTS` dual points at once.
+    Label sets are coded in the order they are first met in C order, exactly as in
+    `dual_label_sets`.
+
+    Args:
+        segmented_mask (NDArray[np.uint]): the label image, 3-D, integer labels.
+
+    Returns:
+        tuple: `(occupied, code_values, table)`. `occupied` is `(n, 3)` `int64`, the dual-lattice
+        indices of every point with three or more distinct labels, in C order (the order of
+        `np.argwhere`); `code_values` is `(n,)` `int64`, each point's code; `table[c]` is the
+        frozenset of labels of code `c`. A mask with a side shorter than 2 has no dual point and
+        returns empty arrays.
+    """
+    shape = segmented_mask.shape
+    dual_shape = (shape[0] - 1, shape[1] - 1, shape[2] - 1)
     table: list[frozenset[int]] = []
     index_of: dict[frozenset[int], int] = {}
-    for i, j, k in np.argwhere(n_distinct >= _THREE):
-        materials = frozenset(int(v) for v in stacked[i, j, k])
-        code = index_of.get(materials)
-        if code is None:
-            code = len(table)
-            index_of[materials] = code
-            table.append(materials)
-        codes[i, j, k] = code
-    return codes, table
+    occupied_blocks: list[NDArray[np.int64]] = []
+    code_blocks: list[NDArray[np.int64]] = []
+    if min(dual_shape) <= 0:
+        return np.zeros((0, 3), dtype=np.int64), np.zeros(0, dtype=np.int64), table
+    plane = dual_shape[1] * dual_shape[2]
+    planes_per_slab = max(1, _DUAL_SLAB_POINTS // plane)
+    for start in range(0, dual_shape[0], planes_per_slab):
+        stop = min(start + planes_per_slab, dual_shape[0])
+        window = segmented_mask[start : stop + 1]
+        corners = [
+            window[a:, b:, c:][: stop - start, : dual_shape[1], : dual_shape[2]]
+            for a in (0, 1)
+            for b in (0, 1)
+            for c in (0, 1)
+        ]
+        stacked = np.stack(corners, axis=-1)
+        del corners
+        stacked_sorted = np.sort(stacked, axis=-1)
+        n_distinct = 1 + (np.diff(stacked_sorted, axis=-1) != 0).sum(axis=-1)
+        local = np.argwhere(n_distinct >= _THREE)
+        del n_distinct
+        if not len(local):
+            continue
+        # One row per junction point: its sorted distinct labels, the repeats masked, so that equal
+        # label sets give equal rows. Codes are then handed out in order of first appearance.
+        rows = stacked_sorted[local[:, 0], local[:, 1], local[:, 2]].astype(np.int64)
+        repeated = np.zeros(rows.shape, dtype=bool)
+        repeated[:, 1:] = rows[:, 1:] == rows[:, :-1]
+        rows[repeated] = np.iinfo(np.int64).min
+        distinct_rows, first, inverse = np.unique(rows, axis=0, return_index=True, return_inverse=True)
+        code_of_row = np.empty(len(distinct_rows), dtype=np.int64)
+        for row in np.argsort(first, kind="stable"):
+            members = stacked[tuple(local[first[row]])]
+            materials = frozenset(int(v) for v in members)
+            code = index_of.get(materials)
+            if code is None:
+                code = len(table)
+                index_of[materials] = code
+                table.append(materials)
+            code_of_row[row] = code
+        local[:, 0] += start
+        occupied_blocks.append(local.astype(np.int64, copy=False))
+        code_blocks.append(code_of_row[inverse.reshape(-1)])
+    if not occupied_blocks:
+        return np.zeros((0, 3), dtype=np.int64), np.zeros(0, dtype=np.int64), table
+    return np.concatenate(occupied_blocks), np.concatenate(code_blocks), table
 
 
 def _points_by_triple(
@@ -362,10 +424,38 @@ def _points_by_triple(
     occupied = np.argwhere(codes >= 0)
     if occupied.size == 0:
         return {}
-    per_triple: dict[tuple[int, ...], list[NDArray[np.int64]]] = defaultdict(list)
     code_values = codes[occupied[:, 0], occupied[:, 1], occupied[:, 2]]
-    for code in np.unique(code_values):
-        members = occupied[code_values == code]
+    return _points_by_triple_from_points(occupied, code_values, table)
+
+
+def _points_by_triple_from_points(
+    occupied: NDArray[np.int64],
+    code_values: NDArray[np.int64],
+    table: list[frozenset[int]],
+) -> dict[tuple[int, ...], NDArray[np.int64]]:
+    """`_points_by_triple` on the junction points themselves (`_dual_junction_points`' output).
+
+    A point carrying four or more labels belongs to every triple it contains. Each triple's points
+    are the blocks of its codes in ascending code order, each block in C order, exactly as the
+    per-code selection `occupied[code_values == code]` gives them.
+
+    Args:
+        occupied (NDArray[np.int64]): `(n, 3)` junction points, in C order.
+        code_values (NDArray[np.int64]): `(n,)` their codes.
+        table (list[frozenset[int]]): code -> label set.
+
+    Returns:
+        dict: triple -> `(k, 3)` `int64` points.
+    """
+    if occupied.size == 0:
+        return {}
+    order = np.argsort(code_values, kind="stable")
+    sorted_codes = code_values[order]
+    distinct, starts = np.unique(sorted_codes, return_index=True)
+    ends = np.append(starts[1:], len(sorted_codes))
+    per_triple: dict[tuple[int, ...], list[NDArray[np.int64]]] = defaultdict(list)
+    for code, start, end in zip(distinct, starts, ends, strict=True):
+        members = occupied[order[start:end]]
         for triple in combinations(sorted(table[code]), 3):
             per_triple[triple].append(members)
     return {triple: np.concatenate(blocks, axis=0) for triple, blocks in per_triple.items()}
@@ -513,8 +603,8 @@ def detect_junction_spines(
         dict: `by_triple` (triple -> list of polylines, longest first), `diagnostics` (one record
         per component) and `n_dual_junction_points`.
     """
-    codes, table = dual_label_sets(segmented_mask)
-    per_triple = _points_by_triple(codes, table)
+    occupied, code_values, table = _dual_junction_points(segmented_mask)
+    per_triple = _points_by_triple_from_points(occupied, code_values, table)
     by_triple: dict[tuple[int, int, int], list[NDArray[np.float64]]] = {}
     diagnostics: list[dict] = []
     for triple, coordinates in sorted(per_triple.items()):
@@ -552,7 +642,7 @@ def detect_junction_spines(
     return {
         "by_triple": by_triple,
         "diagnostics": diagnostics,
-        "n_dual_junction_points": int((codes >= 0).sum()),
+        "n_dual_junction_points": len(occupied),
     }
 
 
@@ -608,9 +698,8 @@ def extract_junction_curves(
     among the mesh's own trijunctions of the same material triple, so it can be joined to the
     interfaces and the dihedral angles the reconstruction already reports.
     `curves.invented` is everything the mask says is a junction and the mesh does not have;
-    the junction-curve-extraction work measured **0 of 16** of those within one voxel of all
-    three of their interfaces, against a
-    median of 0.68 voxels for the matched ones, so they are kept apart rather than merged.
+    **0 of 16** of those were measured within one voxel of all three of their interfaces, against
+    a median of 0.68 voxels for the matched ones, so they are kept apart rather than merged.
     `curves.fragmented` holds real trijunctions the mask resolves as several pieces.
 
     Reading spacing is not a parameter: the polylines are resampled at the mesh's **own** median
@@ -625,18 +714,18 @@ def extract_junction_curves(
     so they do not.
 
     `"anchor"`'s real argument is not that 9 %: it is that the polytope's deepest interior point
-    carries **only** the identifiability-floor work's irreducible narrow-wedge term (a),
+    carries **only** the irreducible narrow-wedge term (a) of the mask's identifiability floor,
     where the detected position and the centroid both carry more. Reach for it when a
     systematic bias against narrow wedges would corrupt what you are inferring, not to shave
     a tenth of a voxel.
-    `"centroid"` is exposed to reproduce the junction-curve-extraction work's measurement and
-    for nothing else: that work measured it carrying
-    (a) **+** (b), so it is the larger systematic, not the smaller one, and it costs about
+    `"centroid"` is kept for comparison only: it was
+    measured carrying (a) **+** (b), so it is the larger systematic, not the smaller one, and it costs about
     thirty times the anchor's linear programs on top.
 
     Args:
         segmented_mask (NDArray[np.uint]): the label image the mesh was reconstructed from.
-        points (NDArray[np.float64]): mesh vertex coordinates in mask voxel units, `(n, 3)`.
+        points (NDArray[np.float64]): mesh vertex coordinates in mask voxel units, `(n, 3)`, in the
+            mask's index order, as `construct_mesh_from_segmentation_mask` returns them.
         triangles (NDArray[np.int64]): triangle vertex indices, `(m, 3)`.
         labels (NDArray[np.int64]): the two materials each triangle separates, `(m, 2)`.
         estimator (Estimator): `"plain"` (default, no linear program), `"anchor"` or

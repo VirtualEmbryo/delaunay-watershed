@@ -15,6 +15,10 @@ from scipy.interpolate import RegularGridInterpolator
 if TYPE_CHECKING:
     from dw3d.reconstruction_algorithm import ScoreComputationFunction
 
+# The four faces of a tetrahedron with sorted vertices `(a, b, c, d)`, in the order
+# `abc, abd, acd, bcd` that fixes the rows of the face table before its sort.
+_FACE_VERTICES_OF_A_TETRAHEDRON = ((0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3))
+
 
 class TesselationGraph:
     """Graph computed from a tesselation to compute scores for a Watershed algorithm to label the tetrahedrons."""
@@ -54,17 +58,35 @@ class TesselationGraph:
             print("Graph build in ", np.round(t2 - t1, 3))
 
     def _construct_edges_table(self) -> NDArray[np.int64]:
-        """Get an ordered array of triangle faces from tetrahedrons."""
+        """Get an ordered array of triangle faces from tetrahedrons.
+
+        Each tetrahedron's vertex indices are sorted, shifted by one, and its four faces are
+        written as rows `(a, b, c, tetrahedron index)` in the order `abc, abd, acd, bcd`. The
+        rows are then sorted lexicographically (first point index, then second, then third,
+        then tetrahedron index), so a triangle shared by two tetrahedrons appears twice in a
+        row. No two rows are equal, so the order does not depend on the sort's stability.
+
+        Side effect: sets `self.tetrahedrons`, the tetrahedrons with sorted vertex indices, in
+        the dtype of `self.nodes`.
+
+        Returns:
+            NDArray[np.int64]: `(4 * n_tetrahedrons, 4)` rows, point indices shifted by one.
+        """
         tetrahedrons = np.sort(self.nodes, axis=1)
         self.tetrahedrons = tetrahedrons.copy()
-        tetrahedrons += 1  # We shift to get the right keys
-        faces_table = np.array(_give_faces_table(tetrahedrons), dtype=np.int64)
+        shifted_tetrahedrons = tetrahedrons.astype(np.int64) + 1  # We shift to get the right keys
+
+        n_tetrahedrons = len(shifted_tetrahedrons)
+        faces_table = np.empty((4 * n_tetrahedrons, 4), dtype=np.int64)
+        for position, face_vertices in enumerate(_FACE_VERTICES_OF_A_TETRAHEDRON):
+            faces_table[position::4, :3] = shifted_tetrahedrons[:, face_vertices]
+            faces_table[position::4, 3] = np.arange(n_tetrahedrons, dtype=np.int64)
 
         # sort faces (3 triangles point indices + tetra id) lexicographically.
         # i.e. first point index is sorted, then second, then third, then tetra id.
         # Note : a triangle separating two tetrahedrons will appear twice in a row (which is what we want)
         lex_keys = (faces_table[:, 3], faces_table[:, 2], faces_table[:, 1], faces_table[:, 0])
-        edges_table: NDArray[np.uint] = faces_table[np.lexsort(lex_keys)]
+        edges_table: NDArray[np.int64] = faces_table[np.lexsort(lex_keys)]
         return edges_table
 
     def _construct_edges(self, edges_table: NDArray[np.int64]) -> None:
@@ -76,50 +98,51 @@ class TesselationGraph:
         boundary), which gives the invariant
         `2 * len(triangle_faces) + len(lone_faces) == len(edges_table)`.
 
-        The loop bound is `index < n`, not `index < n - 1`: the latter never examined the
-        last row, so a *trailing lone face* was silently dropped and its tetrahedron not
-        marked in `nodes_on_the_border`. On all 8
-        golden-master configurations the last row happens to be the second half of a
-        matched pair, so the bug does not fire there and this fix changes no output; it
-        fires whenever the lexicographically largest face is a boundary face. See
-        `tests/test_construct_edges.py`.
+        The pairs are found at once by comparing each row's three point indices with the next
+        row's. A *trailing lone face* (the lexicographically largest face on the tesselation
+        boundary) is therefore kept, as the loop this replaced kept it once its bound was
+        corrected from `index < n - 1` to `index < n`; see `tests/test_construct_edges.py`.
+
+        Sets `triangle_faces` (`(n_faces, 3)`, `np.uint`), `nodes_linked_by_faces`
+        (`(n_faces, 2)`, `int64`), `lone_faces` (`(n_lone, 3)`, `int64`),
+        `nodes_linked_by_lone_faces` (`(n_lone,)`, `int64`), `nodes_on_the_border`
+        (`(n_tetrahedrons,)`, `float64`, 1 where a tetrahedron has a lone face) and
+        `faces_of_nodes` (a dict from every tetrahedron index to the indices of its shared
+        faces, in increasing order). These are the dtypes the loop produced; fingerprints
+        hash them.
+
+        Args:
+            edges_table (NDArray[np.int64]): the output of `_construct_edges_table`.
+
+        Raises:
+            ValueError: if one triangle belongs to more than two tetrahedrons, which no
+                tetrahedralisation produces.
         """
-        index = 0
-        n = len(edges_table)
+        n_rows = len(edges_table)
+        n_nodes = len(self.nodes)
 
-        self.triangle_faces = []
-        self.nodes_linked_by_faces = []
-        self.nodes_on_the_border = np.zeros(len(self.nodes))
-        self.faces_of_nodes = {i: [] for i in range(len(self.nodes))}
-        self.lone_faces = []
-        self.nodes_linked_by_lone_faces = []
-        while index < n:
-            if index + 1 < n and (
-                edges_table[index][0] == edges_table[index + 1][0]
-                and edges_table[index][1] == edges_table[index + 1][1]
-                and edges_table[index][2] == edges_table[index + 1][2]
-            ):
-                # same triangle,two tetraedron indices
-                a, b = edges_table[index][3], edges_table[index + 1][3]
-                self.triangle_faces.append(edges_table[index][:-1] - 1)  # We correct the previous shift
-                self.nodes_linked_by_faces.append([a, b])
+        same_face_as_next = np.all(edges_table[:-1, :3] == edges_table[1:, :3], axis=1)
+        if np.any(same_face_as_next[:-1] & same_face_as_next[1:]):
+            msg = "a triangle belongs to more than two tetrahedrons: the tesselation is not a simplicial complex"
+            raise ValueError(msg)
+        pair_starts = np.flatnonzero(same_face_as_next)
+        is_paired = np.zeros(n_rows, dtype=bool)
+        is_paired[pair_starts] = True
+        is_paired[pair_starts + 1] = True
+        lone_rows = np.flatnonzero(~is_paired)
 
-                self.faces_of_nodes[a].append(len(self.triangle_faces) - 1)
-                self.faces_of_nodes[b].append(len(self.triangle_faces) - 1)
-                # self.faces_of_nodes[a] = [*self.faces_of_nodes.get(a, []), len(self.triangle_faces) - 1]
-                # self.faces_of_nodes[b] = [*self.faces_of_nodes.get(b, []), len(self.triangle_faces) - 1]
-                index += 2
-            else:
-                self.nodes_on_the_border[edges_table[index][3]] = 1
-                self.lone_faces.append(edges_table[index][:-1] - 1)
-                self.nodes_linked_by_lone_faces.append(edges_table[index][3])
-                index += 1
+        self.triangle_faces: NDArray[np.uint] = (edges_table[pair_starts, :3] - 1).astype(np.uint)
+        self.nodes_linked_by_faces = np.stack((edges_table[pair_starts, 3], edges_table[pair_starts + 1, 3]), axis=1)
 
-        self.triangle_faces: NDArray[np.uint] = np.array(self.triangle_faces, dtype=np.uint)
-        self.nodes_linked_by_faces = np.array(self.nodes_linked_by_faces)
+        self.lone_faces = edges_table[lone_rows, :3] - 1  # We correct the previous shift
+        self.nodes_linked_by_lone_faces = edges_table[lone_rows, 3]
+        self.nodes_on_the_border = np.zeros(n_nodes)
+        self.nodes_on_the_border[self.nodes_linked_by_lone_faces] = 1
 
-        self.lone_faces = np.array(self.lone_faces)
-        self.nodes_linked_by_lone_faces = np.array(self.nodes_linked_by_lone_faces)
+        self.faces_of_nodes = {i: [] for i in range(n_nodes)}
+        for face_index, (node_a, node_b) in enumerate(self.nodes_linked_by_faces.tolist()):
+            self.faces_of_nodes[node_a].append(face_index)
+            self.faces_of_nodes[node_b].append(face_index)
 
     def _compute_volumes(self) -> NDArray[np.float64]:
         """Get volume of all tetrahedrons of the tesselation."""
@@ -217,51 +240,36 @@ class TesselationGraph:
     def to_networkx_graph(self) -> networkx.Graph:
         """Compute a NetworkX graph with nodes = tetrahedrons, edges = triangle faces and data associated.
 
-        Data on nodes = volumes, Data on edges = scores and area.
+        Data on nodes = volumes, Data on edges = scores and area. Nodes are the tetrahedron
+        indices `0..n-1`, added in that order; edges are added in the order of
+        `triangle_faces`. Keys are Python `int` and edge data Python `float`, with the values
+        of the arrays they come from.
         """
         self.volumes = self._compute_volumes()  # Number of nodes (Tetrahedras)
         self.areas = self._compute_areas()  # Number of edges (Faces)
 
         nx_graph = networkx.Graph()
-        nt = len(self.volumes)
-        node_data_dicts = [{"volume": x} for x in self.volumes]
-        nx_graph.add_nodes_from(zip(np.arange(nt), node_data_dicts, strict=False))
-
-        network_edges = np.array(
-            [
-                (
-                    self.nodes_linked_by_faces[idx][0],
-                    self.nodes_linked_by_faces[idx][1],
-                    {"score": self.scores[idx], "area": self.areas[idx]},
-                )
-                for idx in np.arange(len(self.triangle_faces))
-            ],
+        nx_graph.add_nodes_from((node_index, {"volume": volume}) for node_index, volume in enumerate(self.volumes))
+        nx_graph.add_edges_from(
+            (node_a, node_b, {"score": score, "area": area})
+            for (node_a, node_b), score, area in zip(
+                self.nodes_linked_by_faces.tolist(),
+                np.asarray(self.scores, dtype=np.float64).tolist(),
+                self.areas.tolist(),
+                strict=True,
+            )
         )
-
-        nx_graph.add_edges_from(network_edges)
 
         return nx_graph
 
 
 def _interpolate_image(image: NDArray[np.uint8]) -> RegularGridInterpolator:
     """Return an interpolated image, a function with values based on pixels."""
-    x = np.linspace(0, image.shape[0] - 1, image.shape[0])
-    y = np.linspace(0, image.shape[1] - 1, image.shape[1])
-    z = np.linspace(0, image.shape[2] - 1, image.shape[2])
+    x = np.arange(image.shape[0], dtype=np.float64)
+    y = np.arange(image.shape[1], dtype=np.float64)
+    z = np.arange(image.shape[2], dtype=np.float64)
     image_interp = RegularGridInterpolator((x, y, z), image)
     return image_interp
-
-
-def _give_faces_table(tetrahedrons: NDArray[np.uint]) -> list[list[int]]:
-    """Give all triangle faces of a list of tetrahedrons."""
-    faces_table = []
-    for i, tet in enumerate(tetrahedrons):
-        a, b, c, d = tet
-        faces_table.append([a, b, c, i])
-        faces_table.append([a, b, d, i])
-        faces_table.append([a, c, d, i])
-        faces_table.append([b, c, d, i])
-    return faces_table
 
 
 def intersect_line_triangle(l1: NDArray, l2: NDArray, t1: NDArray, t2: NDArray, t3: NDArray) -> NDArray | None:

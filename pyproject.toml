@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "delaunay-watershed-3d"
-version = "0.5.1"
+version = "0.7.0"
 description = "Geometrical reconstruction of cell assemblies from instance segmentations"
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -19,12 +19,12 @@ classifiers = [
   "Intended Audience :: Science/Research",
 ]
 dependencies = [
-  "edt>=2.4.0",
-  "meshio>=5.3.4",
+  "edt>=2.4.1",
+  "meshio>=5.3.5",
   "networkx>=2.8.0",
-  "numpy>=1.24.0",
-  "scikit-image>=0.20.0",
-  "scipy>=1.9.3",
+  "numpy>=2.0.0",
+  "scikit-image>=0.23.1",
+  "scipy>=1.13.0",
   "trimesh>=4.0.0",
 ]
 
@@ -33,16 +33,12 @@ Homepage = "https://github.com/VirtualEmbryo/delaunay-watershed"
 "Team website" = "https://www.turlierlab.com/"
 
 [project.optional-dependencies]
-viewing = ["polyscope>=1.2.0", "matplotlib>=3.3.1"]
+viewing = ["polyscope>=2.2.0", "matplotlib>=3.8.4"]
 # For the figure scripts only (dw3d_benchmarks/mesh_quality_comparison/figures/), so plotting
-# a benchmark does not require the Polyscope viewer (`viewing`). Those scripts also
-# import foambryo directly, which is not declared here: the published foambryo (0.3.5 on
-# PyPI) pulls in torch/CUDA as a core dependency, a multi-GB footprint this extra should not
-# impose. In this workspace foambryo is already present as a sibling editable install; a
-# standalone `pip install dw3d[benchmarks]` would still need `pip install foambryo`
-# separately. `src/dw3d` itself must never depend on foambryo -- only the benchmarks package
+# a benchmark does not require the Polyscope viewer (`viewing`). These scripts also import
+# foambryo, which this extra does not install: `pip install foambryo`. `src/dw3d` itself must never depend on foambryo -- only the benchmarks package
 # does.
-benchmarks = ["matplotlib>=3.3.1"]
+benchmarks = ["matplotlib>=3.8.4"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
