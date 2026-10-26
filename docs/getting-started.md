@@ -32,4 +32,4 @@ print(algorithm.cut_cells, algorithm.cell_volume_report)
 
 Without a voxel size, `construct_mesh_from_segmentation_mask(mask)` meshes the voxel grid and returns the mesh in voxel units. `min_distance` is the minimum distance between the tessellation's points, in (cubic) voxels: smaller gives a finer, slower mesh.
 
-To look at it (needs a display): `from dw3d.viewing import plot_cells_polyscope; plot_cells_polyscope(algorithm)`.
+To look at it (needs a display): `from dw3d.viewing import plot_cells_polyscope; plot_cells_polyscope(algorithm)`. The window shows the mask's column, row and slice as Polyscope's x, y and z (the points' columns 2, 1, 0), so the tissue is drawn as it is; a program that reads a saved mesh's columns as (x, y, z), such as ParaView, shows its mirror image (see `dw3d.io`).

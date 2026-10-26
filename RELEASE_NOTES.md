@@ -1,3 +1,37 @@
+# Release notes — 0.7.1, 26 October 2026
+
+`delaunay-watershed-3d` (this repository) and `foambryo` ship together as 0.7.1. This is what changes for you and what can mislead you; `CHANGELOG.md` has the full list, and foambryo's `RELEASE_NOTES.md` covers the inference side. Install with `pip install --upgrade delaunay-watershed-3d foambryo`.
+
+## What changes for you
+
+1. **Meshes change slightly: they no longer depend on Qhull's row order.** The watershed's tie-break between faces of exactly equal score, the seed lookup and mesh surgery read the order in which Qhull returned the tetrahedra, which changes when the same points come in another order. Every reconstruction now sorts the tetrahedra first. On the 47 benchmark masks (default configuration) 9 row orders gave 9 different meshes in the median case and now give one; against 0.7.0, 45 of the 47 meshes change by a few faces (median 13 of a few thousand), and foambryo's median relative tension error (`YoungDupre`) goes from 0.0777 to 0.0763. Set `canonical_tetrahedron_order = False` to reproduce 0.7.0's meshes on the same machine.
+2. **Masks with a lumen, a medium cut in two by the image, or a region too small for the tesselation are meshed differently, and were wrong before.** An enclosed pocket of medium lined by two or more cells and at least `min_distance + 1` voxels deep is now its own region, recorded as a medium (`label_enclosed_media = False` keeps 0.7.0's behaviour); every piece of exterior gets its own seed; a seed that fell in a neighbouring region moves into its own, and a region with no tetrahedron of its own is absent from the mesh and named instead of growing as a phantom inside a neighbour. On a public 697-cell embryo with a lumen, one lining cell had 2.40 times its voxel volume; now every cell is within 0.903 to 1.024 times. Of 543 default meshes (the benchmark, two real embryo series, the test images) 533 are bit for bit unchanged.
+3. **Mesh surgery no longer leaves abnormal non-manifold edges** by undoing its own repairs; none of the default route's 47 benchmark meshes changes; 4 of the 282 anisotropic benchmark meshes change by a few triangles, and 31 of the 84 meshes of simulated tissues at a real cell size change.
+4. **The junction-protected configurations no longer depend on how SciPy breaks exact ties**, so they place the same points on every machine; on macOS some of their meshes change by a point or a few.
+5. **The Polyscope viewer drew the mirror image of the tissue**, and now draws it the right way round. Only the picture changes: the mesh, its files and every number are unchanged. Screenshots taken with 0.7.0's viewer show the mirror image.
+
+## New
+
+* **Reports and warnings**: `enclosed_medium_report`, `medium_labels`, `dw3d.find_enclosed_media`; `EnclosedMediumWarning` (pockets left to the cells), `UnresolvedCellWarning` (regions absent from the mesh), `AbnormalEdgeWarning` (abnormal edges left in a finished mesh). The `.rec` appendix records the media and the unresolved regions; foambryo 0.7.1 reads them.
+* **Cross-machine checks**: the golden master no longer depends on Qhull, and the test suites run on Linux x86-64 CI with the newest and the lowest supported dependencies.
+
+## What can mislead you
+
+1. **Between machines, meshes may still differ at exactly cospherical points** (five or more lattice points on one sphere), where Qhull's choice of tetrahedralisation itself differs; on one machine a reconstruction is reproducible.
+2. **A small pocket of medium stays with the cells**: below the size bound, or lined by a single cell (a hole in that cell's segmentation). `EnclosedMediumWarning` lists them.
+3. The points of 0.7.0's list still hold.
+
+## Known issues
+
+1. **The crop report can miss a cut cell.** On a small test mask of four cells in a ball cut by the image box, the cells with voxels on the box are 1, 3 and 4; `cut_cells` reports 2, 3 and 4, as 0.7.0 did, and foambryo, which reads the same crop faces, then gives cell 1 a pressure and cell 2 none. Not yet measured on realistic cut masks: check `cut_cells` against the mask's own border labels.
+2. **`reconstruct_mask_from_dict` depends on the installed trimesh**: the same mesh is subdivided into 1 901 565 vertices with trimesh 4.12.2 and 1 319 748 with 5.1.1, and the rebuilt masks differ by 509 to 819 voxels per test image. The mesh does not depend on trimesh.
+3. **dw3d 0.7.0 reads the new `.rec` keys as strings**: a file with media or unresolved regions written by 0.7.1 loads in 0.7.0, but its `media` and `unresolved_regions` are text. A file with neither is unchanged.
+4. **Mesh files keep the mask's column order, `(z, y, x)`.** ParaView, MeshLab and other programs that read the columns as `(x, y, z)` show the mirror image of the tissue unless they exchange columns 0 and 2; so does napari in its default 3-D orientation.
+
+## Credits
+
+Recent work on dw3d and foambryo is part of a collaboration with Alejandro Aguilera Castrejon (Janelia Research Campus, Howard Hughes Medical Institute). We thank him and his Janelia colleagues Adam L. Taylor, Wenhong Li and Francesco Roncato. Adam L. Taylor found the border-triangle winding defect fixed in 0.6.0 and pointed us to the seed-extraction and dense tension-solve bottlenecks on large tissues.
+
 # Release notes — 0.7.0, 17 October 2026
 
 `delaunay-watershed-3d` (this repository) and `foambryo` ship together as 0.7.0, the first release on PyPI since 0.5.1. 0.6.0 was prepared but not published; its changes are part of 0.7.0 and are included below. This is what changes for you and what can mislead you; `CHANGELOG.md` has the full list, and foambryo's `RELEASE_NOTES.md` covers the inference side. Install with `pip install --upgrade delaunay-watershed-3d foambryo`.

@@ -3,7 +3,7 @@
 **Delaunay-Watershed-3D** (package `dw3d`) reconstructs, from a 3-D instance segmentation of cells or nuclei, a **multimaterial surface mesh**: one triangle mesh of every interface between two cells, or between a cell and the medium. It is the reconstruction behind [foambryo](https://github.com/VirtualEmbryo/foambryo), which infers surface tensions and cell pressures from these meshes.
 
 * [Getting started](getting-started.md): installation, the input, the output, a first mesh.
-* User guide: [reconstruction variants](user-guide/reconstruction-variants.md), [junction relocation](user-guide/junction-relocation.md), [cropped tissues](user-guide/cropped-tissues.md), [anisotropic voxels](user-guide/anisotropic-voxels.md), [the `.rec` metadata appendix](user-guide/rec-metadata-appendix.md).
+* User guide: [reconstruction variants](user-guide/reconstruction-variants.md), [junction relocation](user-guide/junction-relocation.md), [cropped tissues](user-guide/cropped-tissues.md), [anisotropic voxels](user-guide/anisotropic-voxels.md), [the `.rec` metadata appendix](user-guide/rec-metadata-appendix.md), [enclosed pockets of medium](user-guide/enclosed-media.md).
 * [Examples](examples/index.md): the notebooks.
 * [API reference](api/index.md), generated from the docstrings.
 * [Changelog](changelog.md) and [release notes](release-notes.md).

@@ -96,6 +96,8 @@ from numpy.typing import NDArray
 from scipy import ndimage as ndi
 from skimage.morphology import skeletonize
 
+from dw3d.nearest_neighbours import candidates_holding_every_nearest
+
 # 26-connectivity neighbour offsets, in raster order, with their Euclidean step lengths.
 _NEIGHBOURS_26 = np.array(
     [(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)],
@@ -245,23 +247,45 @@ def _corner_representatives_on_skeleton(
 
     Two components can in principle snap to the same skeleton voxel (two `|L| >= 4` blobs a
     voxel apart); duplicates are removed, so the count of 0-junction samples is a lower
-    bound on the number of components. Deterministic — `cKDTree.query` returns the lowest
-    index on an exact tie, and `skeleton_coords` is in raster order.
+    bound on the number of components.
+
+    Exact ties are common on the lattice (three skeleton voxels at distance exactly 1 from a
+    one-voxel component on `3.tif`), and `cKDTree.query` breaks them by its tree traversal,
+    which differs between SciPy builds: Linux and macOS picked different voxels there. The
+    tie is therefore broken explicitly. The k-d tree only proposes candidates
+    (`dw3d.nearest_neighbours.candidates_holding_every_nearest`: the `k` nearest, `k` doubled
+    until every exact minimum is among them). Their distances are compared
+    exactly, as the integers `n**2 d**2 = sum((n x - S)**2)` (`S` the component's coordinate
+    sum, `n` its voxel count), and the lowest raster index among the exact minima wins. The
+    result depends neither on the SciPy build nor on the order of `skeleton_coords`.
     """
     if not is_corner.any() or len(skeleton_coords) == 0:
         return np.zeros((0, 3), dtype=np.int64)
 
     from scipy.spatial import cKDTree
 
+    skeleton_coords = np.asarray(skeleton_coords, dtype=np.int64)
     labelled, n_components = ndi.label(is_corner, structure=np.ones((3, 3, 3), dtype=np.uint8))
     coords = np.argwhere(labelled)
     component_of = labelled[tuple(coords.T)] - 1
-    centroid_sum = np.zeros((n_components, 3), dtype=np.float64)
-    np.add.at(centroid_sum, component_of, coords)
-    centroids = centroid_sum / np.bincount(component_of, minlength=n_components)[:, None]
+    counts = np.bincount(component_of, minlength=n_components)
+    size = counts.astype(np.int64)
+    coordinate_sum = np.zeros((n_components, 3), dtype=np.int64)
+    np.add.at(coordinate_sum, component_of, coords)
+    centroids = coordinate_sum / size[:, None]
 
-    _, nearest = cKDTree(skeleton_coords).query(centroids)
-    return np.unique(skeleton_coords[np.atleast_1d(nearest)], axis=0)
+    candidate = candidates_holding_every_nearest(cKDTree(skeleton_coords), centroids)
+    k = candidate.shape[1]
+    # |n x - S| <= n max(shape); below 1.7e9 the sum of three squares fits in an int64.
+    exact = np.int64 if int(np.amax(counts)) * max(is_corner.shape) < 1_700_000_000 else object
+    offsets = size[:, None, None].astype(exact) * skeleton_coords[candidate].astype(exact)
+    offsets -= coordinate_sum[:, None, :].astype(exact)
+    scaled_squared_distance = (offsets * offsets).sum(axis=2)
+    is_minimum = scaled_squared_distance == scaled_squared_distance.min(axis=1, keepdims=True)
+    raster_index = np.ravel_multi_index(tuple(skeleton_coords[candidate.ravel()].T), is_corner.shape)
+    raster_index = np.where(is_minimum, raster_index.reshape(n_components, k), np.iinfo(np.int64).max)
+    nearest = candidate[np.arange(n_components), raster_index.argmin(axis=1)]
+    return np.unique(skeleton_coords[nearest], axis=0)
 
 
 def _skeleton_adjacency(coords: NDArray[np.int64], shape: tuple[int, ...]) -> list[list[int]]:

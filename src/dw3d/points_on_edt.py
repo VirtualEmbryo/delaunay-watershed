@@ -31,10 +31,12 @@ number involved anywhere. The rule, in full:
    contributes no point.
 
 The result is a **greedy maximal `s`-separated farthest-point packing of the plateau
-set**, computed in a fixed deterministic order: identical on every run, on every platform,
-and independent of numpy's RNG. Step 3 only ever has to test the 26 neighbouring cells,
-because a cell of side `s` holds at most one accepted point and cells two apart are
-automatically more than `s` apart, so the whole rule is O(number of plateau voxels).
+set**, computed in a fixed deterministic order: identical on every run and independent of
+numpy's RNG. Between machines, remaining differences in the mesh built on these points are
+expected only at exactly cospherical points (confirmed on Linux x86-64 in continuous integration). Step 3 only ever has
+to test the 26 neighbouring cells, because a cell of side `s` holds at most one accepted point
+and cells two apart are automatically more than `s` apart, so the whole rule is O(number of
+plateau voxels).
 
 Why farthest-point and not simply "the candidate nearest the cell centre"
 -------------------------------------------------------------------------
@@ -547,7 +549,9 @@ def peak_local_points_boundary_layer(
     Keeps the deterministic interface minima and interior maxima and adds offset
     points `delta` into each material adjacent to a genuine interface (see the module
     docstring for the full construction and its rationale). No random number is involved,
-    so the result is bit-identical across runs and platforms, exactly like the default.
+    so the result is bit-identical across runs, like the deterministic placement; between
+    machines, remaining differences are expected only at exactly cospherical points (not yet
+    confirmed on Linux).
 
     The offset points are stacked **between** the interior maxima and the interface minima
     and are counted as interior (non-interface) points in `indices_of_sorted_maxes`: they

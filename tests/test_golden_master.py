@@ -58,6 +58,35 @@ keep it sharp.
 
 If either fixture set ever needs regenerating, that must be a deliberate, reviewed
 decision (a real algorithm change), never an automatic "fix the test" action.
+
+**The canonical tetrahedron order (0.7.1) was such a decision.** It changed 90 of the 128
+fixture files of 0.7.0 and they were regenerated in one commit: the default's 5 of 8 per
+relocation setting (same point and triangle counts, relative changes below 5e-5), the
+deterministic set's 2 of 8, and most of the boundary-layer, junction-protected, link-checked,
+offset-excluded and cubic-score sets. `tests/golden/dithered/` (dw3d 0.3.6, `rtol=1e-4`) still
+passes unchanged. The default's 0.7.0 fixtures moved to `tests/golden/qhull_tetrahedron_order/`
+(and its twin without relocation), checked with `canonical_tetrahedron_order=False`. The default's
+own golden test reconstructs from a stored tetrahedralisation (see
+`tests/test_canonical_tetrahedron_order.py`), so that it does not depend on Qhull's choice inside
+cospherical point sets; its twin `..._with_qhull` runs end to end where Qhull makes the same choice.
+
+**Every other configuration's fixture test is pinned the same way (0.7.1).** On Linux, Qhull splits the
+golden images' cospherical point sets otherwise than on macOS, which changes the opt-in configurations'
+meshes: 82 tests failed in the first Linux run, and shuffling the order of Qhull's input on macOS
+reproduces 78 of them. Their fixture tests (and the reference counts of `test_reference_values.py`)
+now reconstruct from `tests/golden/opt_in_configuration_tetrahedralisations.npz`, and
+`test_qhull_gives_the_opt_in_configurations_their_stored_tetrahedralisation` checks Qhull's own
+choice exactly, for the weighted (junction-protected) point sets with the regular-tetrahedralisation
+certificate. No fixture file changed.
+
+**The guarded mesh surgery (0.7.1) was another.** Surgery no longer applies a relabelling that adds
+abnormal edges, nor one that undoes an earlier step, and runs until none is left (at most 20
+iterations). It changes 36 of the 144 fixture files, all in the non-default sets: boundary layer
+12 of 16, junction protected, link checked, offset excluded and cubic score 6 of 16 each, by up to
+11 triangles. Their abnormal edges fall from 12 to 2 (boundary layer), 2 to 0 (junction protected,
+link checked, cubic score) and 10 to 8 (offset excluded, whose remaining edges are made after
+surgery by the offset exclusion); no fixture's mesh gains one. The default and deterministic sets do
+not change.
 """
 
 import json
@@ -86,8 +115,14 @@ from tests.conftest import (
     JUNCTION_PROTECTED_GOLDEN_DIR,
     LINK_CHECKED_GOLDEN_DIR,
     OFFSET_EXCLUDED_GOLDEN_DIR,
+    QHULL_TETRAHEDRON_ORDER_GOLDEN_DIR,
     golden_dir,
     load_image_or_skip,
+)
+from tests.pinned_tetrahedralisations import (
+    OPT_IN_POINT_SETS,
+    pinned_tesselation_function,
+    skip_where_qhull_differs_inside_cospherical_sets,
 )
 
 # The keyword calls that replace `get_cubic_score_...` and `get_offset_excluded_...`, removed in
@@ -106,10 +141,20 @@ MIN_DISTANCES = [3, 5]
 DITHERED_GEOMETRY_RTOL = 1e-4
 
 
-def _compute_golden_record(image_name: str, min_distance: int, algorithm_getter, relocate_junctions: bool) -> dict:
+def _compute_golden_record(
+    image_name: str,
+    min_distance: int,
+    algorithm_getter,
+    relocate_junctions: bool,
+    tesselation=None,
+    canonical_tetrahedron_order: bool = True,
+) -> dict:
     mask = load_image_or_skip(image_name)
     algo = algorithm_getter(min_distance=min_distance, print_info=False)
     algo.relocate_junctions = relocate_junctions
+    algo.canonical_tetrahedron_order = canonical_tetrahedron_order
+    if tesselation is not None:
+        algo.tesselation_creation_function = tesselation
     points, triangles, labels = algo.construct_mesh_from_segmentation_mask(mask)
 
     interface_areas = m.interface_areas(points, triangles, labels)
@@ -153,10 +198,73 @@ def _assert_matches_fixture(record: dict, fixture_path, rtol: float) -> None:
 @pytest.mark.parametrize("min_distance", MIN_DISTANCES)
 @RELOCATION
 def test_golden_master_reproduces_fixture(image_name, min_distance, relocate_junctions):
+    """The default configuration, on the stored tetrahedralisation, so that the check does not depend on Qhull.
+
+    The default's points lie on the integer lattice and Qhull's tetrahedralisation of their
+    cospherical sets may differ between machines; `tests/test_canonical_tetrahedron_order.py`
+    checks, exactly, that the stored tetrahedralisation is a Delaunay one of these points.
+    """
+    record = _compute_golden_record(
+        image_name,
+        min_distance,
+        get_default_mesh_reconstruction_algorithm,
+        relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance),
+    )
+    _assert_matches_fixture(record, _golden(GOLDEN_DIR, image_name, min_distance, relocate_junctions), rtol=1e-10)
+
+
+@pytest.mark.parametrize("image_name", IMAGE_NAMES)
+@pytest.mark.parametrize("min_distance", MIN_DISTANCES)
+@RELOCATION
+def test_golden_master_reproduces_fixture_with_qhull(image_name, min_distance, relocate_junctions):
+    """The same, end to end with Qhull's own tetrahedralisation; skipped where Qhull picks another Delaunay one."""
+    skip_where_qhull_differs_inside_cospherical_sets(image_name, min_distance)
     record = _compute_golden_record(
         image_name, min_distance, get_default_mesh_reconstruction_algorithm, relocate_junctions,
     )
     _assert_matches_fixture(record, _golden(GOLDEN_DIR, image_name, min_distance, relocate_junctions), rtol=1e-10)
+
+
+
+@pytest.mark.parametrize("image_name", IMAGE_NAMES)
+@pytest.mark.parametrize("min_distance", MIN_DISTANCES)
+@pytest.mark.parametrize("point_set", OPT_IN_POINT_SETS)
+def test_qhull_gives_the_opt_in_configurations_their_stored_tetrahedralisation(point_set, image_name, min_distance):
+    """Qhull's own tetrahedralisation of each opt-in configuration's points is the stored one, or another valid choice.
+
+    The opt-in configurations' fixture tests reconstruct from the stored tetrahedralisations, so that they
+    do not depend on Qhull. This is their twin on Qhull: it passes where Qhull gives the stored tetrahedra,
+    skips where it splits a set of cospherical (for weighted points, co-power-spherical) lattice points
+    otherwise, and fails on any other difference (exact checks, `tests/exact_delaunay_checks.py`).
+    """
+    skip_where_qhull_differs_inside_cospherical_sets(image_name, min_distance, point_set)
+
+@pytest.mark.parametrize("image_name", IMAGE_NAMES)
+@pytest.mark.parametrize("min_distance", MIN_DISTANCES)
+@RELOCATION
+def test_qhull_tetrahedron_order_reproduces_the_0_7_default(image_name, min_distance, relocate_junctions):
+    """`canonical_tetrahedron_order=False` reproduces the default's fixtures of dw3d 0.7, moved here byte for byte.
+
+    Qhull's row order is what this option keeps, so the check is only as portable as that order:
+    these fixtures were made on macOS arm64, and a machine whose Qhull returns the tetrahedra in
+    another order (or tetrahedralises a cospherical set differently) gives another mesh. Where the
+    tetrahedralisation itself differs inside cospherical sets the test is skipped and says so; a
+    different row order of the same tetrahedra still fails it.
+    """
+    skip_where_qhull_differs_inside_cospherical_sets(image_name, min_distance)
+    record = _compute_golden_record(
+        image_name,
+        min_distance,
+        get_default_mesh_reconstruction_algorithm,
+        relocate_junctions,
+        canonical_tetrahedron_order=False,
+    )
+    _assert_matches_fixture(
+        record,
+        _golden(QHULL_TETRAHEDRON_ORDER_GOLDEN_DIR, image_name, min_distance, relocate_junctions),
+        rtol=1e-10,
+    )
 
 
 @pytest.mark.parametrize("image_name", IMAGE_NAMES)
@@ -170,6 +278,7 @@ def test_deterministic_algorithm_reproduces_its_fixture(image_name, min_distance
     """
     record = _compute_golden_record(
         image_name, min_distance, get_deterministic_mesh_reconstruction_algorithm, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "deterministic"),
     )
     _assert_matches_fixture(
         record,
@@ -184,6 +293,7 @@ def test_deterministic_algorithm_reproduces_its_fixture(image_name, min_distance
 def test_dithered_algorithm_reproduces_its_fixture(image_name, min_distance, relocate_junctions):
     record = _compute_golden_record(
         image_name, min_distance, get_dithered_mesh_reconstruction_algorithm, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "dithered"),
     )
     _assert_matches_fixture(
         record,
@@ -204,6 +314,7 @@ def test_boundary_layer_algorithm_reproduces_its_fixture(image_name, min_distanc
     """
     record = _compute_golden_record(
         image_name, min_distance, get_boundary_layer_mesh_reconstruction_algorithm, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "boundary_layer"),
     )
     _assert_matches_fixture(
         record,
@@ -228,6 +339,7 @@ def test_junction_protected_algorithm_reproduces_its_fixture(image_name, min_dis
     """
     record = _compute_golden_record(
         image_name, min_distance, get_junction_protected_mesh_reconstruction_algorithm, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "junction_protected"),
     )
     _assert_matches_fixture(
         record,
@@ -257,6 +369,7 @@ def test_link_checked_algorithm_reproduces_its_fixture(image_name, min_distance,
     """
     record = _compute_golden_record(
         image_name, min_distance, get_link_checked_mesh_reconstruction_algorithm, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "link_checked"),
     )
     _assert_matches_fixture(
         record,
@@ -275,7 +388,10 @@ def test_cubic_score_algorithm_reproduces_its_fixture(image_name, min_distance, 
     `benchmarks/baseline/fingerprints_cubic_score.json` pins bit-exactness across runs.
     Opt-in, not the default: it changes the scores, hence the labelling, hence the mesh.
     """
-    record = _compute_golden_record(image_name, min_distance, get_cubic_score, relocate_junctions)
+    record = _compute_golden_record(
+        image_name, min_distance, get_cubic_score, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "cubic_score"),
+    )
     _assert_matches_fixture(
         record,
         _golden(CUBIC_SCORE_GOLDEN_DIR, image_name, min_distance, relocate_junctions),
@@ -297,7 +413,10 @@ def test_offset_excluded_algorithm_reproduces_its_fixture(image_name, min_distan
     boundary-layer flaps carried area no interface has). `test_offset_exclusion.py` asserts
     each of those directly rather than leaving them implicit in the numbers here.
     """
-    record = _compute_golden_record(image_name, min_distance, get_offset_excluded, relocate_junctions)
+    record = _compute_golden_record(
+        image_name, min_distance, get_offset_excluded, relocate_junctions,
+        tesselation=pinned_tesselation_function(image_name, min_distance, "offset_excluded"),
+    )
     _assert_matches_fixture(
         record,
         _golden(OFFSET_EXCLUDED_GOLDEN_DIR, image_name, min_distance, relocate_junctions),

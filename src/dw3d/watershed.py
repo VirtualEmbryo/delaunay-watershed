@@ -84,10 +84,20 @@ def _seeded_watershed_aggregation(
     `np.lexsort` gives the stable sort *and* an explicit tie-break: among faces of equal
     score, the one joining the lexicographically smaller pair of tetrahedron indices is
     aggregated first. The pair is used rather than the face's own vertex indices because
-    it is what the graph carries; both are functions of the tesselation alone, so either
-    removes the remaining dependence on `networkx`'s edge insertion order. That last
-    dependence is real: stable-sorted order and lexsorted order differ at 1 439-1 642 of
-    ~40 000 positions on the four `min_distance=3` configurations.
+    it is what the graph carries. It removes the remaining dependence on `networkx`'s edge
+    insertion order. That last dependence is real: stable-sorted order and lexsorted order
+    differ at 1 439-1 642 of ~40 000 positions on the four `min_distance=3` configurations.
+
+    The tetrahedron indices are row indices into the tesselation's array of tetrahedra, so
+    the tie-break is a function of the tetrahedra's **row order**, not of the
+    tetrahedralisation as a set. Qhull's row order changes when the same points are given in
+    another order, and with it the visiting order inside groups of tied faces and hence the
+    labelling: measured on 8 row permutations of one benchmark case, the score table was
+    bitwise the same and the visiting order differed only inside tie groups, yet 1-3
+    tetrahedra were labelled differently. `MeshReconstructionAlgorithm` therefore puts the
+    tetrahedra in canonical order before building the graph (`canonical_tetrahedron_order`,
+    on by default since 0.7.1), which makes this tie-break a function of the
+    tetrahedralisation alone.
     """
     groups = {}
     number_group = np.zeros(len(nx_graph.nodes), dtype=int) - 1

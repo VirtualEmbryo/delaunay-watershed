@@ -59,6 +59,7 @@ nav:
       - Cropped tissues: user-guide/cropped-tissues.md
       - Anisotropic voxels: user-guide/anisotropic-voxels.md
       - The .rec metadata appendix: user-guide/rec-metadata-appendix.md
+      - Enclosed pockets of medium: user-guide/enclosed-media.md
   - Examples:
       - examples/index.md
       - examples/mesh-reconstruction-and-visualisation.md
@@ -76,6 +77,7 @@ nav:
       - api/junction-relocation.md
       - api/junction-curves.md
       - api/cell-volume-agreement.md
+      - api/enclosed-media.md
       - api/triangle-intersection.md
       - api/io.md
       - api/mesh-utilities.md

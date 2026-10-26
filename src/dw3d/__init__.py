@@ -27,6 +27,15 @@ from numpy.typing import NDArray
 
 from dw3d.cell_volume_agreement import CellVolumeDisagreementWarning, CellVolumeReport, compare_cell_volumes_with_mask
 from dw3d.crop_faces import IMAGE_FACES, CropFaceReport
+from dw3d.enclosed_media import (
+    EnclosedMedium,
+    EnclosedMediumReport,
+    EnclosedMediumWarning,
+    PocketLeftToCells,
+    UnresolvedCellWarning,
+    UnresolvedRegion,
+    find_enclosed_media,
+)
 from dw3d.io import save_rec, save_vtk
 
 # An additional, purely additive read of the mask a mesh was reconstructed from. Nothing
@@ -45,6 +54,7 @@ from dw3d.junction_relocation import (
 )
 from dw3d.mask_preprocessing import UnmeasuredAnisotropyWarning, resample_to_isotropic
 from dw3d.mask_reconstruction import reconstruct_mask_from_dict, reconstruct_mask_from_saved_file_dict
+from dw3d.mesh_surgery import AbnormalEdgeWarning
 from dw3d.mesh_utilities import center_around_origin, set_pixel_size, set_points_min_max
 from dw3d.reconstruction_algorithm_factory import MeshReconstructionAlgorithmFactory
 
@@ -227,6 +237,14 @@ __all__ = (
     "compare_cell_volumes_with_mask",
     "CellVolumeReport",
     "CellVolumeDisagreementWarning",
+    "EnclosedMedium",
+    "EnclosedMediumReport",
+    "EnclosedMediumWarning",
+    "PocketLeftToCells",
+    "UnresolvedCellWarning",
+    "UnresolvedRegion",
+    "find_enclosed_media",
+    "AbnormalEdgeWarning",
     "CropFaceReport",
     "IMAGE_FACES",
     "find_self_intersections",

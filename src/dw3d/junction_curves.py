@@ -31,20 +31,20 @@ from a curve's vertices to the reference polyline; lower is better.
 
 | dw3d `min_distance` | these curves | the mesh's own lines | advantage |
 |---|---:|---:|---:|
-| 2 | 0.5595 | 0.7862 | 1.41x |
-| 3 | 0.5855 | 0.8642 | 1.48x |
-| 4 | 0.6173 | 0.9277 | 1.50x |
-| 7 | 0.6817 | 1.2942 | 1.90x |
+| 3 | 0.5796 | 0.6735 | 1.16x |
+| 4 | 0.6146 | 0.7449 | 1.21x |
 
-On the 42 equilibrium cases, all 30 paired comparisons -- five values of `min_distance` times six
-geometric metrics -- favour the extraction, in a fraction 1.000 of 10,000 case-level bootstrap
-draws. At `min_distance = 3`, relative to the value the reference line itself scores when
-subsampled at the same spacing, the curves read tortuosity at 1.001 (the mesh: 1.034), curvature
-at 1.013 (1.172) and tangent error at 1.957x (4.529x).
+(42 equilibrium cases, the default reconstruction with junction relocation, dw3d 0.7.1; on 0.7.0 without
+relocation the mesh's own lines sit at 0.8642 and 0.9277, and the advantage is 1.48x and 1.52x.)
+Of the 24 paired comparisons of `BENCHMARKS.md` -- two spacings, two estimators, six geometric
+metrics -- the 16 on tangent and position error favour the curves on at least 9,999 of 10,000
+case-level bootstrap draws. At `min_distance = 3`, relative to the value the reference line itself
+scores when subsampled at the same spacing, the curves read tortuosity at 1.001 (the mesh's own
+lines: 1.002), curvature at 1.018 (1.024) and tangent error at 1.99x (3.35x).
 
 **They are better geometry, not correct geometry.** The mask's own identifiability floor -- the best any
-mask-based method can do -- is 0.107 voxels (`BENCHMARKS.md`, "Junction curves"). These curves sit at 0.5855,
-a factor of **4.8** above it, and that gap is open.
+mask-based method can do -- is 0.107 voxels (`BENCHMARKS.md`, "Junction curves"). These curves sit at 0.5796,
+a factor of **5.4** above it, and that gap is open.
 
 Coordinates
 -----------
@@ -142,10 +142,11 @@ class JunctionCurve:
 class JunctionCurves:
     """Every trijunction curve of one case, split by whether the mesh agrees it exists.
 
-    `matched` is the set a caller wanting usable geometry wants: its curves were measured a
-    median 0.68 voxels from all three of their own interfaces at once, with a p99 of 4.50. The
-    `invented` curves are structurally different -- median 4.32 voxels and **0 of 16 within one
-    voxel** -- so they are never merged into the same list. `fragmented` holds the rest: real
+    `matched` is the set a caller wanting usable geometry wants: on the benchmark at
+    `min_distance = 3` its 621 curves were measured a median 0.523 voxels from all three of their
+    own interfaces at once, with a p99 of 4.43. The 27 `invented` curves are structurally
+    different -- median 29.7 voxels and **none within one voxel** -- so they are never merged into
+    the same list. `fragmented` holds the rest: real
     trijunctions the mask resolves as several pieces, or the reverse.
 
     Attributes:
@@ -698,8 +699,8 @@ def extract_junction_curves(
     among the mesh's own trijunctions of the same material triple, so it can be joined to the
     interfaces and the dihedral angles the reconstruction already reports.
     `curves.invented` is everything the mask says is a junction and the mesh does not have;
-    **0 of 16** of those were measured within one voxel of all three of their interfaces, against
-    a median of 0.68 voxels for the matched ones, so they are kept apart rather than merged.
+    **none of 27** of those were measured within one voxel of all three of their interfaces, against
+    a median of 0.524 voxels for the matched ones, so they are kept apart rather than merged.
     `curves.fragmented` holds real trijunctions the mask resolves as several pieces.
 
     Reading spacing is not a parameter: the polylines are resampled at the mesh's **own** median

@@ -50,9 +50,9 @@ class MeshReconstructionAlgorithmFactory:
 
         A new factory's `make_algorithm` builds what `get_deterministic_algorithm` returns: the
         classical EDT, deterministic EDT extrema with `min_distance=3`, plain Delaunay
-        tesselation, max-value face scores, mesh surgery, junction relocation on and no physical
-        image face. This is **not** `get_default_algorithm`, which places its points with the
-        dithered rule (`set_dithered_peak_local_points_placement_method`).
+        tesselation, max-value face scores, mesh surgery, junction relocation on, the canonical
+        tetrahedron order and no physical image face. This is **not** `get_default_algorithm`,
+        which places its points with the dithered rule (`set_dithered_peak_local_points_placement_method`).
 
         Args:
             print_info (bool, optional): print the timing of each step. Defaults to False.
@@ -66,6 +66,7 @@ class MeshReconstructionAlgorithmFactory:
         self._score_computation_function: ScoreComputationFunction = compute_scores_by_max_value
         self.perform_mesh_postprocess_surgery = perform_mesh_postprocess_surgery
         self.relocate_junctions = True
+        self.canonical_tetrahedron_order = True
         self.physical_image_faces: tuple[str, ...] = ()
 
     def set_physical_image_faces(self, *faces: str) -> Self:
@@ -123,6 +124,27 @@ class MeshReconstructionAlgorithmFactory:
             Self: this factory, for chaining.
         """
         self.relocate_junctions = enabled
+        return self
+
+    def set_canonical_tetrahedron_order(self, enabled: bool = True) -> Self:
+        """Choose whether the tesselation's tetrahedra are put in canonical order before anything reads them.
+
+        **On by default since 0.7.1**, for this factory and for every `get_*_algorithm` static
+        method. The canonical order sorts the vertex indices within each tetrahedron and the
+        tetrahedra lexicographically (`dw3d.tesselation.canonical_tetrahedron_order`), so the mesh
+        no longer depends on the row order in which Qhull returns the same tetrahedra.
+        `set_canonical_tetrahedron_order(False)` keeps Qhull's row order, which reproduces the
+        meshes of dw3d 0.7 and earlier on the machine they were made on. See
+        `MeshReconstructionAlgorithm.__init__` for what the row order changes.
+
+        Args:
+            enabled (bool, optional): whether the tetrahedra are put in canonical order. Defaults
+                to True, so that `set_canonical_tetrahedron_order()` reads as switching it on.
+
+        Returns:
+            Self: this factory, for chaining.
+        """
+        self.canonical_tetrahedron_order = enabled
         return self
 
     def set_classical_edt_method(self) -> Self:
@@ -383,6 +405,7 @@ class MeshReconstructionAlgorithmFactory:
             perform_mesh_postprocess_surgery=self.perform_mesh_postprocess_surgery,
             relocate_junctions=self.relocate_junctions,
             physical_image_faces=self.physical_image_faces,
+            canonical_tetrahedron_order=self.canonical_tetrahedron_order,
         )
 
     @staticmethod
@@ -399,13 +422,13 @@ class MeshReconstructionAlgorithmFactory:
 
         | method | dithered `E_total` (gauge-matched median) | revised (`link_checked`) `E_total` |
         |---|---:|---:|
-        | `YoungDupre` | 0.0882 | 0.1049 |
-        | `YoungDupreLocal` | 0.0949 | 0.1245 |
-        | `ForceBalanceKKT` | 0.1299 | 0.3436 |
-        | `BayesianMAP` | 0.1799 | 0.1962 |
+        | `YoungDupre` | 0.0763 | 0.1003 |
+        | `YoungDupreLocal` | 0.0911 | 0.1266 |
+        | `ForceBalanceKKT` | 0.1138 | 0.3262 |
+        | `BayesianMAP` | 0.1186 | 0.3149 |
 
-        (42 equilibrium cases of `foambryo`'s benchmarking dataset, paired per case; see
-        `BENCHMARKS.md` at the repository root.) The revised pipeline is real, deterministic,
+        (42 equilibrium cases of `foambryo`'s benchmarking dataset, `min_distance` 3, dw3d 0.7.1,
+        paired per case; see `BENCHMARKS.md` at the repository root.) The revised pipeline is real, deterministic,
         junction-protected and topologically cleaner than the dithered default by every
         meshing-only metric (interface-area bias, sliver fraction, score-gap degeneracy,
         non-manifold edges) -- it is kept, fully reachable, as
@@ -430,7 +453,10 @@ class MeshReconstructionAlgorithmFactory:
           junction-protection placements are measured against.
 
         Every configuration, this one included, relocates junction vertices by default since
-        0.5.0; set `relocate_junctions = False` on the returned algorithm to reproduce 0.4.
+        0.5.0; set `relocate_junctions = False` on the returned algorithm to reproduce 0.4. Every
+        configuration puts the tetrahedra in canonical order by default since 0.7.1; set
+        `canonical_tetrahedron_order = False` on the returned algorithm to keep Qhull's row order,
+        as dw3d 0.7 did.
 
         The EDT is `compute_edt_classical`. The tiled EDT (`set_tiled_edt_method`, reachable
         from a factory instance, not used here) produces a field whose *values* are bit-identical

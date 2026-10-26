@@ -78,6 +78,30 @@ def simple_delaunay_tesselation(
     return tesselation.points, tesselation.simplices.astype(np.int64)
 
 
+def canonical_tetrahedron_order(tetrahedra: NDArray[np.integer]) -> NDArray[np.int64]:
+    """Put tetrahedra in a canonical order: vertex indices ascending within each row, rows in lexicographic order.
+
+    The result depends only on the *set* of tetrahedra (and on the vertex indices), not on the
+    order in which the tesselation returned them. dw3d reads the row index of a tetrahedron in
+    three places: the watershed's tie-break between faces of exactly equal score
+    (`dw3d.watershed`), the lookup of the seed tetrahedra, and the order in which mesh surgery
+    walks the tetrahedra around an edge. Qhull's row order changes when the input points are
+    permuted and may change between machines, so without this step the mesh did too.
+
+    No vertex is renumbered and no tetrahedron is added or removed. Sorting the vertices within a
+    row discards the row's orientation; nothing in dw3d reads it (`TesselationGraph` sorts each
+    row itself, and triangle orientation is set from tetrahedron centroids).
+
+    Args:
+        tetrahedra (NDArray[np.integer]): (m, 4) vertex indices.
+
+    Returns:
+        NDArray[np.int64]: the same tetrahedra, (m, 4), in canonical order.
+    """
+    rows = np.sort(np.asarray(tetrahedra, dtype=np.int64), axis=1)
+    return rows[np.lexsort(rows.T[::-1])]
+
+
 def regular_tesselation(
     points: NDArray[np.float64],
     weights: NDArray[np.float64],
