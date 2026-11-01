@@ -2,7 +2,10 @@
 
 A mesh is `(points, triangles, labels)`: `(n, 3)` points, `(m, 3)` vertex indices and `(m, 2)` labels,
 the two regions each triangle separates (label 0 is the medium). The files store the points as given:
-these functions neither scale nor reorder their columns.
+these functions neither scale nor reorder their columns. A file therefore keeps the mask's order, `(z, y, x)` for a
+microscope stack; a program that reads its columns as `(x, y, z)`, as ParaView, MeshLab and other VTK readers do,
+shows the mirror image of the tissue, unless it exchanges columns 0 and 2 (and two corners of every triangle, so
+that each still faces the same side), as `dw3d.viewing.plot_cells_polyscope` does for what it draws.
 
 The `.rec` reader and writer are copied from iorec, version 1.0.5.
 Matthieu Perez 2024
@@ -24,8 +27,11 @@ from numpy.typing import NDArray
 # why it must stay trailing, never leading.
 _APPENDIX_MAGIC = "rec-appendix"
 _APPENDIX_VERSION = 1
-_APPENDIX_SEQUENCE_INT_KEYS = frozenset({"source_shape", "crop_offset", "crop_faces"})
-_APPENDIX_SEQUENCE_FLOAT_KEYS = frozenset({"spacing"})
+_APPENDIX_SEQUENCE_INT_KEYS = frozenset(
+    {"source_shape", "crop_offset", "crop_faces", "media", "enclosed_media_voxels", "unresolved_regions",
+     "unresolved_regions_voxels"},
+)
+_APPENDIX_SEQUENCE_FLOAT_KEYS = frozenset({"spacing", "enclosed_media_inscribed_radius"})
 _APPENDIX_SCALAR_FLOAT_KEYS = frozenset({"resampled_spacing"})
 
 
@@ -392,8 +398,9 @@ def parse_rec_appendix(block_text: str) -> dict[str, Any]:
 
     Returns:
         dict[str, Any]: parsed fields, plus `"_version"` (the schema version, an int).
-            Sequence-valued fields known to the schema are parsed into tuples (`spacing` of
-            `float`; `source_shape`, `crop_offset` and `crop_faces` of `int`), and
+            Sequence-valued fields known to the schema are parsed into tuples (`spacing` and
+            `enclosed_media_inscribed_radius` of `float`; `source_shape`, `crop_offset`, `crop_faces`, `media`,
+            `enclosed_media_voxels`, `unresolved_regions` and `unresolved_regions_voxels` of `int`), and
             `resampled_spacing` into a `float`; every other key is kept as a raw string, never
             dropped, so a future rewrite can carry it forward.
     """

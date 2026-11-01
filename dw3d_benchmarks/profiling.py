@@ -67,6 +67,10 @@ def cost_profile(mask: NDArray[np.uint], min_distance: int, variant: str = "defa
         points_for_tesselation,
         point_weights,
     )
+    if getattr(stage_algo, "canonical_tetrahedron_order", False):
+        from dw3d.tesselation import canonical_tetrahedron_order
+
+        tesselation_tetrahedrons = canonical_tetrahedron_order(tesselation_tetrahedrons)
     stage_times["tesselation"] = time.perf_counter() - t0
 
     t0 = time.perf_counter()

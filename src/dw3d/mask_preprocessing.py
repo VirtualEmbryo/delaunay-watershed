@@ -10,16 +10,17 @@ interpolation** before meshing removes most of that error. Measured on masks dow
 coarse voxel takes the label covering most of it), one meshing seed, as the median over cases of each mesh's median
 line-mean contact-angle error minus that of the same mask meshed at full resolution:
 
-* on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size: meshing the native grid costs
-  +1.38 deg at `k = 5/3`, +1.97 at 2 and +4.10 at 3; resampling first, +0.83, +0.71 and +1.17;
-* on foambryo's benchmark, whose cells are larger (42 cases): native +1.43, +2.43 and +5.58 deg at
-  `k = 5/3, 2, 3`; resampled +0.43, +1.54 and +1.27.
+* on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size (dw3d 0.7.0; not measured again for
+  0.7.1, whose meshes differ slightly, because some of these runs need 8 to 40 GiB of memory): meshing the
+  native grid costs +1.38 deg at `k = 5/3`, +1.97 at 2 and +4.10 at 3; resampling first, +0.83, +0.71 and +1.17;
+* on foambryo's benchmark, whose cells are larger (42 cases, dw3d 0.7.1): native +1.59, +2.25 and
+  +5.85 deg at `k = 5/3, 2, 3`; resampled +0.43, +1.46 and +1.27.
 
 Tension errors follow. Repeating slices (nearest neighbour) is worse than shape-based interpolation at every
 anisotropy above 2, and coarsening the two short axes, or passing the anisotropy to the distance transform alone,
 is worse than not resampling at all. Nothing was measured above `k = 3` at real cell size. foambryo's quadric angle
-reading, which helps on the benchmark's larger cells, made every route worse at real cell size: keep foambryo's
-default reading.
+reading, which helps on the benchmark's larger cells, made every route worse at real cell size (dw3d 0.7.0's
+meshes): keep foambryo's default reading.
 
 Conventions
 -----------

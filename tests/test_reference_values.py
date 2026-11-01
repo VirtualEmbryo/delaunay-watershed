@@ -53,6 +53,7 @@ from dw3d import (
     get_link_checked_mesh_reconstruction_algorithm,
 )
 from tests.conftest import load_image_or_skip
+from tests.pinned_tetrahedralisations import pinned_tesselation_function
 
 # dw3d 0.3.6 reference values, on data/Images/3.tif, min_distance=3:
 #   interface pts 5911 | interior pts 133 | tets 24153 | all-surface tets 58.0%
@@ -60,32 +61,36 @@ from tests.conftest import load_image_or_skip
 #   mesh pts 1580 | triangles 3311 | valence-3 edges 163 | score gaps <1e-3: 80.4%
 
 
-def _reconstruct(algorithm_getter):
+def _reconstruct(algorithm_getter, configuration: str):
+    # On the stored tetrahedralisation of the configuration's points, so that the counts below do not
+    # depend on how this machine's Qhull splits sets of cospherical lattice points (see
+    # `tests/pinned_tetrahedralisations.py`).
     mask = load_image_or_skip("3.tif")
     algo = algorithm_getter(min_distance=3, print_info=False)
+    algo.tesselation_creation_function = pinned_tesselation_function("3.tif", 3, configuration)
     points, triangles, labels = algo.construct_mesh_from_segmentation_mask(mask)
     return algo, points, triangles, labels
 
 
 @pytest.fixture(scope="module")
 def reconstruction_3tif_dithered():
-    return _reconstruct(get_dithered_mesh_reconstruction_algorithm)
+    return _reconstruct(get_dithered_mesh_reconstruction_algorithm, "dithered")
 
 
 @pytest.fixture(scope="module")
 def reconstruction_3tif_deterministic():
-    return _reconstruct(get_deterministic_mesh_reconstruction_algorithm)
+    return _reconstruct(get_deterministic_mesh_reconstruction_algorithm, "deterministic")
 
 
 @pytest.fixture(scope="module")
 def reconstruction_3tif_link_checked():
-    return _reconstruct(get_link_checked_mesh_reconstruction_algorithm)
+    return _reconstruct(get_link_checked_mesh_reconstruction_algorithm, "link_checked")
 
 
 @pytest.fixture(scope="module")
 def reconstruction_3tif_offset_included():
     # The configuration `get_offset_included_...` named until its removal in 0.7.0.
-    return _reconstruct(get_junction_protected_mesh_reconstruction_algorithm)
+    return _reconstruct(get_junction_protected_mesh_reconstruction_algorithm, "junction_protected")
 
 
 def _counts_and_surface_stats(algo):
@@ -222,7 +227,7 @@ def test_link_checked_mesh_size_and_tetrahedron_count(reconstruction_3tif_link_c
 
     The link-condition-checked collapse removes the boundary layer's offsets from the
     *extracted surface* while leaving them in the tesselation, so the tetrahedron count is
-    untouched (25 997, exactly the offset-included configuration's) and the mesh shrinks by
+    untouched (25 999, exactly the offset-included configuration's) and the mesh shrinks by
     31 %. Every other assertion in this section is unchanged from the junction-protected
     default, which is the point: nothing upstream of the extraction moved.
     """
@@ -235,9 +240,13 @@ def test_link_checked_mesh_size_and_tetrahedron_count(reconstruction_3tif_link_c
     # material-pair set, no degenerate triangle, no unclosed cell. The attribution claim
     # this test exists to protect is untouched: the tetrahedron count below is unchanged,
     # and `test_offset_included_and_link_checked_differ_only_in_the_extraction` still passes.
-    assert len(points) == 1364  # offset_included: 1980, deterministic: 1172, v0.3: 1580
-    assert len(triangles) == 2943  # offset_included: 4175, deterministic: 2477, v0.3: 3311
-    assert abs(len(algo._tesselation_graph.tetrahedrons) - 25997) <= 3  # offset_included: 25997, deterministic: 20912
+    # The canonical tetrahedron order (0.7.1) changes which of several exactly tied faces the
+    # watershed takes first, moving them again by +4 points and +8 triangles (was 1364 / 2943).
+    # The exact tie-break of the corner snapping (0.7.1) moves one 0-junction sample, +1 triangle
+    # (was 2951) and +2 tetrahedra (was 25 997).
+    assert len(points) == 1368  # offset_included: 1982, deterministic: 1172, v0.3: 1580
+    assert len(triangles) == 2952  # offset_included: 4180, deterministic: 2477, v0.3: 3311
+    assert abs(len(algo._tesselation_graph.tetrahedrons) - 25999) <= 3  # offset_included: 25999, deterministic: 20912
 
 
 def test_link_checked_all_surface_and_sliver_fractions(reconstruction_3tif_link_checked):
@@ -281,7 +290,8 @@ def test_link_checked_has_no_quadjunction_edge_and_no_hole_on_this_case(reconstr
     edge_stats = m.edge_topology_stats(points, triangles, labels)
     assert edge_stats["n_valence_geq4_edges"] == 0
     assert edge_stats["n_holes"] == 0
-    assert edge_stats["valence_histogram"].get(3, 0) == 227  # deterministic: 163 at v0.3, more triple lines resolved
+    # 228 since the exact tie-break of the corner snapping (0.7.1) moved one 0-junction sample (was 227).
+    assert edge_stats["valence_histogram"].get(3, 0) == 228  # deterministic: 163 at v0.3, more triple lines resolved
 
 
 # --------------------------------------------------------------------------------------
@@ -307,8 +317,11 @@ def test_offset_included_mesh_size(reconstruction_3tif_offset_included):
     # set). The regression this test exists to keep measurable is unaffected in kind: the
     # boundary layer's offsets still account for ~31% of the vertices and ~30% of the
     # triangles that the junction-protected default emitted over the link-checked default's.
-    assert len(points) == 1980  # the link-checked default: 1364
-    assert len(triangles) == 4175  # the link-checked default: 2943
+    # The canonical tetrahedron order (0.7.1) moves them by +2 points and +4 triangles (was
+    # 1980 / 4175), through the watershed's order among exactly tied faces. The exact tie-break
+    # of the corner snapping (0.7.1) moves one 0-junction sample, +1 triangle (was 4179).
+    assert len(points) == 1982  # the link-checked default: 1368
+    assert len(triangles) == 4180  # the link-checked default: 2952
 
 
 def test_offset_included_and_link_checked_differ_only_in_the_extraction(

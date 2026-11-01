@@ -7,9 +7,9 @@ beyond the image, and nothing beyond it was observed. The reconstruction closes 
 with triangles lying on the image face, the *border triangles*: faces of the tesselation's hull,
 labelled `(0, c)`, with the cell `c` on one side and nothing on the other. They are not contact
 with the medium. A tension or a contact angle read on them measures the crop, not the tissue: on
-plane crops of the benchmark tissues, reading them as medium contact puts 13 % to 40 % error on
+plane crops of the benchmark tissues, reading them as medium contact puts 14 % to 39 % error on
 the tensions of the interfaces that touch the crop (10 % to 40 % of the tissue removed), against
-9 % to 12 % when they are kept out of every equation.
+9 % to 13 % when they are kept out of every equation (dw3d 0.7.1's meshes).
 
 So the reconstruction records them. A **crop face** is a border triangle on an image face that is
 not declared physical, **and that its cell reaches in the mask**. A **cut cell** is a cell with a

@@ -51,7 +51,7 @@ def test_two_calls_show_the_same_points_and_leave_the_mesh_unchanged(shown_verti
     second = shown_vertices[-1]
 
     assert np.array_equal(first, second)
-    assert np.array_equal(first, stored * np.array([3.0, 1.0, 1.0]))
+    assert np.array_equal(first, (stored * np.array([3.0, 1.0, 1.0]))[:, ::-1])  # drawn as (x, y, z): columns 2, 1, 0
     assert np.array_equal(algorithm.last_constructed_mesh[0], stored)
 
 

@@ -11,17 +11,27 @@ Matthieu Perez 2024
 
 import warnings
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from time import perf_counter
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.spatial import cKDTree
 
 from dw3d.crop_faces import CropFaceReport, classify_crop_faces, normalise_physical_image_faces
+from dw3d.enclosed_media import (
+    EnclosedMediumReport,
+    EnclosedMediumWarning,
+    MediumPieces,
+    UnresolvedCellWarning,
+    UnresolvedRegion,
+    label_enclosed_media,
+    unresolved_message,
+    warning_message,
+)
 from dw3d.io import save_rec, save_vtk
-from dw3d.mesh_surgery import post_process_mesh_surgery
+from dw3d.mesh_surgery import AbnormalEdgeWarning, _find_abnormal_non_manifold_edges, post_process_mesh_surgery
 from dw3d.mesh_utilities import (
     WELD,
     center_around_origin,
@@ -31,7 +41,9 @@ from dw3d.mesh_utilities import (
     set_pixel_size,
     set_points_min_max,
 )
+from dw3d.nearest_neighbours import nearest_with_ties_to_the_lowest_index
 from dw3d.segmentation import extract_seed_coords_and_indices
+from dw3d.tesselation import canonical_tetrahedron_order
 from dw3d.tesselation_graph import TesselationGraph
 from dw3d.watershed import seeded_watershed_map
 
@@ -95,6 +107,8 @@ class MeshReconstructionAlgorithm:
     Attributes:
         print_info (bool): whether to print the timing of each step.
         relocate_junctions (bool): whether the next reconstruction runs junction relocation.
+        canonical_tetrahedron_order (bool): whether the next reconstruction puts the tetrahedra in
+            canonical order before anything reads them; see `__init__`.
         physical_image_faces (tuple[str, ...]): the image faces declared physical; see `__init__`.
     """
 
@@ -108,6 +122,8 @@ class MeshReconstructionAlgorithm:
         perform_mesh_postprocess_surgery: bool,
         relocate_junctions: bool = True,
         physical_image_faces: tuple[str, ...] = (),
+        canonical_tetrahedron_order: bool = True,
+        label_enclosed_media: bool = True,
     ) -> None:
         """Set the methods used by this algorithm to reconstruct a mesh from a segmentation mask.
 
@@ -139,6 +155,39 @@ class MeshReconstructionAlgorithm:
                 mask's cell reaches that face, and the cells they touch are *cut cells*
                 (`cut_cells`). Can also be set as an attribute before a reconstruction. Changes no
                 point, triangle or label of the mesh; see `dw3d.crop_faces`.
+            canonical_tetrahedron_order (bool): Whether to put the tesselation's tetrahedra in
+                canonical order (`dw3d.tesselation.canonical_tetrahedron_order`: vertex indices
+                sorted within each tetrahedron, tetrahedra sorted lexicographically) before
+                anything reads them. **Defaults to `True` since 0.7.1.** The tetrahedra's row
+                indices break the watershed's ties between exactly equal face scores (about a third
+                of the score field is exactly tied), pick the seed tetrahedra and order mesh
+                surgery's cycles, and the row order Qhull returns is not a function of the
+                tetrahedralisation: it changes with the order of the input points and may change
+                with the machine. Measured on the 47 benchmark masks with the default
+                configuration: 9 row orders of the same tetrahedra gave 9 different meshes in the
+                median case, and up to 0.78 degrees of line-mean contact-angle error and 3.8 points
+                of tension error on one case; with the canonical order all 9 gave the same mesh, in
+                47 of 47 cases. `False` keeps Qhull's row order, which reproduces the meshes of
+                dw3d 0.7 and earlier on the machine they were made on. Under the canonical order,
+                between machines, remaining differences are expected only at exactly cospherical
+                points (five or more points on one sphere, where Qhull's choice of
+                tetrahedralisation itself may differ); this is confirmed on Linux x86-64 in
+                continuous integration (Python 3.12 and 3.13).
+            label_enclosed_media (bool): Whether an enclosed pocket of label 0 (a lumen, a cavity: a 6-connected
+                piece of label 0 touching no face of the array) becomes its own region, flagged as a medium, when
+                its inscribed radius is at least the placement's `min_distance + 1` voxels and two or more cells
+                line it. **Defaults to `True` since 0.7.1.** Before, such a pocket had no watershed seed and the
+                first cell its tetrahedra reached took all of it (measured on a 697-cell embryo: a 389 918-voxel
+                lumen inside one cell, at 2.40 times the cell's voxel volume). The new labels are `max + 1`, ... in
+                the order of each pocket's lowest raster index; `enclosed_medium_report` and `medium_labels` say
+                which, the `.rec` file records them (`media = ...`), and `EnclosedMediumWarning` names the cell
+                that took each pocket left (below the bound, lined by one cell). `False` leaves every pocket to the
+                cells, as in 0.7.0. Independently of this switch, since 0.7.1 every piece of label 0 touching the
+                image box gets its own label-0 seed, and a seed whose nearest tetrahedron lies outside its own
+                label's voxels is moved to the nearest one inside (or dropped when there is none), so that no
+                region is seeded in a neighbour. A mask with no pocket at or above the bound, one exterior piece
+                and every seed already inside its label is reconstructed bitwise as before. See
+                `dw3d.enclosed_media`.
         """
         self.print_info = print_info
         self.edt_creation_function = edt_creation_function
@@ -147,10 +196,15 @@ class MeshReconstructionAlgorithm:
         self.score_computation_function = score_computation_function
         self.perform_mesh_postprocess_surgery = perform_mesh_postprocess_surgery
         self.relocate_junctions = relocate_junctions
+        self.canonical_tetrahedron_order = canonical_tetrahedron_order
+        self.label_enclosed_media = label_enclosed_media
+        self._enclosed_medium_report: EnclosedMediumReport | None = None
+        self._medium_pieces: MediumPieces | None = None
         self._relocation_report = None
         self._coarse_spacing_warning_emitted = False
         self._relocation_ran = False
         self._cell_volume_report = None
+        self._n_abnormal_edges: int | None = None
         self.physical_image_faces = normalise_physical_image_faces(physical_image_faces)
         self._crop_face_report: CropFaceReport | None = None
         # Set by `construct_mesh_in_physical_units`, cleared by every reconstruction: the `.rec` appendix fields
@@ -191,9 +245,16 @@ class MeshReconstructionAlgorithm:
                 placement's `min_distance` is 5 or more.
             CellVolumeDisagreementWarning: once, when some cells' mesh volume disagrees with their
                 voxel count (see `cell_volume_report`).
+            AbnormalEdgeWarning: once, when the finished mesh has abnormal non-manifold edges, with
+                their number and the configuration.
         """
-        self._segmented_image = segmented_image
         self._physical_frame = None
+        min_distance = self.placement_min_distance
+        self._segmented_image, self._enclosed_medium_report, self._medium_pieces = label_enclosed_media(
+            segmented_image,
+            float((3 if min_distance is None else min_distance) + 1),
+            make_regions=self.label_enclosed_media,
+        )
 
         self._edt_image = self.edt_creation_function(self._segmented_image)
 
@@ -217,6 +278,8 @@ class MeshReconstructionAlgorithm:
             points_for_tesselation,
             self._point_weights,
         )
+        if self.canonical_tetrahedron_order:
+            tesselation_tetrahedrons = canonical_tetrahedron_order(tesselation_tetrahedrons)
         if self.print_info:
             print(f"Delaunay Tesselation built in {perf_counter() - t_init_tesselation:.2} seconds")
 
@@ -237,6 +300,17 @@ class MeshReconstructionAlgorithm:
             self._segmented_image,
             self._edt_image,
         )
+        self._compressed_seeds = self._seeds_coords
+        library_seeds = self._seeds_coords
+        self._seeds_coords, self._seeds_indices = _seed_every_exterior_piece(
+            self._seeds_coords,
+            self._seeds_indices,
+            self._segmented_image,
+            self._edt_image,
+            self._medium_pieces,
+        )
+        if self._enclosed_medium_report is not None:
+            self._enclosed_medium_report.exterior_seeds_changed = self._seeds_coords is not library_seeds
         self._watershed_seeded()
 
         self._points, self._triangles, self._labels = labeled_mesh_from_labeled_graph(
@@ -245,6 +319,8 @@ class MeshReconstructionAlgorithm:
         )
 
         self._mesh_surgery()
+        self._report_enclosed_media()
+        self._check_for_abnormal_edges()
         self._classify_crop_faces()
         self._relocate_junctions()
         self._compare_cell_volumes_with_mask()
@@ -273,8 +349,8 @@ class MeshReconstructionAlgorithm:
         Why resample rather than mesh the native grid and scale it: measured on 12 simulated tissues of 90 and 165
         cells at a real cell size, down-sampled along z, against the same tissues meshed at full resolution,
         meshing the native grid costs +1.38, +1.97 and +4.10 degrees of contact-angle error at `k = 5/3`, 2 and 3
-        (`k` = long spacing / short spacing), and resampling first +0.83, +0.71 and +1.17; see
-        `dw3d.mask_preprocessing`. The cost is that
+        (`k` = long spacing / short spacing), and resampling first +0.83, +0.71 and +1.17 (on dw3d 0.7.0's meshes,
+        not measured again for 0.7.1); see `dw3d.mask_preprocessing`. The cost is that
         of a mask acquired at the short spacing: `k` times the voxels.
 
         The reports (`crop_faces`, `cut_cells`, `crop_face_report`, `cell_volume_report`, `relocation_report`)
@@ -312,6 +388,7 @@ class MeshReconstructionAlgorithm:
                 along one axis, a range in which the accuracy was not measured. The mesh is built anyway.
             CoarseSpacingRelocationWarning: as in `construct_mesh_from_segmentation_mask`.
             CellVolumeDisagreementWarning: as in `construct_mesh_from_segmentation_mask`.
+            AbnormalEdgeWarning: as in `construct_mesh_from_segmentation_mask`.
         """
         from dw3d.mask_preprocessing import (
             MEASURED_ANISOTROPY_RATIO_MAX,
@@ -417,6 +494,89 @@ class MeshReconstructionAlgorithm:
             return None
         return {"physical_image_faces": " ".join(report.physical_image_faces) or "none"}
 
+    def _rec_media_metadata(self) -> dict | None:
+        """The `.rec` appendix fields for the media and the unresolved regions, or `None` when there is neither.
+
+        `media` lists every medium label, 0 first; `enclosed_media_voxels` and `enclosed_media_inscribed_radius`
+        are aligned with the enclosed ones (the labels after 0). `unresolved_regions` lists the labels of the mask
+        absent from the mesh because no tetrahedron lies in their voxels, `unresolved_regions_voxels` their voxel
+        counts. Each is written only when it has an entry, so a file with neither is byte for byte what it was
+        before 0.7.1.
+        """
+        report = self._enclosed_medium_report
+        if report is None or not (report.media or report.unresolved):
+            return None
+        fields: dict = {}
+        if report.media:
+            fields["media"] = report.medium_labels
+            fields["enclosed_media_voxels"] = tuple(medium.voxels for medium in report.media)
+            fields["enclosed_media_inscribed_radius"] = tuple(repr(medium.inscribed_radius) for medium in report.media)
+        if report.unresolved:
+            fields["unresolved_regions"] = report.dropped_seeds
+            fields["unresolved_regions_voxels"] = tuple(u.voxels for u in report.unresolved)
+        return fields
+
+    @property
+    def enclosed_medium_report(self) -> EnclosedMediumReport | None:
+        """The pieces of medium of the last reconstruction, or `None` before any.
+
+        Returns:
+            dw3d.enclosed_media.EnclosedMediumReport | None: the enclosed media made (`media`), the pockets left to
+                the cells (`pockets_left_to_cells`, each with the cell that took it), the exterior pieces seeded,
+                the size bound, and the labels whose seed had no tetrahedron in their own voxels.
+        """
+        return self._enclosed_medium_report
+
+    @property
+    def medium_labels(self) -> tuple[int, ...]:
+        """The labels of the last mesh that are media, not cells: 0 first, then the enclosed media; `(0,)` before any.
+
+        Returns:
+            tuple[int, ...]: ascending after 0. A mask without label 0 has no 0 here.
+        """
+        report = self._enclosed_medium_report
+        return (0,) if report is None else report.medium_labels
+
+    def _report_enclosed_media(self) -> None:
+        """Name the cell that took each pocket left to the cells, and warn once when there is any.
+
+        Reads the final labelling (after surgery). A pocket's cell is the label holding most of the volume of the
+        tetrahedra whose centroid lies in the pocket (`numpy.rint` of the centroid); when none does, the label of
+        the tetrahedron whose centroid is nearest to the pocket's deepest voxel. Releases the pieces kept for this.
+        """
+        report, pieces = self._enclosed_medium_report, self._medium_pieces
+        self._medium_pieces = None
+        if report is None or pieces is None or not pieces.left:
+            return
+        graph = self._tesselation_graph
+        centroids = graph.compute_nodes_centroids()
+        shape = np.array(self._segmented_image.shape)
+        voxel = np.clip(np.rint(centroids).astype(np.int64), 0, shape - 1)
+        centroid_index = np.ravel_multi_index(tuple(voxel.T), tuple(shape))
+        pocket_index = np.concatenate([pocket.flat_indices for pocket in pieces.left])
+        pocket_id = np.concatenate([np.full(len(p.flat_indices), k) for k, p in enumerate(pieces.left)])
+        order = np.argsort(pocket_index, kind="stable")
+        pocket_index, pocket_id = pocket_index[order], pocket_id[order]
+        position = np.clip(np.searchsorted(pocket_index, centroid_index), 0, len(pocket_index) - 1)
+        inside = pocket_index[position] == centroid_index
+        nodes_in = np.flatnonzero(inside)
+        volumes = graph._compute_volumes()
+        labels = self._map_node_id_to_label
+        absorbed = []
+        for k, pocket in enumerate(pieces.left):
+            nodes = nodes_in[pocket_id[position[nodes_in]] == k]
+            if len(nodes):
+                taken, inverse = np.unique(labels[nodes], return_inverse=True)
+                cell = int(taken[np.argmax(np.bincount(inverse, weights=volumes[nodes]))])
+            else:
+                deepest = np.array(np.unravel_index(pocket.deepest_index, tuple(shape)), dtype=np.float64)
+                cell = int(labels[nearest_with_ties_to_the_lowest_index(centroids, deepest[None])[0]])
+            absorbed.append(cell)
+        report.pockets_left_to_cells = tuple(
+            replace(left, absorbed_by=cell) for left, cell in zip(report.pockets_left_to_cells, absorbed, strict=True)
+        )
+        warnings.warn(warning_message(report), EnclosedMediumWarning, stacklevel=3)
+
     def _relocate_junctions(self) -> None:
         """Move the finished mesh's trijunction vertices onto the mask's own trijunction curves.
 
@@ -482,6 +642,7 @@ class MeshReconstructionAlgorithm:
             self._points,
             self._triangles,
             self._labels,
+            media=self.medium_labels,
         )
         if self._cell_volume_report.cells:
             warnings.warn(disagreement_message(self._cell_volume_report), CellVolumeDisagreementWarning, stacklevel=3)
@@ -554,16 +715,32 @@ class MeshReconstructionAlgorithm:
     def _watershed_seeded(self) -> None:
         """Perform watershed algorithm to label tetrahedrons of the tesselation networkX graph."""
         t1 = perf_counter()
-        seeds_nodes = _compute_seeds_idx_from_voxel_coords(
-            self._tesselation_graph.compute_nodes_centroids(),
+        centroids = self._tesselation_graph.compute_nodes_centroids()
+        seeds_nodes = _compute_seeds_idx_from_voxel_coords(centroids, self._seeds_coords)
+        seeds_nodes, seed_labels, dropped, moved = _seeds_inside_their_labels(
+            centroids,
+            seeds_nodes,
             self._seeds_coords,
+            self._seeds_indices,
+            self._segmented_image,
         )
+        report = self._enclosed_medium_report
+        if report is not None:
+            report.moved_seeds = moved
+            report.min_distance = self.placement_min_distance
+            if dropped:
+                report.unresolved = tuple(
+                    UnresolvedRegion(label, int(np.count_nonzero(self._segmented_image == label)),
+                                     _region_kind(label, report))
+                    for label in dropped
+                )
+                warnings.warn(unresolved_message(report), UnresolvedCellWarning, stacklevel=3)
 
         nx_graph = self._tesselation_graph.to_networkx_graph()
         self._map_label_to_nodes_ids, self._map_node_id_to_label = seeded_watershed_map(
             nx_graph,
             seeds_nodes,
-            self._seeds_indices,
+            seed_labels,
         )
 
         if self.print_info:
@@ -587,6 +764,39 @@ class MeshReconstructionAlgorithm:
         # library.
         self._surface_point_ids = np.unique(self._triangles)
         self._points, self._triangles = filter_unused_points(self._points, self._triangles)
+
+    def _check_for_abnormal_edges(self) -> None:
+        """Count the abnormal non-manifold edges of the finished mesh, and warn once if there is any.
+
+        Runs after surgery and the offset exclusion, when the triangles and labels are final
+        (junction relocation moves vertices only). Changes nothing in the mesh.
+        """
+        triangles = np.asarray(self._triangles, dtype=np.int64)
+        labels = np.asarray(self._labels, dtype=np.int64)
+        self._n_abnormal_edges = len(_find_abnormal_non_manifold_edges(self._points, triangles, labels))
+        if self._n_abnormal_edges:
+            warnings.warn(
+                f"The mesh has {self._n_abnormal_edges} abnormal non-manifold edge"
+                f"{'s' if self._n_abnormal_edges > 1 else ''} (four or more triangles that do not separate as many "
+                f"regions: a surface touching itself or two cells meeting twice along the edge). "
+                f"Configuration: {self._configuration_description()}.",
+                AbnormalEdgeWarning,
+                stacklevel=3,
+            )
+
+    def _configuration_description(self) -> str:
+        """The settings that decide the mesh's connectivity, in one line, for warnings."""
+        placement = self.point_placing_function
+        name = getattr(getattr(placement, "func", placement), "__name__", type(placement).__name__)
+        keywords = {key: value for key, value in getattr(placement, "keywords", {}).items() if key != "print_info"}
+        arguments = ", ".join(f"{key}={value!r}" for key, value in keywords.items())
+        metadata = getattr(self, "_point_metadata", None) or {}
+        return (
+            f"point placement {name}({arguments}), "
+            f"mesh surgery {'on' if self.perform_mesh_postprocess_surgery else 'off'}, "
+            f"canonical tetrahedron order {'on' if self.canonical_tetrahedron_order else 'off'}, "
+            f"offset exclusion {'on' if 'surface_merge_target' in metadata else 'off'}"
+        )
 
     def _exclude_scaffolding_from_surface(self) -> None:
         """Keep the point-placing scheme's scaffolding points out of the surface.
@@ -671,7 +881,7 @@ class MeshReconstructionAlgorithm:
         return {
             "points": self._points,
             "triangles": self._triangles,
-            "seeds": self._seeds_coords,
+            "seeds": self._compressed_seeds,
             "image_shape": self._segmented_image.shape,
         }
 
@@ -743,10 +953,11 @@ class MeshReconstructionAlgorithm:
         """
         report = self._crop_face_report
         crop = report is not None and report.meets_the_image_box
-        if not crop and self._physical_frame is None:
+        media = self._rec_media_metadata()
+        if not crop and self._physical_frame is None and media is None:
             save_rec(filename, self._points, self._triangles, self._labels, binary_mode)
             return
-        metadata = {**(self._physical_frame or {}), **(self._rec_crop_metadata() or {})}
+        metadata = {**(self._physical_frame or {}), **(self._rec_crop_metadata() or {}), **(media or {})}
         save_rec(
             filename,
             self._points,
@@ -786,7 +997,7 @@ def save_compressed_segmentation(filename: str | Path, compressed_segmentation: 
 def _compute_seeds_idx_from_voxel_coords(
     centroids: NDArray[np.float64],
     seed_pixel_coords: NDArray[np.uint],
-) -> NDArray[np.uint]:
+) -> NDArray[np.int64]:
     """Find, for each seed voxel, the index of the nearest tetrahedron centroid.
 
     Used to express the watershed's seeds as tesselation nodes.
@@ -798,7 +1009,112 @@ def _compute_seeds_idx_from_voxel_coords(
     from indexing into a materialised array of every voxel coordinate — see the deleted
     `_pixels_coords` helper in the git history of this file. Removing it also removed the
     function's `edt` parameter, which existed only to supply that array's shape.
+
+    A seed voxel can be equidistant from several centroids (both sit on the lattice or its
+    quarters); the lowest tetrahedron index is taken then, not `cKDTree.query`'s choice, which
+    depends on the SciPy build. No seed of the four golden images has such a tie.
     """
-    tree = cKDTree(centroids)
-    _, idx_seeds = tree.query(seed_pixel_coords)
-    return idx_seeds  # "seed" nodes ids
+    return nearest_with_ties_to_the_lowest_index(centroids, seed_pixel_coords)  # "seed" nodes ids
+
+
+def _seed_every_exterior_piece(
+    coords: NDArray[np.uint],
+    labels: NDArray,
+    segmented_image: NDArray,
+    edt_image: NDArray,
+    pieces: MediumPieces | None,
+) -> tuple[NDArray[np.uint], NDArray]:
+    """Label 0's watershed seeds: one per piece of label 0 touching the image box, none in an enclosed pocket.
+
+    `extract_seed_coords_and_indices` gives label 0 one seed, at its largest EDT value, which before 0.7.1 could
+    lie in an enclosed pocket (when the pocket was deeper than the exterior), so that the exterior had none and a
+    cell took it; and a second piece of exterior got none either. Here label 0's seed is kept when there is one
+    exterior piece and it lies there (the common case: the seeds are returned unchanged). Otherwise label 0's
+    seeds are one per exterior piece, at that piece's largest EDT value (the first voxel in C order among
+    ties), in the order of each piece's first voxel; with no exterior piece, label 0 gets no seed, and its pockets
+    are left to the cells.
+
+    Returns:
+        tuple: the seeds' voxel coordinates and labels, label 0's first, then the others as given.
+    """
+    if pieces is None:
+        return coords, labels
+    zero = np.flatnonzero(labels == 0)
+    if not len(zero):
+        return coords, labels
+    shape = segmented_image.shape
+    seed_index = int(np.ravel_multi_index(tuple(int(c) for c in coords[zero[0]]), shape))
+    in_a_pocket = any(bool(np.any(pocket.flat_indices == seed_index)) for pocket in pieces.left)
+    if pieces.exterior_count == 1 and not in_a_pocket:
+        return coords, labels
+    others = np.flatnonzero(labels != 0)
+    flat_edt = edt_image.reshape(-1)
+    seeds = []
+    if pieces.exterior_count == 1:
+        exterior = segmented_image.reshape(-1) == 0
+        for pocket in pieces.left:
+            exterior[pocket.flat_indices] = False
+        indices = np.flatnonzero(exterior)
+        seeds.append(indices[np.argmax(flat_edt[indices])])
+    elif pieces.exterior_count > 1:
+        components = pieces.exterior_components
+        if components is None:  # kept by `label_enclosed_media` whenever there are two or more exterior pieces
+            message = "the exterior pieces' component image was not kept"
+            raise RuntimeError(message)
+        flat_components = components.reshape(-1)
+        for piece in pieces.exterior_ids:
+            indices = np.flatnonzero(flat_components == piece)
+            seeds.append(indices[np.argmax(flat_edt[indices])])
+    zero_coords = np.array([np.unravel_index(index, shape) for index in seeds], dtype=coords.dtype).reshape(-1, 3)
+    new_coords = np.concatenate([zero_coords, coords[others]])
+    new_labels = np.concatenate([np.zeros(len(seeds), dtype=labels.dtype), labels[others]])
+    return new_coords, new_labels
+
+
+def _seeds_inside_their_labels(
+    centroids: NDArray[np.float64],
+    seeds_nodes: NDArray[np.int64],
+    seed_coords: NDArray[np.uint],
+    seed_labels: NDArray,
+    segmented_image: NDArray,
+) -> tuple[NDArray[np.int64], NDArray, tuple[int, ...], tuple[int, ...]]:
+    """Move a seed whose tetrahedron lies outside its own label to the nearest tetrahedron inside, or drop it.
+
+    A tetrahedron lies in a label when the voxel of its centroid (`numpy.rint`, clipped to the array) carries it.
+    The nearest tetrahedron centroid to a seed voxel can lie in a neighbouring region when the seed's region is
+    too thin or too small for the tesselation; seeding it there grows the region inside its neighbour (measured:
+    phantom regions of up to 64 times their voxel volume when seeds were placed in unresolved pockets). Such a
+    seed is moved to the nearest centroid whose voxel carries its label (lowest index on exact ties); with none,
+    the seed is dropped and the region is absent from the mesh. When every seed is already inside its label,
+    the arguments are returned unchanged.
+
+    Returns:
+        tuple: the seed tetrahedra, their labels, the labels whose seed was dropped and those whose seed was moved
+            (both ascending).
+    """
+    shape = np.array(segmented_image.shape)
+    voxel = np.clip(np.rint(centroids[seeds_nodes]).astype(np.int64), 0, shape - 1)
+    outside = segmented_image[tuple(voxel.T)] != seed_labels
+    if not outside.any():
+        return seeds_nodes, seed_labels, (), ()
+    all_voxels = np.clip(np.rint(centroids).astype(np.int64), 0, shape - 1)
+    centroid_labels = segmented_image[tuple(all_voxels.T)]
+    keep = np.ones(len(seeds_nodes), dtype=bool)
+    nodes = np.array(seeds_nodes, dtype=np.int64, copy=True)
+    for position in np.flatnonzero(outside):
+        candidates = np.flatnonzero(centroid_labels == seed_labels[position])
+        if not len(candidates):
+            keep[position] = False
+            continue
+        query = np.asarray(seed_coords[position], dtype=np.float64)[None]
+        nodes[position] = candidates[nearest_with_ties_to_the_lowest_index(centroids[candidates], query)[0]]
+    dropped = tuple(sorted({int(label) for label in seed_labels[~keep]}))
+    moved = tuple(sorted({int(label) for label in seed_labels[outside & keep]}))
+    return nodes[keep], seed_labels[keep], dropped, moved
+
+
+def _region_kind(label: int, report: EnclosedMediumReport) -> str:
+    """`"exterior"` for label 0, `"enclosed medium"` for an enclosed medium's label, `"cell"` otherwise."""
+    if label == 0:
+        return "exterior"
+    return "enclosed medium" if label in report.medium_labels else "cell"

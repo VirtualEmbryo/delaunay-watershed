@@ -12,9 +12,10 @@ import numpy as np
 import trimesh
 from numpy.typing import NDArray
 from scipy import ndimage as ndi
-from scipy.spatial import cKDTree
 from skimage.segmentation import watershed
 from trimesh import remesh
+
+from dw3d.nearest_neighbours import nearest_with_ties_to_the_lowest_index
 
 
 def _create_coords(nx: int, ny: int, nz: int) -> NDArray[np.float64]:
@@ -64,14 +65,14 @@ def _subdivide_mesh(
 
 
 def _make_mask(verts: NDArray[np.float64], image_shape: NDArray[np.uint]) -> NDArray[np.float64]:
-    """Mark the pixels touching a vertex of the subdivided mesh."""
+    """Mark the pixels touching a vertex of the subdivided mesh.
+
+    A vertex halfway between two pixels marks the one of lower index, whatever the SciPy build.
+    """
     nz, ny, nx = image_shape
     # nx,ny,nz = grid_size
     points = _create_coords(nx, ny, nz)
-    tree = cKDTree(points)
-    distances = tree.query(verts)
-
-    _, idx = distances
+    idx = nearest_with_ties_to_the_lowest_index(points, verts)
     membrane = np.zeros(nx * ny * nz)
     membrane[idx] = 1
     membrane = membrane.reshape(nx, ny, nz)

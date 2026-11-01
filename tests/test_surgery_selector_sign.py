@@ -25,8 +25,7 @@ from dw3d.mesh_surgery import (
     _find_candidate_for_label_switching,
     _label_switching,
     _powerset,
-    _search_and_make_double_switching,
-    post_process_mesh_surgery,
+    _rule_relabelling,
 )
 
 # --------------------------------------------------------------------------------------
@@ -200,33 +199,34 @@ def test_the_selection_is_deterministic():
 # --------------------------------------------------------------------------------------
 # Part 3 -- the sign itself, at both call sites, so it cannot be re-inverted silently.
 # --------------------------------------------------------------------------------------
-@pytest.mark.parametrize(
-    "function",
-    [post_process_mesh_surgery, _search_and_make_double_switching],
-    ids=["post_process_mesh_surgery", "_search_and_make_double_switching"],
-)
-def test_the_source_selects_by_argmax_at_both_call_sites(function):
+def test_the_source_selects_by_argmax_at_both_call_sites():
     """Both selection sites must maximise `_evaluate_cycle`, which is what its docstring asks.
 
     Asserted on the source text rather than on behaviour because behaviour needs a mesh and this
     file is dataset-independent by design. Crude, and deliberately so: the failure this guards
     against is someone reading `argmax` as a typo and "fixing" it back, and a source assertion
     with this docstring attached is what stops that from being a silent one-character change.
-    `_search_and_make_double_switching` is included because it carries the *same* inversion and
-    was corrected in the same commit -- it is not covered by any other test here.
+    Both sites -- the single-switch and the double-switch candidates, which carried the *same*
+    inversion and were corrected in the same commit -- are in `_rule_relabelling` since mesh
+    surgery scores every relabelling by the abnormal edges it adds or removes (it was
+    `post_process_mesh_surgery` and `_search_and_make_double_switching` before).
     """
-    source = inspect.getsource(function)
-    assert "np.argmax(evaluation_of_switch)" in source
+    source = inspect.getsource(_rule_relabelling)
+    assert source.count("np.argmax(evaluation_of_switch)") == 2
     assert "np.argmin(evaluation_of_switch)" not in source
 
 
 def test_evaluate_cycle_is_reached_only_through_those_two_selection_sites():
     """The scope claim the whole fix rests on, checked instead of asserted in a commit message.
 
-    If `_evaluate_cycle` were consulted anywhere else, correcting the comparator at the two
-    selection sites would be a partial fix. It is not: the module's source contains exactly two
-    calls to it, and both are the selection expressions above.
+    If `_evaluate_cycle` were consulted anywhere else to choose the rule's switch, correcting the
+    comparator at the two selection sites would be a partial fix. It is not: the module's source
+    contains exactly two such calls, and both are the selection expressions above. Its one other
+    call is a tie-break among the alternatives the guarded surgery scores by abnormal-edge count
+    (`_select_relabelling`), where the higher score is preferred too.
     """
     source = inspect.getsource(mesh_surgery)
     calls = source.count("_evaluate_cycle(cycle)")
     assert calls == 2, f"expected exactly 2 selection-site calls to _evaluate_cycle, found {calls}"
+    assert source.count("-_evaluate_cycle(resulting)") == 1
+    assert source.count("_evaluate_cycle(") == 4  # the two sites, the tie-break, the definition

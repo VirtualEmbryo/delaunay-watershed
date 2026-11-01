@@ -3,13 +3,16 @@
 Why this exists
 ---------------
 A reconstruction can lose a cell or misplace part of it while the mesh stays closed, manifold and
-free of self-intersections, so no topological check sees it. Measured with the default algorithm
-at `min_distance` 3: on the 47 benchmark masks 2 of 240 cells, on two 246-timepoint real embryo
-series 169 of 5 038, and on a 1 866-cell tissue 20 cells, have a mesh volume below half or above
-one and a half times their voxel count, a non-positive volume, or no surface at all. Almost all of
-them are small cells (a few hundred voxels, about two voxels thick) that the seeded watershed never
-grows out of; one is a single-tetrahedron cell that junction relocation turned inside out. Their
-interfaces are missing or misplaced, and a pressure inferred for such a cell is not a measurement.
+free of self-intersections, so no topological check sees it. Measured with the default algorithm at
+`min_distance` 3: on the 47 benchmark masks 2 of 240 cells, on two 246-timepoint real embryo series
+169 of 5 038, and on a 1 866-cell tissue 20 cells, have a mesh volume below half or above one and a
+half times their voxel count, a non-positive volume, or no surface at all (the benchmark and
+embryo counts measured before 0.7.1, whose meshes differ slightly; the 1 866-cell tissue's 20 are the
+same cells on 0.7.0's and on 0.7.1's meshes). Almost all of them are small cells (a few hundred
+voxels, about two voxels thick) that the seeded watershed never grows out of; before 0.6.0 one of
+the 1 866-cell tissue's was a single-tetrahedron cell that junction relocation turned inside out,
+which relocation now refuses to do. Their interfaces are missing or misplaced, and a pressure inferred for such a
+cell is not a measurement.
 
 This module changes no geometry. It compares each label's mesh volume with its voxel count and
 reports the labels that fall outside a fixed range, so that a user, or foambryo, can see which
@@ -21,7 +24,8 @@ The mesh volume of a label is the divergence-theorem volume with the package's w
 convention: `+det(p0, p1, p2) / 6` for every triangle whose first label it is, `-det / 6` for every
 triangle whose second label it is. Volumes are in cubic voxels, so the comparison is made on the
 mesh in mask voxel units, before any pixel-size scaling. Label 0 is the exterior medium and is
-never listed. The range `[0.5, 1.5]` is inclusive; its bounds are fixed, not tuning parameters.
+never listed, nor is an enclosed medium (a lumen) the reconstruction made its own region
+(`media`). The range `[0.5, 1.5]` is inclusive; its bounds are fixed, not tuning parameters.
 """
 
 from __future__ import annotations
@@ -161,6 +165,8 @@ def compare_cell_volumes_with_mask(
     triangles: NDArray[np.integer],
     labels: NDArray[np.integer],
     ratio_range: tuple[float, float] = CELL_VOLUME_RATIO_RANGE,
+    *,
+    media: tuple[int, ...] | list[int] = (0,),
 ) -> CellVolumeReport:
     """List every non-zero label whose mesh volume disagrees with its voxel count.
 
@@ -175,6 +181,9 @@ def compare_cell_volumes_with_mask(
         triangles (NDArray[np.integer]): `(m, 3)` vertex indices.
         labels (NDArray[np.integer]): `(m, 2)`, the two materials each triangle separates.
         ratio_range (tuple[float, float]): the inclusive range that is not listed.
+        media (tuple[int, ...] | list[int]): the labels that are media, not cells (the exterior 0 and the enclosed
+            media a reconstruction made, `MeshReconstructionAlgorithm.medium_labels`); never listed nor counted.
+            Keyword-only. Defaults to `(0,)`.
 
     Returns:
         CellVolumeReport: the listed labels, ascending, with their voxel count, volume and reason.
@@ -183,8 +192,9 @@ def compare_cell_volumes_with_mask(
     voxels = voxel_counts(segmented_mask)
     volumes = mesh_cell_volumes(points, triangles, labels)
     report = CellVolumeReport(ratio_range=(float(lower), float(upper)))
+    skipped = {int(label) for label in media}
     for label, count in voxels.items():
-        if label == 0:
+        if label in skipped:
             continue
         report.n_cells += 1
         volume = volumes.get(label)

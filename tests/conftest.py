@@ -41,6 +41,9 @@ OFFSET_EXCLUDED_GOLDEN_DIR = GOLDEN_DIR / "offset_excluded"
 # **This is the default**, so these must stay byte-identical to `GOLDEN_DIR`'s;
 # `test_golden_master.py` asserts it.
 LINK_CHECKED_GOLDEN_DIR = GOLDEN_DIR / "link_checked"
+# The default configuration's fixtures of dw3d 0.7 (Qhull's tetrahedron row order), moved byte for byte
+# when the canonical tetrahedron order became the default (0.7.1); checked with `canonical_tetrahedron_order=False`.
+QHULL_TETRAHEDRON_ORDER_GOLDEN_DIR = GOLDEN_DIR / "qhull_tetrahedron_order"
 
 # Since 0.5.0 every configuration relocates junction vertices by default. The fixtures under
 # `GOLDEN_DIR` are the relocated meshes; the byte-identical 0.4 fixtures they replaced live

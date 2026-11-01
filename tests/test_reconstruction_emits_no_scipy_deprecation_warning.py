@@ -2,7 +2,8 @@
 
 Up to 0.7.0 the seed lookup imported `scipy.spatial.ckdtree`, a namespace SciPy deprecated (to be removed in SciPy
 2.0.0), so every reconstruction printed a `DeprecationWarning`. The public `scipy.spatial.cKDTree` is the very same
-class (checked below), so the meshes cannot change; the golden-master tests pin them bitwise.
+class (checked below), so the meshes cannot change; the golden-master tests pin them bitwise. The seed lookup now
+goes through `dw3d.nearest_neighbours`, which breaks exact ties itself; its k-d tree is the same public class.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import warnings
 import numpy as np
 import scipy.spatial
 
-from dw3d import get_default_mesh_reconstruction_algorithm, reconstruction_algorithm
+from dw3d import get_default_mesh_reconstruction_algorithm, nearest_neighbours
 
 
 def two_cells(n: int = 32) -> np.ndarray:
@@ -24,7 +25,7 @@ def two_cells(n: int = 32) -> np.ndarray:
 
 
 def test_the_seed_lookup_uses_the_public_kd_tree() -> None:
-    assert reconstruction_algorithm.cKDTree is scipy.spatial.cKDTree
+    assert nearest_neighbours.cKDTree is scipy.spatial.cKDTree
 
 
 def test_a_reconstruction_emits_no_scipy_deprecation_warning() -> None:

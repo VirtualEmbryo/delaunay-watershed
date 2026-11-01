@@ -35,6 +35,13 @@ therefore **not** a fix (measured at 3/6/12/30: unchanged on 030 and 032; case 0
 one that does converge, at 6). It is also not free -- it would move `get_dithered_algorithm`'s
 output and invalidate the published-comparability fixtures -- so `max_iter` is left at 3
 and the oscillation is recorded instead.
+
+Since 0.7.1 the oscillation cannot happen: surgery scores every relabelling by the abnormal
+edges it adds or removes, never applies one that adds more than it removes, and never undoes
+an earlier relabelling with no gain (`post_process_mesh_surgery`;
+`tests/test_surgery_never_recreates_an_abnormal_edge.py` pins it on a mesh where the rule alone
+oscillated). The label cycles below are the historical survivors and are tested as cycles,
+independently of surgery.
 """
 
 import numpy as np

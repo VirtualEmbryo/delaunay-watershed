@@ -3,272 +3,272 @@
     "1_md3": {
       "runs": [
         {
-          "joint": "06d8df93037b6a9869b8c27c706141291c72365d15d1c73c7deeeed0759d5eaf",
-          "labels": "0a17299ba0f7d7116cc1d92b03d09e3c6dc8a20a2b16e7e9a8e107e8694328bc",
+          "joint": "3a96caa08145952fa73c7f0ad96cd454b9557be4b4456ae1049a274796eb98a1",
+          "labels": "c0b3a30529d28438dc651a90ede06f3269f6c83f6f058d916e242937ac9b824d",
           "lone_faces": "ea1648dd8ba0a838665040ac3878298406b480acaee23e438417b8a219feabdc",
-          "map_node_id_to_label": "5cbf168c9dc518daf97ea16457241a9223eafffee9e7134c073dfb92a8214569",
+          "map_node_id_to_label": "0f95401cb8d6da304afe1d60975592d2e1ef063ebed02bc6d38ceee83c2e7b82",
           "n_lone_faces": 6962,
           "n_points": 1327,
           "n_tetrahedra": 20348,
           "n_triangles": 2696,
-          "nodes_on_the_border": "23a5a83278ee9aaeeed0de668c543fadc859e7a7adea809ac397545d69d595f8",
+          "nodes_on_the_border": "d86a1020cafdb1f44198883ee6940052d2197ee0194443adaadced16cba621eb",
           "points": "c6e2a0f94b9a074b881fdfcffb7670f910824787a7901fcacb090f348205ced8",
           "scores": "0fa4d1bd7d8dfb0fa1c94cd147ca4cf823a919adb00b983a2a2f697c482d1a2b",
-          "triangles": "96380fa01717341e5c70bdef2d2366f5b660407955d3e991495c982b30ef56cb",
-          "wall_time_s": 3.8227252909564413
+          "triangles": "9ed208bca53dea0a879999fc8756ddfc2c3999a97d6f0f15f7d3015d4d554619",
+          "wall_time_s": 2.0333791250013746
         },
         {
-          "joint": "06d8df93037b6a9869b8c27c706141291c72365d15d1c73c7deeeed0759d5eaf",
-          "labels": "0a17299ba0f7d7116cc1d92b03d09e3c6dc8a20a2b16e7e9a8e107e8694328bc",
+          "joint": "3a96caa08145952fa73c7f0ad96cd454b9557be4b4456ae1049a274796eb98a1",
+          "labels": "c0b3a30529d28438dc651a90ede06f3269f6c83f6f058d916e242937ac9b824d",
           "lone_faces": "ea1648dd8ba0a838665040ac3878298406b480acaee23e438417b8a219feabdc",
-          "map_node_id_to_label": "5cbf168c9dc518daf97ea16457241a9223eafffee9e7134c073dfb92a8214569",
+          "map_node_id_to_label": "0f95401cb8d6da304afe1d60975592d2e1ef063ebed02bc6d38ceee83c2e7b82",
           "n_lone_faces": 6962,
           "n_points": 1327,
           "n_tetrahedra": 20348,
           "n_triangles": 2696,
-          "nodes_on_the_border": "23a5a83278ee9aaeeed0de668c543fadc859e7a7adea809ac397545d69d595f8",
+          "nodes_on_the_border": "d86a1020cafdb1f44198883ee6940052d2197ee0194443adaadced16cba621eb",
           "points": "c6e2a0f94b9a074b881fdfcffb7670f910824787a7901fcacb090f348205ced8",
           "scores": "0fa4d1bd7d8dfb0fa1c94cd147ca4cf823a919adb00b983a2a2f697c482d1a2b",
-          "triangles": "96380fa01717341e5c70bdef2d2366f5b660407955d3e991495c982b30ef56cb",
-          "wall_time_s": 3.7990695839980617
+          "triangles": "9ed208bca53dea0a879999fc8756ddfc2c3999a97d6f0f15f7d3015d4d554619",
+          "wall_time_s": 1.6202960420050658
         }
       ]
     },
     "1_md5": {
       "runs": [
         {
-          "joint": "dc0f7ec27f224954f4da7660b910523eed6828336e453327a7e5183979120f46",
+          "joint": "72bc14570f9245528080e394fe43f1a6a01382369b7021e255f65278c495340c",
           "labels": "bf5f103e2bbd5e5468076f52e8d8e7fb624cf6615d9f28827ccf464f0acd1583",
           "lone_faces": "7c029fb15d32cb1614b4d4559429f572d44a47c695f0456f0a33fcb1f41d6418",
-          "map_node_id_to_label": "24e072b4997c9956048899c649d3da07efea640ce701d93141f48e1899e48133",
+          "map_node_id_to_label": "568bbf6f9e72e44dc3426896e61ca6070fdcdbf5754b1d830bb35f655e11a31f",
           "n_lone_faces": 2828,
           "n_points": 526,
           "n_tetrahedra": 8226,
           "n_triangles": 1083,
-          "nodes_on_the_border": "fcb7e55576637ea3817d3d0eea3ad9d4e8db0001c3b97d14c186a56833ba1058",
+          "nodes_on_the_border": "ee913c6b00e2fe758863483b22d5834ece34e26a0c5ec1eb5327995ec8f790bb",
           "points": "bce4143098c5a5e5f7821730b9328b27f220dc2e6d76f9c50399fa3cced20ec4",
           "scores": "52ebdb4d98a6dd69977f1ecdc35e0e20d3477e2ee067ce3386b91e6d3cbeae6d",
           "triangles": "e00f996af1a9a7ee52ab6c922a52f2469fd320b420f2e782d93a68b0e24f6728",
-          "wall_time_s": 2.403847041015979
+          "wall_time_s": 1.1918399169808254
         },
         {
-          "joint": "dc0f7ec27f224954f4da7660b910523eed6828336e453327a7e5183979120f46",
+          "joint": "72bc14570f9245528080e394fe43f1a6a01382369b7021e255f65278c495340c",
           "labels": "bf5f103e2bbd5e5468076f52e8d8e7fb624cf6615d9f28827ccf464f0acd1583",
           "lone_faces": "7c029fb15d32cb1614b4d4559429f572d44a47c695f0456f0a33fcb1f41d6418",
-          "map_node_id_to_label": "24e072b4997c9956048899c649d3da07efea640ce701d93141f48e1899e48133",
+          "map_node_id_to_label": "568bbf6f9e72e44dc3426896e61ca6070fdcdbf5754b1d830bb35f655e11a31f",
           "n_lone_faces": 2828,
           "n_points": 526,
           "n_tetrahedra": 8226,
           "n_triangles": 1083,
-          "nodes_on_the_border": "fcb7e55576637ea3817d3d0eea3ad9d4e8db0001c3b97d14c186a56833ba1058",
+          "nodes_on_the_border": "ee913c6b00e2fe758863483b22d5834ece34e26a0c5ec1eb5327995ec8f790bb",
           "points": "bce4143098c5a5e5f7821730b9328b27f220dc2e6d76f9c50399fa3cced20ec4",
           "scores": "52ebdb4d98a6dd69977f1ecdc35e0e20d3477e2ee067ce3386b91e6d3cbeae6d",
           "triangles": "e00f996af1a9a7ee52ab6c922a52f2469fd320b420f2e782d93a68b0e24f6728",
-          "wall_time_s": 2.5575443750130944
+          "wall_time_s": 1.1333789159543812
         }
       ]
     },
     "2_md3": {
       "runs": [
         {
-          "joint": "4e9964866261be6f6e714c1da6dc635b68df304a268d9f96e0dcac0bd84e308e",
-          "labels": "cf23abc03e0b6fc989cafd1228082a77d26338cc86a33b8ae57ea0ac947fb2a0",
+          "joint": "7a8a3418c0488e37318a15a7f219441d48dd83d7daea075f36db6ed56ab838fa",
+          "labels": "3ff408d5a9349181884568f8b3bf91dd29650f91b0bfaf39da84e8b7dfc2ab98",
           "lone_faces": "9afee0480f263a38941d3f28cbd32464b5ce4432a978478989c65919cce9588c",
-          "map_node_id_to_label": "fde16a2f9ad373a4e290c5cd0b6cda5730f8dd7a94e77ca9388825608220c89c",
+          "map_node_id_to_label": "b427bf8b469cacd53cce82b41a1938c0429d8c91344ce47ff79f2c0814d56fb5",
           "n_lone_faces": 6970,
           "n_points": 1126,
           "n_tetrahedra": 18450,
           "n_triangles": 2309,
-          "nodes_on_the_border": "c2384b8d74579754bfff41e523e6b90148b3bb9dc9021ec67832b7a6987283eb",
+          "nodes_on_the_border": "86096bcda68e54a5187c5f58e55d20c4ddae3d40cad3fcd67ac0b5dc5f3fc81e",
           "points": "cd2d39c54a358a46b19c187b2c86791c004bb25e6d8eac7e87f72ff803909944",
           "scores": "c6c9708a705dec76ffa308fc83776a46f4699aef661d063ceb3ba41d52a9477b",
-          "triangles": "98bb80bf1fe96922130848e2c3945dede33397963b026acbb31303e9ce8a5ab9",
-          "wall_time_s": 3.6574991659726948
+          "triangles": "beb56cd013cb9b31172b5234e569deab53e1872ec889bab65a05955a51555590",
+          "wall_time_s": 1.5665772919892333
         },
         {
-          "joint": "4e9964866261be6f6e714c1da6dc635b68df304a268d9f96e0dcac0bd84e308e",
-          "labels": "cf23abc03e0b6fc989cafd1228082a77d26338cc86a33b8ae57ea0ac947fb2a0",
+          "joint": "7a8a3418c0488e37318a15a7f219441d48dd83d7daea075f36db6ed56ab838fa",
+          "labels": "3ff408d5a9349181884568f8b3bf91dd29650f91b0bfaf39da84e8b7dfc2ab98",
           "lone_faces": "9afee0480f263a38941d3f28cbd32464b5ce4432a978478989c65919cce9588c",
-          "map_node_id_to_label": "fde16a2f9ad373a4e290c5cd0b6cda5730f8dd7a94e77ca9388825608220c89c",
+          "map_node_id_to_label": "b427bf8b469cacd53cce82b41a1938c0429d8c91344ce47ff79f2c0814d56fb5",
           "n_lone_faces": 6970,
           "n_points": 1126,
           "n_tetrahedra": 18450,
           "n_triangles": 2309,
-          "nodes_on_the_border": "c2384b8d74579754bfff41e523e6b90148b3bb9dc9021ec67832b7a6987283eb",
+          "nodes_on_the_border": "86096bcda68e54a5187c5f58e55d20c4ddae3d40cad3fcd67ac0b5dc5f3fc81e",
           "points": "cd2d39c54a358a46b19c187b2c86791c004bb25e6d8eac7e87f72ff803909944",
           "scores": "c6c9708a705dec76ffa308fc83776a46f4699aef661d063ceb3ba41d52a9477b",
-          "triangles": "98bb80bf1fe96922130848e2c3945dede33397963b026acbb31303e9ce8a5ab9",
-          "wall_time_s": 3.398907041992061
+          "triangles": "beb56cd013cb9b31172b5234e569deab53e1872ec889bab65a05955a51555590",
+          "wall_time_s": 1.6320146250072867
         }
       ]
     },
     "2_md5": {
       "runs": [
         {
-          "joint": "b82e9facca68f07a0f7b8b29922e10920896e05758b5225c1f40075ff164daa8",
+          "joint": "3c2ade0def1885916daccb0491cad5c8841194cf80ca4ca868e6e222c31d3c7e",
           "labels": "efefc63976586a1dd3aa99fee5dcd2f865b0aa2fea37056bb5e3b2e5756cb9d4",
           "lone_faces": "fb970cf9188eaffee1e0afd2cb4787bf91651c844beab3dd8843aad88b99681f",
-          "map_node_id_to_label": "0ced0cbfcc9b99ff904473141e6cf73fb1081406b23d7505049d5abcf18a0741",
+          "map_node_id_to_label": "a55b03321ff042c405b30e716e1d554057aef11eb3613fe52888374c0ad0bb20",
           "n_lone_faces": 2798,
           "n_points": 445,
           "n_tetrahedra": 7480,
           "n_triangles": 927,
-          "nodes_on_the_border": "7d80b5054f86a2a96948a711e8d25aa7741feefcce1adbc3256df307fbb78327",
+          "nodes_on_the_border": "bff8845f72069a11bd4d76eccb9f4f724c90bb14ed0c024b4469b160fd58f58b",
           "points": "5fcda25485f4b2fcf1e55eb43bab522bdbbe9067e73f892ee72a0a8158acad9a",
           "scores": "ddb0e74d7f14d24d9dacab609b6cc399996fd7b239106744655b59c6778c9162",
           "triangles": "63c72e88d064c438e1966810c34a7409d405106a1bfc95bd13514070e4336b37",
-          "wall_time_s": 2.340446582995355
+          "wall_time_s": 1.1436923340079375
         },
         {
-          "joint": "b82e9facca68f07a0f7b8b29922e10920896e05758b5225c1f40075ff164daa8",
+          "joint": "3c2ade0def1885916daccb0491cad5c8841194cf80ca4ca868e6e222c31d3c7e",
           "labels": "efefc63976586a1dd3aa99fee5dcd2f865b0aa2fea37056bb5e3b2e5756cb9d4",
           "lone_faces": "fb970cf9188eaffee1e0afd2cb4787bf91651c844beab3dd8843aad88b99681f",
-          "map_node_id_to_label": "0ced0cbfcc9b99ff904473141e6cf73fb1081406b23d7505049d5abcf18a0741",
+          "map_node_id_to_label": "a55b03321ff042c405b30e716e1d554057aef11eb3613fe52888374c0ad0bb20",
           "n_lone_faces": 2798,
           "n_points": 445,
           "n_tetrahedra": 7480,
           "n_triangles": 927,
-          "nodes_on_the_border": "7d80b5054f86a2a96948a711e8d25aa7741feefcce1adbc3256df307fbb78327",
+          "nodes_on_the_border": "bff8845f72069a11bd4d76eccb9f4f724c90bb14ed0c024b4469b160fd58f58b",
           "points": "5fcda25485f4b2fcf1e55eb43bab522bdbbe9067e73f892ee72a0a8158acad9a",
           "scores": "ddb0e74d7f14d24d9dacab609b6cc399996fd7b239106744655b59c6778c9162",
           "triangles": "63c72e88d064c438e1966810c34a7409d405106a1bfc95bd13514070e4336b37",
-          "wall_time_s": 2.1941539999679662
+          "wall_time_s": 1.2035187089932151
         }
       ]
     },
     "3_md3": {
       "runs": [
         {
-          "joint": "5d664e6a3414610a20c89022e383b63eb453e8306615605f3fba2e4ffeace970",
-          "labels": "133de1bf50c43d36df7917cde8902a4d8182a0e2f8db45f3ce41ac46a723cccb",
+          "joint": "ef78ecd802f25133b3af4f4714fa7a3c11b5726c10699743a9bfd91c5d0b949c",
+          "labels": "ab422355996e8fb32eceff57aac077d99066e47fd02da10b9807950a3811ca94",
           "lone_faces": "582ed957f07990bb7ab8f1f414ff3bd2a916bab6ae301449ddc4dbdc87ff97b5",
-          "map_node_id_to_label": "951636e6282ee117bdc5feb4c408344f6ac1257c423a5ae0bd14f32c04faf140",
+          "map_node_id_to_label": "131abd7c982f8a014d5a41efd0950b03a025d59bd1072f2eef423270f91da60d",
           "n_lone_faces": 8672,
           "n_points": 1580,
           "n_tetrahedra": 24152,
           "n_triangles": 3311,
-          "nodes_on_the_border": "60651f47af805d359717227f606e6f44de06824861711c3f954e9f372b4281fd",
+          "nodes_on_the_border": "82e44ebf40e51e5e1e4685445d08eeb38d3c22c036c482f8b6f94aa2229a1f49",
           "points": "b47a66f2ef1af2601e4ca35245cdf3aaefebad25fc65577ecb54967f0d4f88e8",
           "scores": "4ed18db3f13267c782c82aeb13553674add93af8d6362be3793ae675a4b90a06",
-          "triangles": "2081ba78671fa0f970f23d67561ff666185ac246f34525dd0c69335de1daf175",
-          "wall_time_s": 5.120986916997936
+          "triangles": "ddc55040d040ebeaa96934973d50bdd2b98e55bd91e7aca131e4eb8e07995ee7",
+          "wall_time_s": 2.916878624993842
         },
         {
-          "joint": "5d664e6a3414610a20c89022e383b63eb453e8306615605f3fba2e4ffeace970",
-          "labels": "133de1bf50c43d36df7917cde8902a4d8182a0e2f8db45f3ce41ac46a723cccb",
+          "joint": "ef78ecd802f25133b3af4f4714fa7a3c11b5726c10699743a9bfd91c5d0b949c",
+          "labels": "ab422355996e8fb32eceff57aac077d99066e47fd02da10b9807950a3811ca94",
           "lone_faces": "582ed957f07990bb7ab8f1f414ff3bd2a916bab6ae301449ddc4dbdc87ff97b5",
-          "map_node_id_to_label": "951636e6282ee117bdc5feb4c408344f6ac1257c423a5ae0bd14f32c04faf140",
+          "map_node_id_to_label": "131abd7c982f8a014d5a41efd0950b03a025d59bd1072f2eef423270f91da60d",
           "n_lone_faces": 8672,
           "n_points": 1580,
           "n_tetrahedra": 24152,
           "n_triangles": 3311,
-          "nodes_on_the_border": "60651f47af805d359717227f606e6f44de06824861711c3f954e9f372b4281fd",
+          "nodes_on_the_border": "82e44ebf40e51e5e1e4685445d08eeb38d3c22c036c482f8b6f94aa2229a1f49",
           "points": "b47a66f2ef1af2601e4ca35245cdf3aaefebad25fc65577ecb54967f0d4f88e8",
           "scores": "4ed18db3f13267c782c82aeb13553674add93af8d6362be3793ae675a4b90a06",
-          "triangles": "2081ba78671fa0f970f23d67561ff666185ac246f34525dd0c69335de1daf175",
-          "wall_time_s": 5.10243258299306
+          "triangles": "ddc55040d040ebeaa96934973d50bdd2b98e55bd91e7aca131e4eb8e07995ee7",
+          "wall_time_s": 2.5209157500066794
         }
       ]
     },
     "3_md5": {
       "runs": [
         {
-          "joint": "b357d45fd411c8f9ef6242c2037f18d5e53ba3f33067c1db4870ca025e0495c2",
+          "joint": "ed2e447e7ddd8ddd3975eced4301f17f3d9f1fb3e84eb2a2d58546f20ce5becb",
           "labels": "49f104a5c8d060e44bd44386b272b42873d5d93022dafc3568a55a5f302d056f",
           "lone_faces": "988f9e11582b882324a417d7b7e0427a18452c4806c218eff3aea2a0661c4f3e",
-          "map_node_id_to_label": "36db5c924216e86473237e2f574f5c510f84b4c88d007c1575922960d30d836e",
+          "map_node_id_to_label": "83ae655f49d2a03543dcc4f75f16f418644a2fdd31d8e4780ba9037b495e94f8",
           "n_lone_faces": 3544,
           "n_points": 584,
           "n_tetrahedra": 9566,
           "n_triangles": 1270,
-          "nodes_on_the_border": "03945429b2c98fc848eb762eb4250acf895806692e815bea167f18c616bb9f7d",
+          "nodes_on_the_border": "a0a77e0b16669403f55214edd9c4ca53c0c424209ee14cdc08366a2223ac01f3",
           "points": "0fbb8ab07c82c835e88e61f75d49f649670b489c6481ab8897c39ab4ce7d06f4",
           "scores": "03279d8c38ccc73f7e6a8018a95a9f3542adfeb220edba41902116b11defc88c",
           "triangles": "7c209438a21afb0e2909bf92d72b8f4baf28ba92715402e88125b0836a7946c2",
-          "wall_time_s": 3.3992094169952907
+          "wall_time_s": 1.7026285409810953
         },
         {
-          "joint": "b357d45fd411c8f9ef6242c2037f18d5e53ba3f33067c1db4870ca025e0495c2",
+          "joint": "ed2e447e7ddd8ddd3975eced4301f17f3d9f1fb3e84eb2a2d58546f20ce5becb",
           "labels": "49f104a5c8d060e44bd44386b272b42873d5d93022dafc3568a55a5f302d056f",
           "lone_faces": "988f9e11582b882324a417d7b7e0427a18452c4806c218eff3aea2a0661c4f3e",
-          "map_node_id_to_label": "36db5c924216e86473237e2f574f5c510f84b4c88d007c1575922960d30d836e",
+          "map_node_id_to_label": "83ae655f49d2a03543dcc4f75f16f418644a2fdd31d8e4780ba9037b495e94f8",
           "n_lone_faces": 3544,
           "n_points": 584,
           "n_tetrahedra": 9566,
           "n_triangles": 1270,
-          "nodes_on_the_border": "03945429b2c98fc848eb762eb4250acf895806692e815bea167f18c616bb9f7d",
+          "nodes_on_the_border": "a0a77e0b16669403f55214edd9c4ca53c0c424209ee14cdc08366a2223ac01f3",
           "points": "0fbb8ab07c82c835e88e61f75d49f649670b489c6481ab8897c39ab4ce7d06f4",
           "scores": "03279d8c38ccc73f7e6a8018a95a9f3542adfeb220edba41902116b11defc88c",
           "triangles": "7c209438a21afb0e2909bf92d72b8f4baf28ba92715402e88125b0836a7946c2",
-          "wall_time_s": 3.7354046670370735
+          "wall_time_s": 2.0735556669533253
         }
       ]
     },
     "4_md3": {
       "runs": [
         {
-          "joint": "7e0fde0ceb36a0edf25d703e146abf9e777e0f555690d8557fd1185b04e899a7",
-          "labels": "d73fc797aa1e14a2970c429f17a5cf8d30c96842798b3641db0571a882bdedd8",
+          "joint": "228515086fe6c6093518467de171bd3082512da86a6cebed5c84bb4f82e03836",
+          "labels": "33a76be5d18b06c9129441d22c9d794f114b02b48277ff21ec66e2a24ec39a9d",
           "lone_faces": "b6d3012d40c0987cd9578f4ef22573f2883fe6e5521d5d9550661655475085ec",
-          "map_node_id_to_label": "18f51eaa92176e05dbbcb5b05ab3f7adf88b9dc79d956aeeb1c59efdde1e97b9",
+          "map_node_id_to_label": "e81df6b25971e9537d12fa6c176ca6fc22cdfdd8300dcb43bed64949e2157d29",
           "n_lone_faces": 8468,
           "n_points": 1518,
           "n_tetrahedra": 23231,
           "n_triangles": 3155,
-          "nodes_on_the_border": "991fa17692d7706e0ede384d3806fddc5a41693579fd7ea7a087386184c8451a",
+          "nodes_on_the_border": "56b57d9909b18bf4b64423fb61564415e14e0847c37c856b4b37c8233f78731e",
           "points": "448a8f533af600cc5fe78008582acd81f41fd6ebf7105f3dc453478721697ab1",
           "scores": "e0bb50504452e51374886dac181471c2582409a337cff278be566a139e1bba59",
-          "triangles": "ff7314740ea63cbb0c633cdf8126b5d8f205245ad9c37fecf5f41b2135bd370a",
-          "wall_time_s": 4.547489833028521
+          "triangles": "5b1c7ae64409dc141c35b70ba93082cbc42ca0bf263347bd5c699915bf43c102",
+          "wall_time_s": 2.294904417009093
         },
         {
-          "joint": "7e0fde0ceb36a0edf25d703e146abf9e777e0f555690d8557fd1185b04e899a7",
-          "labels": "d73fc797aa1e14a2970c429f17a5cf8d30c96842798b3641db0571a882bdedd8",
+          "joint": "228515086fe6c6093518467de171bd3082512da86a6cebed5c84bb4f82e03836",
+          "labels": "33a76be5d18b06c9129441d22c9d794f114b02b48277ff21ec66e2a24ec39a9d",
           "lone_faces": "b6d3012d40c0987cd9578f4ef22573f2883fe6e5521d5d9550661655475085ec",
-          "map_node_id_to_label": "18f51eaa92176e05dbbcb5b05ab3f7adf88b9dc79d956aeeb1c59efdde1e97b9",
+          "map_node_id_to_label": "e81df6b25971e9537d12fa6c176ca6fc22cdfdd8300dcb43bed64949e2157d29",
           "n_lone_faces": 8468,
           "n_points": 1518,
           "n_tetrahedra": 23231,
           "n_triangles": 3155,
-          "nodes_on_the_border": "991fa17692d7706e0ede384d3806fddc5a41693579fd7ea7a087386184c8451a",
+          "nodes_on_the_border": "56b57d9909b18bf4b64423fb61564415e14e0847c37c856b4b37c8233f78731e",
           "points": "448a8f533af600cc5fe78008582acd81f41fd6ebf7105f3dc453478721697ab1",
           "scores": "e0bb50504452e51374886dac181471c2582409a337cff278be566a139e1bba59",
-          "triangles": "ff7314740ea63cbb0c633cdf8126b5d8f205245ad9c37fecf5f41b2135bd370a",
-          "wall_time_s": 4.665671582974028
+          "triangles": "5b1c7ae64409dc141c35b70ba93082cbc42ca0bf263347bd5c699915bf43c102",
+          "wall_time_s": 2.3189359590178356
         }
       ]
     },
     "4_md5": {
       "runs": [
         {
-          "joint": "99b4d16bcb248d3bfdc01cfb5349885fc32cc8b1fe692413ae37281ec3ee0e68",
-          "labels": "201b921d49b9ca6cb519f611939b4f5df0e5f6d808cc9de28a59de65b5b4f28e",
+          "joint": "c7215f84c85ab5fa773b3b6b217fc66cc6cbb3a38670638ef2a993743640b414",
+          "labels": "fe67a606bffd1e2f76cfb70c0f7a644d99c4617495fa4df31e52b901e746a421",
           "lone_faces": "e7ba019fae4db426748a322cd5525254b1afdf2859ce347bd4e67ee175564341",
-          "map_node_id_to_label": "14cc9212881a8c08883fe42ea467176b653a2b2e7347bf2938997c1ef5e94cb1",
+          "map_node_id_to_label": "ec37eb5d5431113733c022868df270fc69e78da733d286eeebcc299f77205969",
           "n_lone_faces": 3426,
           "n_points": 551,
           "n_tetrahedra": 9142,
           "n_triangles": 1179,
-          "nodes_on_the_border": "ddd43dfdef70cf48183b7e6a403b0e0bcf570775d10c4dd4a56a756848317837",
+          "nodes_on_the_border": "d1390e4ab0313435c03058a7fcae79191af6049939136d5c57d978f0813646fe",
           "points": "f1225f9a7d8a60af9f1f6b722fa2b5462f6b7d031de4a6b3d786818fe530b25f",
           "scores": "4704f841bbf3d40bbf4c933d44aa5c3cbe62c74df3c7a14e46e937286a5ebd93",
-          "triangles": "8793da8e00d54bde069d9ff43c7d182946ed7b42ff52323b4a4cb7118001bfa0",
-          "wall_time_s": 3.0813551250030287
+          "triangles": "f753c0df6a10050297bb8d73004958b832ebc1b35d4761e373a0c702efea771c",
+          "wall_time_s": 1.7628571250243112
         },
         {
-          "joint": "99b4d16bcb248d3bfdc01cfb5349885fc32cc8b1fe692413ae37281ec3ee0e68",
-          "labels": "201b921d49b9ca6cb519f611939b4f5df0e5f6d808cc9de28a59de65b5b4f28e",
+          "joint": "c7215f84c85ab5fa773b3b6b217fc66cc6cbb3a38670638ef2a993743640b414",
+          "labels": "fe67a606bffd1e2f76cfb70c0f7a644d99c4617495fa4df31e52b901e746a421",
           "lone_faces": "e7ba019fae4db426748a322cd5525254b1afdf2859ce347bd4e67ee175564341",
-          "map_node_id_to_label": "14cc9212881a8c08883fe42ea467176b653a2b2e7347bf2938997c1ef5e94cb1",
+          "map_node_id_to_label": "ec37eb5d5431113733c022868df270fc69e78da733d286eeebcc299f77205969",
           "n_lone_faces": 3426,
           "n_points": 551,
           "n_tetrahedra": 9142,
           "n_triangles": 1179,
-          "nodes_on_the_border": "ddd43dfdef70cf48183b7e6a403b0e0bcf570775d10c4dd4a56a756848317837",
+          "nodes_on_the_border": "d1390e4ab0313435c03058a7fcae79191af6049939136d5c57d978f0813646fe",
           "points": "f1225f9a7d8a60af9f1f6b722fa2b5462f6b7d031de4a6b3d786818fe530b25f",
           "scores": "4704f841bbf3d40bbf4c933d44aa5c3cbe62c74df3c7a14e46e937286a5ebd93",
-          "triangles": "8793da8e00d54bde069d9ff43c7d182946ed7b42ff52323b4a4cb7118001bfa0",
-          "wall_time_s": 3.0271607500035316
+          "triangles": "f753c0df6a10050297bb8d73004958b832ebc1b35d4761e373a0c702efea771c",
+          "wall_time_s": 1.8507937919930555
         }
       ]
     }

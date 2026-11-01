@@ -25,6 +25,8 @@ The properties pinned here, in order:
    which point-placement function is in use, `dithered`'s included.
 """
 
+from functools import partial
+
 import numpy as np
 import pytest
 import scipy.ndimage as ndi
@@ -41,6 +43,7 @@ from dw3d.edt import compute_edt_classical
 from dw3d.points_on_edt import peak_local_points, peak_local_points_dithered, plateau_packing_extrema
 from dw3d.watershed import _seeded_watershed_aggregation, seeded_watershed_map
 from tests.conftest import load_image_or_skip
+from tests.pinned_tetrahedralisations import pinned_tesselation_function
 
 MIN_DISTANCE = 3
 CASE_IMAGE = "3.tif"
@@ -344,6 +347,17 @@ def _historical_aggregation(nx_graph, map_node_id_to_label: np.ndarray) -> np.nd
     return map_node_id_to_label
 
 
+def _default_on_the_stored_tetrahedralisation(min_distance: int):
+    """The default algorithm on `CASE_IMAGE`'s stored tetrahedralisation (`tests/pinned_tetrahedralisations.py`).
+
+    The committed fingerprints were taken with this Mac's Qhull, whose split of sets of cospherical
+    lattice points another machine's Qhull need not make; the stored tetrahedralisation is that split.
+    """
+    algorithm = get_default_mesh_reconstruction_algorithm(min_distance=min_distance, print_info=False)
+    algorithm.tesselation_creation_function = pinned_tesselation_function(CASE_IMAGE, min_distance)
+    return algorithm
+
+
 def test_committed_fingerprints_reproduce():
     """The strongest regression net in the repo: bit-level, on all 8 configurations.
 
@@ -381,10 +395,7 @@ def test_committed_fingerprints_reproduce():
         # how the across-repeat reproducibility was checked), so accept both shapes.
         expected = committed["cases"][key]
         expected = expected["runs"][0] if "runs" in expected else expected
-        actual = fingerprint_reconstruction(
-            mask,
-            lambda md=min_distance: get_default_mesh_reconstruction_algorithm(min_distance=md, print_info=False),
-        )
+        actual = fingerprint_reconstruction(mask, partial(_default_on_the_stored_tetrahedralisation, min_distance))
         for field in FINGERPRINT_FIELDS:
             assert actual[field] == expected[field], f"{key}: {field}"
         assert actual["joint"] == expected["joint"], key

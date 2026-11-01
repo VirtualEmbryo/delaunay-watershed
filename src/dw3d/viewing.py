@@ -3,6 +3,14 @@
 Install it with the `viewing` extra (`pip install "delaunay-watershed-3d[viewing]"`), which brings
 Polyscope and matplotlib. Calling the viewer opens a Polyscope window.
 
+The window draws the tissue, not its mirror image. The mesh's points are in the mask's index order, `(z, y, x)`
+for a microscope stack, and Polyscope reads the columns it is handed as its own `(x, y, z)`. The viewer hands it the
+columns reversed, `(x, y, z)` = columns `(2, 1, 0)`, the mask's column, row and slice, and each triangle `(a, b, c)`
+as `(a, c, b)`, so that it still faces the same side (`_drawn_points`, `_drawn_triangles`). Exchanging two axes is a
+reflection, which reverses every triangle's orientation; reversing the triangles undoes that. Up to 0.7.0 the
+columns were handed as they are: every view was the mirror image of the tissue. Only what is drawn is reordered;
+the stored mesh and the files written (`.rec`, `.vtk`) keep the mask's order.
+
 Matthieu Perez, 2024.
 """
 
@@ -29,7 +37,8 @@ def plot_cells_polyscope(
     """Plot separated cells of the mesh in a polyscope viewer.
 
     Each cell (every label but the medium 0) is shown as its own surface, in a random colour
-    (fixed seed). The points are shown in their own frame, in the mask's index order.
+    (fixed seed). Polyscope's x, y, z are the mask's column, row and slice (the points' columns 2, 1, 0): the
+    tissue is drawn as it is, not its mirror image (see the module's docstring).
 
     Args:
         reconstruct (MeshReconstructionAlgorithm): the algorithm whose last constructed mesh to show.
@@ -51,6 +60,7 @@ def plot_cells_polyscope(
 
     points, triangles, labels = reconstruct.last_constructed_mesh
     points = points * np.array([anisotropy_factor, 1.0, 1.0])  # a copy: never scale the stored mesh
+    drawn = _drawn_points(points)
 
     clusters = _separate_faces_dict(triangles, labels)
     del clusters[0]  # we don't want to see the exterior
@@ -67,8 +77,8 @@ def plot_cells_polyscope(
             cluster = clusters[key]
             ps.register_surface_mesh(
                 "Cell " + str(key),
-                points,
-                np.array(cluster),
+                drawn,
+                _drawn_triangles(cluster),
                 color=color_cells[key][:3],
                 smooth_shade=False,
             )
@@ -79,8 +89,8 @@ def plot_cells_polyscope(
             centroid_vert = np.mean(points[cluster].reshape(-1, 3), axis=0)
             _ = ps.register_surface_mesh(
                 "Cell " + str(key),
-                points - (centroid_mesh - centroid_vert) * (scattering_coeff),
-                cluster,
+                _drawn_points(points - (centroid_mesh - centroid_vert) * (scattering_coeff)),
+                _drawn_triangles(cluster),
                 color=color_cells[key][:3],
             )
 
@@ -95,6 +105,20 @@ def plot_cells_polyscope(
 
     if clean_after:
         ps.remove_all_structures()
+
+
+def _drawn_points(points: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Points in the mask's order `(z, y, x)` as Polyscope draws them, `(x, y, z)`: the columns `(2, 1, 0)` (a copy)."""
+    return np.asarray(points)[:, [2, 1, 0]]
+
+
+def _drawn_triangles(triangles: NDArray[np.uint]) -> NDArray[np.uint]:
+    """Triangles `(a, b, c)` as handed to Polyscope, `(a, c, b)`, so that each faces the same side once drawn (a copy).
+
+    With the points' columns reversed (`_drawn_points`, a reflection), the normal of `(a, b, c)` computed from the
+    drawn points would be the mirror of the mesh's normal turned the other way; reversing the corners restores it.
+    """
+    return np.asarray(triangles)[:, [0, 2, 1]]
 
 
 def _separate_faces_dict(triangles: NDArray[np.uint], labels: NDArray[np.uint]) -> dict[int, NDArray[np.uint]]:
