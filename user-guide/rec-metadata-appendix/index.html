@@ -14,7 +14,7 @@
         <link rel="prev" href="../anisotropic-voxels/">
       
       
-        <link rel="next" href="../../examples/">
+        <link rel="next" href="../enclosed-media/">
       
       
         
@@ -506,6 +506,34 @@
 
       </a>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1056,6 +1084,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/triangle-intersection/" class="md-nav__link">
         
   
@@ -1305,6 +1361,8 @@
 <li><code>axis_order</code>, <code>spacing</code>/<code>spacing_unit</code>, <code>source_shape</code> and <code>crop_offset</code> record the rest of the sampling geometry, <code>crop_offset</code> even when zero (where the mask sat in a larger image; the crop faces themselves are recorded by <code>crop_faces</code>, below).</li>
 <li><strong>A file with no appendix must be treated as <code>coordinate_frame == "unknown"</code>, never as isotropic spacing</strong> — <code>load_rec_appendix</code> returns <code>None</code> in that case, and every file saved before this feature existed has no appendix.</li>
 <li><code>crop_faces = &lt;first row&gt; &lt;count&gt;</code> says that the last <code>&lt;count&gt;</code> triangle rows, from <code>&lt;first row&gt;</code> on, are crop faces (see <a href="../cropped-tissues/">Cropped tissues</a>), and <code>physical_image_faces</code> which image faces were declared physical (<code>none</code> by default). Written by <code>save_to_rec_mesh</code> whenever a cell of the mask reaches the image box where the mesh lies on it; a file without the key records nothing about a crop.</li>
+<li><code>media = 0 L ...</code> lists the labels that are media, not cells: the exterior 0, then the enclosed pockets of medium the reconstruction made their own regions (see <a href="../enclosed-media/">Enclosed pockets of medium</a>), with <code>enclosed_media_voxels</code> and <code>enclosed_media_inscribed_radius</code> aligned with the enclosed labels. Written only when the mesh has an enclosed medium; a file without the key has the exterior 0 as its only medium.</li>
+<li><code>unresolved_regions = L ...</code> and <code>unresolved_regions_voxels</code> list the labels of the mask absent from the mesh because no tetrahedron of the tesselation lies in their voxels (see <a href="../enclosed-media/#regions-too-small-for-the-mesh">Enclosed pockets of medium</a>), with their voxel counts. Written only when there is one.</li>
 <li><code>construct_mesh_in_physical_units</code> writes <code>coordinate_frame = physical</code>, the mask's own <code>spacing</code> (the mesh is already scaled by it), <code>source_shape</code>, <code>resampling</code> and <code>resampled_spacing</code> (see <a href="../anisotropic-voxels/">Masks with anisotropic voxels</a>).</li>
 </ul>
 

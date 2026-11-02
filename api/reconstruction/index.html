@@ -499,6 +499,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -972,6 +1000,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm_factory.MeshReconstructionAlgorithmFactory.set_canonical_tetrahedron_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_canonical_tetrahedron_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dw3d.reconstruction_algorithm_factory.MeshReconstructionAlgorithmFactory.set_classical_edt_method" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1235,6 +1274,28 @@
     <span class="md-ellipsis">
       
         crop_face_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.enclosed_medium_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enclosed_medium_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.medium_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_labels
       
     </span>
   </a>
@@ -1578,6 +1639,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../triangle-intersection/" class="md-nav__link">
         
   
@@ -1826,6 +1915,17 @@
     <span class="md-ellipsis">
       
         set_junction_relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm_factory.MeshReconstructionAlgorithmFactory.set_canonical_tetrahedron_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_canonical_tetrahedron_order
       
     </span>
   </a>
@@ -2103,6 +2203,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.enclosed_medium_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enclosed_medium_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.medium_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.cell_volume_report" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2361,9 +2483,9 @@ the factory combines the steps one by one and <code>make_algorithm</code> builds
         <p>Initialize the factory with the steps of the deterministic configuration.</p>
 <p>A new factory's <code>make_algorithm</code> builds what <code>get_deterministic_algorithm</code> returns: the
 classical EDT, deterministic EDT extrema with <code>min_distance=3</code>, plain Delaunay
-tesselation, max-value face scores, mesh surgery, junction relocation on and no physical
-image face. This is <strong>not</strong> <code>get_default_algorithm</code>, which places its points with the
-dithered rule (<code>set_dithered_peak_local_points_placement_method</code>).</p>
+tesselation, max-value face scores, mesh surgery, junction relocation on, the canonical
+tetrahedron order and no physical image face. This is <strong>not</strong> <code>get_default_algorithm</code>,
+which places its points with the dithered rule (<code>set_dithered_peak_local_points_placement_method</code>).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -2594,6 +2716,88 @@ significantly. At a point-placement <code>min_distance</code> of 5 or more the r
               <div class="doc-md-description">
                 <p>whether the post-process runs. Defaults to True, so that
 <code>set_junction_relocation()</code> reads as switching it on.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Self</code></td>            <td>
+                  <code><span title="typing.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>this factory, for chaining.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw3d.reconstruction_algorithm_factory.MeshReconstructionAlgorithmFactory.set_canonical_tetrahedron_order" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_canonical_tetrahedron_order</span>
+
+
+<a href="#dw3d.reconstruction_algorithm_factory.MeshReconstructionAlgorithmFactory.set_canonical_tetrahedron_order" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_canonical_tetrahedron_order</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Choose whether the tesselation's tetrahedra are put in canonical order before anything reads them.</p>
+<p><strong>On by default since 0.7.1</strong>, for this factory and for every <code>get_*_algorithm</code> static
+method. The canonical order sorts the vertex indices within each tetrahedron and the
+tetrahedra lexicographically (<code>dw3d.tesselation.canonical_tetrahedron_order</code>), so the mesh
+no longer depends on the row order in which Qhull returns the same tetrahedra.
+<code>set_canonical_tetrahedron_order(False)</code> keeps Qhull's row order, which reproduces the
+meshes of dw3d 0.7 and earlier on the machine they were made on. See
+<code>MeshReconstructionAlgorithm.__init__</code> for what the row order changes.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>enabled</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>whether the tetrahedra are put in canonical order. Defaults
+to True, so that <code>set_canonical_tetrahedron_order()</code> reads as switching it on.</p>
               </div>
             </td>
             <td>
@@ -3725,28 +3929,28 @@ isolation:</p>
 <tbody>
 <tr>
 <td><code>YoungDupre</code></td>
-<td style="text-align: right;">0.0882</td>
-<td style="text-align: right;">0.1049</td>
+<td style="text-align: right;">0.0763</td>
+<td style="text-align: right;">0.1003</td>
 </tr>
 <tr>
 <td><code>YoungDupreLocal</code></td>
-<td style="text-align: right;">0.0949</td>
-<td style="text-align: right;">0.1245</td>
+<td style="text-align: right;">0.0911</td>
+<td style="text-align: right;">0.1266</td>
 </tr>
 <tr>
 <td><code>ForceBalanceKKT</code></td>
-<td style="text-align: right;">0.1299</td>
-<td style="text-align: right;">0.3436</td>
+<td style="text-align: right;">0.1138</td>
+<td style="text-align: right;">0.3262</td>
 </tr>
 <tr>
 <td><code>BayesianMAP</code></td>
-<td style="text-align: right;">0.1799</td>
-<td style="text-align: right;">0.1962</td>
+<td style="text-align: right;">0.1186</td>
+<td style="text-align: right;">0.3149</td>
 </tr>
 </tbody>
 </table>
-<p>(42 equilibrium cases of <code>foambryo</code>'s benchmarking dataset, paired per case; see
-<code>BENCHMARKS.md</code> at the repository root.) The revised pipeline is real, deterministic,
+<p>(42 equilibrium cases of <code>foambryo</code>'s benchmarking dataset, <code>min_distance</code> 3, dw3d 0.7.1,
+paired per case; see <code>BENCHMARKS.md</code> at the repository root.) The revised pipeline is real, deterministic,
 junction-protected and topologically cleaner than the dithered default by every
 meshing-only metric (interface-area bias, sliver fraction, score-gap degeneracy,
 non-manifold edges) -- it is kept, fully reachable, as
@@ -3770,7 +3974,10 @@ benchmark records:</p>
   junction-protection placements are measured against.</li>
 </ul>
 <p>Every configuration, this one included, relocates junction vertices by default since
-0.5.0; set <code>relocate_junctions = False</code> on the returned algorithm to reproduce 0.4.</p>
+0.5.0; set <code>relocate_junctions = False</code> on the returned algorithm to reproduce 0.4. Every
+configuration puts the tetrahedra in canonical order by default since 0.7.1; set
+<code>canonical_tetrahedron_order = False</code> on the returned algorithm to keep Qhull's row order,
+as dw3d 0.7 did.</p>
 <p>The EDT is <code>compute_edt_classical</code>. The tiled EDT (<code>set_tiled_edt_method</code>, reachable
 from a factory instance, not used here) produces a field whose <em>values</em> are bit-identical
 at a third of the peak RSS, and it is the variant to prefer at scale. Composition with a
@@ -4737,7 +4944,7 @@ Matthieu Perez 2024</p>
 
 
 <a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MeshReconstructionAlgorithm</span><span class="p">(</span><span class="n">print_info</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">edt_creation_function</span><span class="p">:</span> <span class="n">EdtCreationFunction</span><span class="p">,</span> <span class="n">point_placing_function</span><span class="p">:</span> <span class="n">PointPlacingFunction</span><span class="p">,</span> <span class="n">tesselation_creation_function</span><span class="p">:</span> <span class="n">TesselationCreationFunction</span><span class="p">,</span> <span class="n">score_computation_function</span><span class="p">:</span> <span class="n">ScoreComputationFunction</span><span class="p">,</span> <span class="n">perform_mesh_postprocess_surgery</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">relocate_junctions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">physical_image_faces</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">())</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MeshReconstructionAlgorithm</span><span class="p">(</span><span class="n">print_info</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">edt_creation_function</span><span class="p">:</span> <span class="n">EdtCreationFunction</span><span class="p">,</span> <span class="n">point_placing_function</span><span class="p">:</span> <span class="n">PointPlacingFunction</span><span class="p">,</span> <span class="n">tesselation_creation_function</span><span class="p">:</span> <span class="n">TesselationCreationFunction</span><span class="p">,</span> <span class="n">score_computation_function</span><span class="p">:</span> <span class="n">ScoreComputationFunction</span><span class="p">,</span> <span class="n">perform_mesh_postprocess_surgery</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">relocate_junctions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">physical_image_faces</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span> <span class="n">canonical_tetrahedron_order</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">label_enclosed_media</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4783,6 +4990,18 @@ two regions each triangle separates, smaller label first, label 0 being the medi
             <td>
               <div class="doc-md-description">
                 <p>whether the next reconstruction runs junction relocation.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.canonical_tetrahedron_order">canonical_tetrahedron_order</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>whether the next reconstruction puts the tetrahedra in
+canonical order before anything reads them; see <code>__init__</code>.</p>
               </div>
             </td>
           </tr>
@@ -4961,6 +5180,69 @@ point, triangle or label of the mesh; see <code>dw3d.crop_faces</code>.</p>
                   <code>()</code>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>canonical_tetrahedron_order</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to put the tesselation's tetrahedra in
+canonical order (<code>dw3d.tesselation.canonical_tetrahedron_order</code>: vertex indices
+sorted within each tetrahedron, tetrahedra sorted lexicographically) before
+anything reads them. <strong>Defaults to <code>True</code> since 0.7.1.</strong> The tetrahedra's row
+indices break the watershed's ties between exactly equal face scores (about a third
+of the score field is exactly tied), pick the seed tetrahedra and order mesh
+surgery's cycles, and the row order Qhull returns is not a function of the
+tetrahedralisation: it changes with the order of the input points and may change
+with the machine. Measured on the 47 benchmark masks with the default
+configuration: 9 row orders of the same tetrahedra gave 9 different meshes in the
+median case, and up to 0.78 degrees of line-mean contact-angle error and 3.8 points
+of tension error on one case; with the canonical order all 9 gave the same mesh, in
+47 of 47 cases. <code>False</code> keeps Qhull's row order, which reproduces the meshes of
+dw3d 0.7 and earlier on the machine they were made on. Under the canonical order,
+between machines, remaining differences are expected only at exactly cospherical
+points (five or more points on one sphere, where Qhull's choice of
+tetrahedralisation itself may differ); this is confirmed on Linux x86-64 in
+continuous integration (Python 3.12 and 3.13).</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>label_enclosed_media</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether an enclosed pocket of label 0 (a lumen, a cavity: a 6-connected
+piece of label 0 touching no face of the array) becomes its own region, flagged as a medium, when
+its inscribed radius is at least the placement's <code>min_distance + 1</code> voxels and two or more cells
+line it. <strong>Defaults to <code>True</code> since 0.7.1.</strong> Before, such a pocket had no watershed seed and the
+first cell its tetrahedra reached took all of it (measured on a 697-cell embryo: a 389 918-voxel
+lumen inside one cell, at 2.40 times the cell's voxel volume). The new labels are <code>max + 1</code>, ... in
+the order of each pocket's lowest raster index; <code>enclosed_medium_report</code> and <code>medium_labels</code> say
+which, the <code>.rec</code> file records them (<code>media = ...</code>), and <code>EnclosedMediumWarning</code> names the cell
+that took each pocket left (below the bound, lined by one cell). <code>False</code> leaves every pocket to the
+cells, as in 0.7.0. Independently of this switch, since 0.7.1 every piece of label 0 touching the
+image box gets its own label-0 seed, and a seed whose nearest tetrahedron lies outside its own
+label's voxels is moved to the nearest one inside (or dropped when there is none), so that no
+region is seeded in a neighbour. A mask with no pocket at or above the bound, one exterior piece
+and every seed already inside its label is reconstructed bitwise as before. See
+<code>dw3d.enclosed_media</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -5134,6 +5416,107 @@ surface were not observed, so its pressure is not a measurement.</p>
     <div class="doc doc-contents ">
 
         <p>The crop faces, the image face of each border triangle and the cut cells; <code>None</code> before a reconstruction.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.enclosed_medium_report" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">enclosed_medium_report</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.enclosed_medium_report" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">enclosed_medium_report</span><span class="p">:</span> <span class="n">EnclosedMediumReport</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The pieces of medium of the last reconstruction, or <code>None</code> before any.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="EnclosedMediumReport
+
+
+  
+      dataclass
+   (dw3d.enclosed_media.EnclosedMediumReport)" href="../enclosed-media/#dw3d.enclosed_media.EnclosedMediumReport">EnclosedMediumReport</a> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>dw3d.enclosed_media.EnclosedMediumReport | None: the enclosed media made (<code>media</code>), the pockets left to
+the cells (<code>pockets_left_to_cells</code>, each with the cell that took it), the exterior pieces seeded,
+the size bound, and the labels whose seed had no tetrahedron in their own voxels.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.medium_labels" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">medium_labels</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw3d.reconstruction_algorithm.MeshReconstructionAlgorithm.medium_labels" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">medium_labels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The labels of the last mesh that are media, not cells: 0 first, then the enclosed media; <code>(0,)</code> before any.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>tuple[int, ...]: ascending after 0. A mask without label 0 has no 0 here.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
     </div>
 
@@ -5561,6 +5944,17 @@ voxel count (see <code>cell_volume_report</code>).</p>
               </div>
             </td>
           </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>AbnormalEdgeWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>once, when the finished mesh has abnormal non-manifold edges, with
+their number and the configuration.</p>
+              </div>
+            </td>
+          </tr>
       </tbody>
     </table>
 
@@ -5592,8 +5986,8 @@ columns stay in the mask's index order, <code>(z, y, x)</code> for a <code>(z, y
 <p>Why resample rather than mesh the native grid and scale it: measured on 12 simulated tissues of 90 and 165
 cells at a real cell size, down-sampled along z, against the same tissues meshed at full resolution,
 meshing the native grid costs +1.38, +1.97 and +4.10 degrees of contact-angle error at <code>k = 5/3</code>, 2 and 3
-(<code>k</code> = long spacing / short spacing), and resampling first +0.83, +0.71 and +1.17; see
-<code>dw3d.mask_preprocessing</code>. The cost is that
+(<code>k</code> = long spacing / short spacing), and resampling first +0.83, +0.71 and +1.17 (on dw3d 0.7.0's meshes,
+not measured again for 0.7.1); see <code>dw3d.mask_preprocessing</code>. The cost is that
 of a mask acquired at the short spacing: <code>k</code> times the voxels.</p>
 <p>The reports (<code>crop_faces</code>, <code>cut_cells</code>, <code>crop_face_report</code>, <code>cell_volume_report</code>, <code>relocation_report</code>)
 describe the mesh on the resampled cubic grid, in its voxel units, before the scaling.</p>
@@ -5785,6 +6179,16 @@ along one axis, a range in which the accuracy was not measured. The mesh is buil
           <tr class="doc-section-item">
             <td>
                   <code>CellVolumeDisagreementWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>as in <code>construct_mesh_from_segmentation_mask</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>AbnormalEdgeWarning</code>
             </td>
             <td>
               <div class="doc-md-description">

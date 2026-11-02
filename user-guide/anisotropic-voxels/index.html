@@ -511,6 +511,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1056,6 +1084,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/triangle-intersection/" class="md-nav__link">
         
   
@@ -1294,7 +1350,7 @@
 <span class="n">points</span><span class="p">,</span> <span class="n">triangles</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">construct_mesh_in_physical_units</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">spacing_unit</span><span class="o">=</span><span class="s2">"um"</span><span class="p">)</span>
 <span class="n">algorithm</span><span class="o">.</span><span class="n">save_to_rec_mesh</span><span class="p">(</span><span class="s2">"mesh.rec"</span><span class="p">)</span>   <span class="c1"># records the frame and the source spacing in the appendix</span>
 </code></pre></div>
-<p>The mesh comes out in the unit of <code>spacing</code> (do not call <code>set_pixel_size</code> on it); <code>min_distance</code> counts voxels of the resampled, cubic grid, so the mesh has as many points as for a mask acquired at the finer spacing, and costs as much: memory and time grow with the z/xy ratio. Measured on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size and down-sampled along z (one seed), as the median over tissues of each mesh's median line-mean contact-angle error minus that of the same tissue meshed at full resolution: meshing the native grid costs +1.38, +1.97 and +4.10 degrees at ratios 5/3, 2 and 3; resampling first, +0.83, +0.71 and +1.17. Nothing was measured above 3 at that cell size: above it the method warns (<code>dw3d.UnmeasuredAnisotropyWarning</code>) and still meshes. Keep foambryo's default (chord) reading: its quadric reading made every route worse at real cell size. The resampling alone is <code>dw3d.resample_to_isotropic(mask, spacing)</code>. Repeating slices instead (<code>method="nearest"</code>), coarsening x and y to the z step, or telling only the distance transform about the spacing were all measured worse.</p>
+<p>The mesh comes out in the unit of <code>spacing</code> (do not call <code>set_pixel_size</code> on it); <code>min_distance</code> counts voxels of the resampled, cubic grid, so the mesh has as many points as for a mask acquired at the finer spacing, and costs as much: memory and time grow with the z/xy ratio. Measured on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size and down-sampled along z (one seed), as the median over tissues of each mesh's median line-mean contact-angle error minus that of the same tissue meshed at full resolution: meshing the native grid costs +1.38, +1.97 and +4.10 degrees at ratios 5/3, 2 and 3; resampling first, +0.83, +0.71 and +1.17. These costs, and the quadric reading's below, were measured on 0.7.0's meshes and not measured again for 0.7.1, whose meshes differ slightly, because some of these runs need 8 to 40 GiB of memory. Nothing was measured above 3 at that cell size: above it the method warns (<code>dw3d.UnmeasuredAnisotropyWarning</code>) and still meshes. Keep foambryo's default (chord) reading: its quadric reading made every route worse at real cell size. The resampling alone is <code>dw3d.resample_to_isotropic(mask, spacing)</code>. Repeating slices instead (<code>method="nearest"</code>), coarsening x and y to the z step, or telling only the distance transform about the spacing were all measured worse.</p>
 <p>Example: the notebook <em>Anisotropic voxels and crop faces</em> (<code>Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb</code>).</p>
 <p><strong>Scaling a mesh afterwards.</strong> <code>set_pixel_size(xy_pixel_size, z_pixel_size)</code> (the algorithm's method, the function in <code>dw3d.mesh_utilities</code>, and <code>dw3d.set_points_pixel_size</code>) scales column 0 of the points (the mask's axis 0, z) by <code>z_pixel_size</code> and columns 1 and 2 by <code>xy_pixel_size</code>. Before 0.7.0 it scaled columns 0 and 1 by the xy size and column 2 by the z size: re-run any analysis that called it with different sizes. A mask stored as <code>(x, y, z)</code> must be transposed to <code>(z, y, x)</code> first.</p>
 

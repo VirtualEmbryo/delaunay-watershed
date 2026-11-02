@@ -499,6 +499,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1046,6 +1074,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../triangle-intersection/" class="md-nav__link">
         
   
@@ -1368,6 +1424,13 @@
         <p>Optional Polyscope viewer for a reconstructed mesh, for inspection and debugging.</p>
 <p>Install it with the <code>viewing</code> extra (<code>pip install "delaunay-watershed-3d[viewing]"</code>), which brings
 Polyscope and matplotlib. Calling the viewer opens a Polyscope window.</p>
+<p>The window draws the tissue, not its mirror image. The mesh's points are in the mask's index order, <code>(z, y, x)</code>
+for a microscope stack, and Polyscope reads the columns it is handed as its own <code>(x, y, z)</code>. The viewer hands it the
+columns reversed, <code>(x, y, z)</code> = columns <code>(2, 1, 0)</code>, the mask's column, row and slice, and each triangle <code>(a, b, c)</code>
+as <code>(a, c, b)</code>, so that it still faces the same side (<code>_drawn_points</code>, <code>_drawn_triangles</code>). Exchanging two axes is a
+reflection, which reverses every triangle's orientation; reversing the triangles undoes that. Up to 0.7.0 the
+columns were handed as they are: every view was the mirror image of the tissue. Only what is drawn is reordered;
+the stored mesh and the files written (<code>.rec</code>, <code>.vtk</code>) keep the mask's order.</p>
 <p>Matthieu Perez, 2024.</p>
 
 
@@ -1405,7 +1468,8 @@ Polyscope and matplotlib. Calling the viewer opens a Polyscope window.</p>
 
         <p>Plot separated cells of the mesh in a polyscope viewer.</p>
 <p>Each cell (every label but the medium 0) is shown as its own surface, in a random colour
-(fixed seed). The points are shown in their own frame, in the mask's index order.</p>
+(fixed seed). Polyscope's x, y, z are the mask's column, row and slice (the points' columns 2, 1, 0): the
+tissue is drawn as it is, not its mirror image (see the module's docstring).</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>

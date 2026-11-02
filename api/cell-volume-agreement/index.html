@@ -14,7 +14,7 @@
         <link rel="prev" href="../junction-curves/">
       
       
-        <link rel="next" href="../triangle-intersection/">
+        <link rel="next" href="../enclosed-media/">
       
       
         
@@ -486,6 +486,34 @@
     
   
     The .rec metadata appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
   
 
     
@@ -1220,6 +1248,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../triangle-intersection/" class="md-nav__link">
         
   
@@ -1600,13 +1656,16 @@
         <p>List the cells whose reconstructed mesh volume disagrees with their voxel count.</p>
 <h3 id="dw3d.cell_volume_agreement--why-this-exists">Why this exists<a class="headerlink" href="#dw3d.cell_volume_agreement--why-this-exists" title="Permanent link">&para;</a></h3>
 <p>A reconstruction can lose a cell or misplace part of it while the mesh stays closed, manifold and
-free of self-intersections, so no topological check sees it. Measured with the default algorithm
-at <code>min_distance</code> 3: on the 47 benchmark masks 2 of 240 cells, on two 246-timepoint real embryo
-series 169 of 5 038, and on a 1 866-cell tissue 20 cells, have a mesh volume below half or above
-one and a half times their voxel count, a non-positive volume, or no surface at all. Almost all of
-them are small cells (a few hundred voxels, about two voxels thick) that the seeded watershed never
-grows out of; one is a single-tetrahedron cell that junction relocation turned inside out. Their
-interfaces are missing or misplaced, and a pressure inferred for such a cell is not a measurement.</p>
+free of self-intersections, so no topological check sees it. Measured with the default algorithm at
+<code>min_distance</code> 3: on the 47 benchmark masks 2 of 240 cells, on two 246-timepoint real embryo series
+169 of 5 038, and on a 1 866-cell tissue 20 cells, have a mesh volume below half or above one and a
+half times their voxel count, a non-positive volume, or no surface at all (the benchmark and
+embryo counts measured before 0.7.1, whose meshes differ slightly; the 1 866-cell tissue's 20 are the
+same cells on 0.7.0's and on 0.7.1's meshes). Almost all of them are small cells (a few hundred
+voxels, about two voxels thick) that the seeded watershed never grows out of; before 0.6.0 one of
+the 1 866-cell tissue's was a single-tetrahedron cell that junction relocation turned inside out,
+which relocation now refuses to do. Their interfaces are missing or misplaced, and a pressure inferred for such a
+cell is not a measurement.</p>
 <p>This module changes no geometry. It compares each label's mesh volume with its voxel count and
 reports the labels that fall outside a fixed range, so that a user, or foambryo, can see which
 cells to distrust.</p>
@@ -1615,7 +1674,8 @@ cells to distrust.</p>
 convention: <code>+det(p0, p1, p2) / 6</code> for every triangle whose first label it is, <code>-det / 6</code> for every
 triangle whose second label it is. Volumes are in cubic voxels, so the comparison is made on the
 mesh in mask voxel units, before any pixel-size scaling. Label 0 is the exterior medium and is
-never listed. The range <code>[0.5, 1.5]</code> is inclusive; its bounds are fixed, not tuning parameters.</p>
+never listed, nor is an enclosed medium (a lumen) the reconstruction made its own region
+(<code>media</code>). The range <code>[0.5, 1.5]</code> is inclusive; its bounds are fixed, not tuning parameters.</p>
 
 
 
@@ -2040,7 +2100,7 @@ the first that applies in that order).</p>
 
 
 <a href="#dw3d.cell_volume_agreement.compare_cell_volumes_with_mask" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compare_cell_volumes_with_mask</span><span class="p">(</span><span class="n">segmented_mask</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">triangles</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">],</span> <span class="n">ratio_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">CELL_VOLUME_RATIO_RANGE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CellVolumeReport</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compare_cell_volumes_with_mask</span><span class="p">(</span><span class="n">segmented_mask</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">triangles</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">],</span> <span class="n">ratio_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">CELL_VOLUME_RATIO_RANGE</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">media</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,))</span> <span class="o">-&gt;</span> <span class="n">CellVolumeReport</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2141,6 +2201,24 @@ pixel-size scaling, or the ratio is off by the voxel volume).</p>
             </td>
             <td>
                   <code><span title="dw3d.cell_volume_agreement.CELL_VOLUME_RATIO_RANGE">CELL_VOLUME_RATIO_RANGE</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>media</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, ...] | <span title="list">list</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the labels that are media, not cells (the exterior 0 and the enclosed
+media a reconstruction made, <code>MeshReconstructionAlgorithm.medium_labels</code>); never listed nor counted.
+Keyword-only. Defaults to <code>(0,)</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>(0,)</code>
             </td>
           </tr>
       </tbody>

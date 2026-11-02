@@ -499,6 +499,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1159,6 +1187,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../triangle-intersection/" class="md-nav__link">
         
   
@@ -1485,16 +1541,17 @@ interpolation</strong> before meshing removes most of that error. Measured on ma
 coarse voxel takes the label covering most of it), one meshing seed, as the median over cases of each mesh's median
 line-mean contact-angle error minus that of the same mask meshed at full resolution:</p>
 <ul>
-<li>on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size: meshing the native grid costs
-  +1.38 deg at <code>k = 5/3</code>, +1.97 at 2 and +4.10 at 3; resampling first, +0.83, +0.71 and +1.17;</li>
-<li>on foambryo's benchmark, whose cells are larger (42 cases): native +1.43, +2.43 and +5.58 deg at
-  <code>k = 5/3, 2, 3</code>; resampled +0.43, +1.54 and +1.27.</li>
+<li>on 12 simulated tissues of 90 and 165 cells voxelised at a real cell size (dw3d 0.7.0; not measured again for
+  0.7.1, whose meshes differ slightly, because some of these runs need 8 to 40 GiB of memory): meshing the
+  native grid costs +1.38 deg at <code>k = 5/3</code>, +1.97 at 2 and +4.10 at 3; resampling first, +0.83, +0.71 and +1.17;</li>
+<li>on foambryo's benchmark, whose cells are larger (42 cases, dw3d 0.7.1): native +1.59, +2.25 and
+  +5.85 deg at <code>k = 5/3, 2, 3</code>; resampled +0.43, +1.46 and +1.27.</li>
 </ul>
 <p>Tension errors follow. Repeating slices (nearest neighbour) is worse than shape-based interpolation at every
 anisotropy above 2, and coarsening the two short axes, or passing the anisotropy to the distance transform alone,
 is worse than not resampling at all. Nothing was measured above <code>k = 3</code> at real cell size. foambryo's quadric angle
-reading, which helps on the benchmark's larger cells, made every route worse at real cell size: keep foambryo's
-default reading.</p>
+reading, which helps on the benchmark's larger cells, made every route worse at real cell size (dw3d 0.7.0's
+meshes): keep foambryo's default reading.</p>
 <h3 id="dw3d.mask_preprocessing--conventions">Conventions<a class="headerlink" href="#dw3d.mask_preprocessing--conventions" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>spacing</code> is the voxel size along the array's axes <code>(axis 0, axis 1, axis 2)</code>, so <code>(dz, dy, dx)</code> for a

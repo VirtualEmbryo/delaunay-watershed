@@ -579,6 +579,34 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1124,6 +1152,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../api/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../api/triangle-intersection/" class="md-nav__link">
         
   
@@ -1421,7 +1477,7 @@ pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"dela
 <span class="nb">print</span><span class="p">(</span><span class="n">algorithm</span><span class="o">.</span><span class="n">cut_cells</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">cell_volume_report</span><span class="p">)</span>
 </code></pre></div>
 <p>Without a voxel size, <code>construct_mesh_from_segmentation_mask(mask)</code> meshes the voxel grid and returns the mesh in voxel units. <code>min_distance</code> is the minimum distance between the tessellation's points, in (cubic) voxels: smaller gives a finer, slower mesh.</p>
-<p>To look at it (needs a display): <code>from dw3d.viewing import plot_cells_polyscope; plot_cells_polyscope(algorithm)</code>.</p>
+<p>To look at it (needs a display): <code>from dw3d.viewing import plot_cells_polyscope; plot_cells_polyscope(algorithm)</code>. The window shows the mask's column, row and slice as Polyscope's x, y and z (the points' columns 2, 1, 0), so the tissue is drawn as it is; a program that reads a saved mesh's columns as (x, y, z), such as ParaView, shows its mirror image (see <code>dw3d.io</code>).</p>
 
 
 
