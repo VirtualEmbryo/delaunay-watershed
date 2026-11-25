@@ -37,11 +37,15 @@ QHULL_LIVE_TESTS = (
 def classify(junit: Path, modules: list[str]) -> tuple[dict[str, Counter], list[tuple[str, str]], list[str]]:
     """Per module, the outcome counts; the cospherical skips (test id, message); the other skips, as lines."""
     counts = {Path(m).stem: Counter() for m in modules}
+    # A test's JUnit classname is its module's path from the repository root, dotted (`tests.test_golden_master`).
+    # It is matched whole: dw2d's suite has modules of the same names in the package tests/two_dimensional
+    # (`tests.two_dimensional.test_golden_master`), which are not these checks.
+    dotted = {Path(m).with_suffix("").as_posix().replace("/", "."): Path(m).stem for m in modules}
     cospherical, other = [], []
     # The report is the one pytest wrote in the same job, not data from outside.
     for case in ElementTree.parse(junit).iter("testcase"):  # noqa: S314
-        module = case.get("classname", "").split(".")[-1]
-        if module not in counts:
+        module = dotted.get(case.get("classname", ""))
+        if module is None:
             continue
         element = next((c for c in case if c.tag in ("skipped", "failure", "error")), None)
         outcome = "passed" if element is None else element.tag

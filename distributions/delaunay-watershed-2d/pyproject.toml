@@ -1,0 +1,51 @@
+# The distribution "delaunay-watershed-2d" carries the package `dw2d` (2-D masks). It is built from this folder
+# (python -m build distributions/delaunay-watershed-2d), whose src/, tests/ and data/ entries are symbolic links to the
+# repository's src/dw2d, tests/two_dimensional and data/two_dimensional/Masks, so that the one copy of dw2d in the
+# repository is what the wheel and the source distribution hold. The repository root builds "delaunay-watershed-3d"
+# (dw3d); distributions/delaunay-watershed builds the metapackage "delaunay-watershed", which holds no code and
+# requires both at the same version. The three always carry one version; the release scripts check it.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delaunay-watershed-2d"
+version = "0.8.0rc1"
+description = "Geometrical reconstruction of cell assemblies from 2-D instance segmentations (package dw2d)"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["License"]
+authors = [{ name = "Turlier lab", email = "virtualembryo@gmail.com" }]
+maintainers = [{ name = "Matthieu Perez", email = "matthieu.perez@cnrs.fr" }]
+requires-python = ">=3.12"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Intended Audience :: Science/Research",
+]
+# dw2d's run-time imports (iorec reads and writes the .rec format); Python 3.12 or later, as iorec 1.4.1 requires.
+# matplotlib, which dw2d imports only to draw figures, is in the `viewing` extra.
+dependencies = [
+  "iorec>=1.4.1",
+  "networkx>=2.8.0",
+  "numpy>=2.0.0",
+  "scikit-image>=0.23.1",
+  "scipy>=1.13.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/VirtualEmbryo/delaunay-watershed"
+"Team website" = "https://www.turlierlab.com/"
+
+[project.optional-dependencies]
+# dw2d's figures.
+viewing = ["matplotlib>=3.8.4"]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dw2d*"]

@@ -1,0 +1,39 @@
+# The distribution "delaunay-watershed" is a metapackage: it holds no code and requires the two distributions that do,
+# at the same version: "delaunay-watershed-3d" (dw3d, built from the repository root) and "delaunay-watershed-2d" (dw2d,
+# built from distributions/delaunay-watershed-2d). Each package stays in the distribution that has always installed
+# it, so that no file changes owner on an upgrade. Its version is always theirs; the release scripts check it.
+# Built from this folder: python -m build distributions/delaunay-watershed
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "delaunay-watershed"
+version = "0.8.0rc1"
+description = "Geometrical reconstruction of cell assemblies from 3-D and 2-D instance segmentations: installs dw3d and dw2d"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Turlier lab", email = "virtualembryo@gmail.com" }]
+maintainers = [{ name = "Matthieu Perez", email = "matthieu.perez@cnrs.fr" }]
+requires-python = ">=3.12"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Intended Audience :: Science/Research",
+]
+dependencies = ["delaunay-watershed-3d==0.8.0rc1", "delaunay-watershed-2d==0.8.0rc1"]
+
+[project.urls]
+Homepage = "https://github.com/VirtualEmbryo/delaunay-watershed"
+"Team website" = "https://www.turlierlab.com/"
+
+# Every extra of the two distributions, forwarded.
+[project.optional-dependencies]
+viewing = ["delaunay-watershed-3d[viewing]==0.8.0rc1", "delaunay-watershed-2d[viewing]==0.8.0rc1"]
+benchmarks = ["delaunay-watershed-3d[benchmarks]==0.8.0rc1"]
+
+# No package and no module: the wheel holds only its metadata.
+[tool.setuptools]
+packages = []
+py-modules = []

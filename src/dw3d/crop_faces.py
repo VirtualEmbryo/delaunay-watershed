@@ -16,12 +16,15 @@ not declared physical, **and that its cell reaches in the mask**. A **cut cell**
 crop face, or with a vertex on one: its volume and some of its interfaces were not observed, and its
 pressure is not a measurement.
 
-The reconstruction also closes a cell on the image box where the mask's cell stops short of the
-image face: with no point in the few voxels of medium between the cell and the face, the
-tetrahedra that reach the hull there take the cell's label. Such a border triangle is not a crop,
-since the cell was observed to end inside the image, and it stays contact with the medium, as on
-a mesh without crop faces. On a mask none of whose cells reaches an image face, no triangle is a
-crop face and no cell is cut, whatever the reconstruction put on the hull.
+The reconstruction could also close a cell on the image box where the mask's cell stops short of
+the image face: with no point on the membrane in the few voxels of medium between the cell and the
+face, the tetrahedra that reach the hull there took the cell's label. Since 0.8.0 such a mask is
+meshed again, padded with medium on the faces no cell reaches (`dw3d.thin_medium_margins`), so this
+is left only on a face that a cell reaches, where `ThinMediumMarginWarning` names the cell. Such a
+border triangle is not a crop, since the cell was observed to end inside the image, and it stays
+contact with the medium, as on a mesh without crop faces. On a mask none of whose cells reaches an
+image face, no triangle is a crop face and no cell is cut, whatever the reconstruction put on the
+hull.
 
 Conventions
 -----------

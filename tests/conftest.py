@@ -10,6 +10,7 @@ tests skip with a clear reason if an image is missing rather than failing opaque
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 import skimage.io as io
 
@@ -68,6 +69,34 @@ def load_image_or_skip(name: str):
     if not path.exists():
         pytest.skip(f"{path} not found locally (data/ is gitignored, not committed)")
     return io.imread(path)
+
+
+def assert_every_mask_cell_is_meshed(algorithm, labels, name: str = "mesh", sub_resolution=()) -> None:
+    """Every cell of the mask the algorithm meshed carries at least one triangle, and none is named unresolved.
+
+    For the cut-cell tests: a cell cut by the image box can be lost by the watershed (it keeps only its seed
+    tetrahedron, which surgery then relabels), so a test of a cut mask checks this before anything else. The cells
+    are the labels of `algorithm._segmented_image` other than the media (`algorithm.medium_labels`).
+
+    `sub_resolution` names the cells a test expects absent because no tetrahedron lies in their voxels (a sliver
+    a voxel or so thick that the cut leaves): each must be absent and named unresolved with that cause, and no
+    other cell may be absent.
+    """
+    from dw3d.enclosed_media import NO_TETRAHEDRON_IN_ITS_VOXELS
+
+    expected = {int(cell) for cell in sub_resolution}
+    meshed = {int(label) for label in np.unique(algorithm._segmented_image)} - set(algorithm.medium_labels)
+    in_mesh = {int(label) for label in np.unique(np.asarray(labels))}
+    missing = sorted(meshed - in_mesh - expected)
+    assert not missing, f"{name}: mask cells absent from the mesh: {missing}"
+    report = algorithm.enclosed_medium_report
+    regions = {} if report is None else {u.label: u for u in report.unresolved if u.kind == "cell"}
+    unexpected = sorted(set(regions) - expected)
+    assert not unexpected, f"{name}: cells named unresolved: {unexpected}"
+    for cell in sorted(expected):
+        assert cell not in in_mesh, f"{name}: cell {cell}, expected below the resolution, is in the mesh"
+        assert cell in regions, f"{name}: cell {cell} is absent from the mesh but not named unresolved"
+        assert regions[cell].cause == NO_TETRAHEDRON_IN_ITS_VOXELS, f"{name}: cell {cell}: {regions[cell].cause}"
 
 
 @pytest.fixture(params=IMAGE_NAMES)

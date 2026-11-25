@@ -4,4 +4,4 @@ Reconstruct the multimaterial mesh of a cell aggregate (`data/Images/1.tif`, in 
 
 Data: the repository's `data/Images/`.
 
-The notebook: [`Examples/example_1_mesh_reconstruction_visualisation.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/Examples/example_1_mesh_reconstruction_visualisation.ipynb).
+The notebook: [`Examples/example_1_mesh_reconstruction_visualisation.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.8.0/Examples/example_1_mesh_reconstruction_visualisation.ipynb).

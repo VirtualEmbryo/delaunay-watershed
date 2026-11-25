@@ -7,43 +7,63 @@ microscope stack; a program that reads its columns as `(x, y, z)`, as ParaView, 
 shows the mirror image of the tissue, unless it exchanges columns 0 and 2 (and two corners of every triangle, so
 that each still faces the same side), as `dw3d.viewing.plot_cells_polyscope` does for what it draws.
 
-The `.rec` reader and writer are copied from iorec, version 1.0.5.
+The `.rec` reader and writer are iorec's (`iorec.load_rec`, `iorec.save_rec`, `iorec.load_rec_appendix`); this module
+keeps dw3d's names and signatures, types dw3d's own appendix keys when it reads a version-1 appendix, and writes the
+appendix in version 1 (see `APPENDIX_VERSION_WRITTEN`).
 Matthieu Perez 2024
 """
 
 from __future__ import annotations
 
-import struct
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
+import iorec
+import iorec.rec_appendix
 import meshio
 import numpy as np
 from numpy.typing import NDArray
 
-# The `.rec` metadata appendix. See CHANGELOG.md / README.md for the format. The
-# appendix is a trailing block of ASCII `#`-prefixed lines -- see `write_rec_appendix` for
-# why it must stay trailing, never leading.
-_APPENDIX_MAGIC = "rec-appendix"
-_APPENDIX_VERSION = 1
-_APPENDIX_SEQUENCE_INT_KEYS = frozenset(
-    {"source_shape", "crop_offset", "crop_faces", "media", "enclosed_media_voxels", "unresolved_regions",
-     "unresolved_regions_voxels"},
+# The appendix version this module writes. iorec 1.4.1 writes version 2 by default (`# key: <JSON>` lines);
+# delaunay-watershed-3d 0.7.1 and foambryo 0.7.1 read such a block without an error but lose every key of it
+# (their parser splits each line on `=`): a file's crop faces, media, unresolved regions and physical spacing
+# would vanish silently for anyone still on 0.7.1. Version 1 (`# key = value` lines) reads the same in both.
+APPENDIX_VERSION_WRITTEN = 1
+
+# The type of each of dw3d's own appendix keys in a version-1 appendix, where values are text (a version-2
+# appendix carries its types): sequences of int or float are space-separated, `resampled_spacing` is one float.
+# Every other key is kept as a string.
+_INTEGER_SEQUENCE_KEYS = (
+    "source_shape",
+    "crop_offset",
+    "crop_faces",
+    "media",
+    "enclosed_media_voxels",
+    "unresolved_regions",
+    "unresolved_regions_voxels",
 )
-_APPENDIX_SEQUENCE_FLOAT_KEYS = frozenset({"spacing", "enclosed_media_inscribed_radius"})
-_APPENDIX_SCALAR_FLOAT_KEYS = frozenset({"resampled_spacing"})
+APPENDIX_KEY_TYPES: dict[str, object] = {
+    **dict.fromkeys(_INTEGER_SEQUENCE_KEYS, tuple[int, ...]),
+    # Written by both packages' algorithms since 0.8.0 (dw3d: whenever it writes an appendix; dw2d: always), so that a
+    # reader can tell a 2-D file from a 3-D one without probing its layout (`rec_dimension`).
+    "dimension": int,
+    # dw2d's: the vertices on the image border.
+    "image_border_vertices": tuple[int, ...],
+    "spacing": tuple[float, ...],
+    "enclosed_media_inscribed_radius": tuple[float, ...],
+    "resampled_spacing": float,
+}
 
 
 def _dw3d_version() -> str:
     """Return the installed dw3d version, or "unknown" if it can't be determined.
 
-    The importable module is `dw3d`, but the distribution is registered as
-    `delaunay_watershed_3d` (see `setup.cfg`), which is the name `importlib.metadata`
-    needs.
+    The importable module is `dw3d`; `importlib.metadata` needs the name of the distribution that carries it,
+    `delaunay-watershed-3d` (the metapackage `delaunay-watershed` only requires it at the same version).
     """
     try:
-        return version("delaunay_watershed_3d")
+        return version("delaunay-watershed-3d")
     except PackageNotFoundError:
         return "unknown"
 
@@ -139,8 +159,19 @@ def save_vtk(
             which writes the file exactly as before this option existed.
 
     Raises:
-        ValueError: if `crop_faces` is not a boolean array with one entry per triangle.
+        ValueError: if `crop_faces` is not a boolean array with one entry per triangle, or if the mesh has no triangle
+            (since 0.8.0; before, meshio raised `IndexError` while writing a `.vtk` file, and wrote `.vtu` files that
+            meshio cannot read back). Nothing is written then; `save_rec` writes an empty `.rec` file, which
+            `load_rec` reads back.
     """
+    if len(triangles) == 0:
+        error = (
+            f"cannot write {Path(filename).name}: the mesh has no triangle (a mask whose cells are all too small to "
+            "hold a tetrahedron, or a mask without cells; see the UnresolvedCellWarning of the reconstruction). meshio "
+            "cannot write an empty .vtk file, nor read back the empty .vtu files it writes; save_rec (or the "
+            "reconstruction's save_to_rec_mesh) writes an empty .rec file"
+        )
+        raise ValueError(error)
     cells = [
         ("triangle", triangles),
     ]
@@ -170,6 +201,104 @@ def save_vtk(
     )
 
 
+_APPENDIX_MARKER = b"# rec-appendix "
+
+
+def _layouts_of_a_binary_rec(filename: Path) -> list[int]:
+    """The dimensions (2, 3) whose binary layout accounts exactly for the file's geometry bytes.
+
+    A binary `.rec` file is `n` (uint64), `n` points of `d` float64, `m` (uint64), then `m` records of `d` vertex indices
+    (int64) and 2 labels (int32), optionally followed by the appendix, which starts with `# rec-appendix `. Layout `d`
+    fits exactly when its geometry ends at the end of the file or at the start of an appendix; when neither fits exactly
+    (stray bytes after the geometry), the layouts that leave less than one of their records unread are returned.
+    """
+    size = filename.stat().st_size
+    exact, within = [], []
+    with filename.open("rb") as f:
+        header = f.read(8)
+        if len(header) < 8:
+            return []
+        n = int(np.frombuffer(header, dtype="<u8")[0])
+        for d in (2, 3):
+            at = 8 + 8 * d * n
+            if at + 8 > size:
+                continue
+            f.seek(at)
+            m = int(np.frombuffer(f.read(8), dtype="<u8")[0])
+            end = at + 8 + (8 * d + 8) * m
+            if end > size:
+                continue
+            f.seek(end)
+            if end == size or f.read(len(_APPENDIX_MARKER)) == _APPENDIX_MARKER:
+                exact.append(d)
+            elif size - end < 8 * d + 8:
+                within.append(d)
+    # A file with a few stray bytes after its geometry (which iorec's readers ignore) fits no layout exactly; then a
+    # layout that leaves less than one of its own records unread decides (the other reads its counts from coordinate
+    # bits and lands elsewhere).
+    return exact or within
+
+
+def _layouts_of_a_text_rec(filename: Path) -> list[int]:
+    """The dimensions whose text layout the file's first rows have: 2 or 3 coordinates per point row (or, with no
+    point, 4 or 5 integers per segment or triangle row)."""
+    with filename.open() as f:
+        rows = []
+        for line in f:
+            if line.strip() and not line.startswith("#"):
+                rows.append(line.split())
+            if len(rows) == 3:
+                break
+    if len(rows) < 2:
+        return []
+    n = int(rows[0][0])
+    if n > 0:
+        return [len(rows[1])] if len(rows[1]) in (2, 3) else []
+    if len(rows) < 3:
+        return []
+    return [len(rows[2]) - 2] if len(rows[2]) in (4, 5) else []
+
+
+def rec_dimension(filename: str | Path) -> int:
+    """Whether a `.rec`/`.arec` file holds a 2-D mesh (segments) or a 3-D mesh (triangles).
+
+    The `.rec` format carries no dimension marker. Since 0.8.0 both packages' algorithms record `dimension` in the
+    metadata appendix (dw2d always, dw3d whenever it writes an appendix); when the key is present it decides. Otherwise
+    the layout does: in a text file, the number of coordinates on the point rows; in a binary file, which of the two
+    layouts accounts exactly for the geometry's bytes before the appendix (`_layouts_of_a_binary_rec`). A file both
+    layouts would fit (possible in principle for a binary file, never observed) is refused rather than guessed.
+
+    Args:
+        filename (str | Path): the path to the file.
+
+    Returns:
+        int: 2 or 3.
+
+    Raises:
+        FileNotFoundError: if the file does not exist.
+        ValueError: if the appendix's `dimension` is not 2 or 3, or if the layout fits neither or both dimensions.
+    """
+    path = Path(filename)
+    if not path.is_file():
+        error = f"no such file: {path}"
+        raise FileNotFoundError(error)
+    appendix = load_rec_appendix(path)
+    if appendix is not None and "dimension" in appendix:
+        dimension = int(appendix["dimension"])
+        if dimension not in (2, 3):
+            error = f"{path}: the appendix records dimension = {dimension}, not 2 or 3"
+            raise ValueError(error)
+        return dimension
+    fitting = _layouts_of(path)
+    if len(fitting) != 1:
+        error = (
+            f"{path}: cannot tell whether this .rec file is 2-D or 3-D from its layout "
+            f"({'both layouts fit' if fitting else 'neither layout fits'}); it records no dimension in its appendix"
+        )
+        raise ValueError(error)
+    return fitting[0]
+
+
 def load_rec(
     filename: str | Path,
 ) -> tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64]]:
@@ -177,13 +306,13 @@ def load_rec(
 
     A metadata appendix, if any, is ignored; read it with `load_rec_appendix`. Crop faces are
     returned as ordinary triangles, in the file's row order; read them with
-    `load_rec_with_crop_faces`.
+    `load_rec_with_crop_faces`. A 2-D file (`rec_dimension`) is refused: read it with `dw2d.io.load_rec`.
 
     Args:
         filename (str | Path): The path to the file on disk.
 
     Raises:
-        ValueError: If the path given is not a .rec or .arec file.
+        ValueError: If the path given is not a .rec or .arec file, or if it holds a 2-D mesh.
         FileNotFoundError: If the file doesn't exist.
 
     Returns:
@@ -191,15 +320,29 @@ def load_rec(
             `(num_points, 3)` float64, triangles `(num_triangles, 3)` int64 and labels
             `(num_triangles, 2)` int64.
     """
-    filename = Path(filename).resolve()
-    if not filename.exists():
-        error = f"{filename} not found."
-        raise FileNotFoundError(error)
-    if filename.suffix == ".rec" or filename.suffix == ".arec":
-        return _load_rec_file(filename)
-    else:
-        error = f"{filename} is not a .rec or .arec file."
+    path = Path(filename)
+    if path.is_file() and path.suffix in (".rec", ".arec") and _is_two_dimensional(path):
+        error = f"{path} holds a 2-D mesh (segments, not triangles): read it with dw2d.io.load_rec"
         raise ValueError(error)
+    return iorec.load_rec(filename)
+
+
+def _layouts_of(path: Path) -> list[int]:
+    with path.open("rb") as f:
+        binary = b"\x00" in f.read(64)
+    return _layouts_of_a_binary_rec(path) if binary else _layouts_of_a_text_rec(path)
+
+
+def _is_two_dimensional(path: Path) -> bool:
+    """Whether a file holds a 2-D mesh, from its layout (a few bytes read), the appendix only when the layout cannot
+    tell; a file neither can classify is left to iorec's reader, which reports what is wrong with it."""
+    fitting = _layouts_of(path)
+    if len(fitting) == 1:
+        return fitting[0] == 2
+    try:
+        return rec_dimension(path) == 2
+    except ValueError:
+        return False
 
 
 def load_rec_with_crop_faces(
@@ -281,89 +424,12 @@ def _require_crop_mask(crop_faces: NDArray[np.bool_], n_triangles: int) -> NDArr
     return crop_faces
 
 
-def _load_rec_file(
-    filename: Path,
-) -> tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64]]:
-    if _is_binary(filename):
-        return _load_binary_rec_file(filename)
-    else:
-        return _load_text_rec_file(filename)
-
-
-def _load_binary_rec_file(
-    filename: Path,
-) -> tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64]]:
-    with Path.open(filename, "rb") as f:
-        # First we read the number of vertices
-        (number_of_points,) = struct.unpack("Q", f.read(8))
-        # Then we read the vertices : they are in a 3D space
-        points = np.fromfile(f, count=3 * number_of_points, dtype=np.float64).reshape(
-            (number_of_points, 3),
-        )
-
-        # Number of triangles
-        (number_of_triangles,) = struct.unpack("Q", f.read(8))
-        # Each line defines a triangle and 2 regions labels
-        dtype_triangles_and_labels = np.dtype(
-            [("triangles", np.int64, (3,)), ("labels", np.int32, (2,))],
-        )
-        triangles_and_labels = np.fromfile(
-            f,
-            count=number_of_triangles,
-            dtype=dtype_triangles_and_labels,
-        )
-
-    return (
-        points,
-        triangles_and_labels["triangles"].astype(np.int64),
-        triangles_and_labels["labels"].astype(np.int64),
-    )
-
-
-def _load_text_rec_file(
-    filename: Path,
-) -> tuple[NDArray[np.float64], NDArray[np.int64], NDArray[np.int64]]:
-    with Path.open(filename) as f:
-        # First we read the number of vertices
-        number_of_points = int(f.readline().strip())
-        # Then we read the vertices : they are in a 3D space
-        points = np.fromfile(
-            f,
-            count=3 * number_of_points,
-            sep="\n",
-            dtype=np.float64,
-        ).reshape((number_of_points, 3))
-
-        # Number of triangles
-        number_of_triangles = int(f.readline().strip())
-        # Each line defines a triangle and 2 regions labels
-        triangles_and_labels = np.fromfile(
-            f,
-            count=5 * number_of_triangles,
-            sep="\n",
-            dtype=np.int64,
-        ).reshape(
-            (number_of_triangles, 5),
-        )
-
-    return (
-        points,
-        triangles_and_labels[:, 0:3].astype(np.int64),
-        triangles_and_labels[:, 3:5].astype(np.int64),
-    )
-
-
-def _format_appendix_value(value: object) -> str:
-    if isinstance(value, (tuple, list, np.ndarray)):
-        return " ".join(str(v) for v in value)
-    return str(value)
-
-
 def write_rec_appendix(metadata: dict[str, Any], *, written_by: str) -> bytes:
     """Build the trailing `.rec`/`.arec` metadata appendix block.
 
-    The block is a sequence of ASCII `#`-prefixed `key = value` lines, headed by the
-    `rec-appendix <version>` line. It must be appended at the very end of the file: a
+    The block is a sequence of ASCII `#`-prefixed `key = value` lines (appendix version 1,
+    `APPENDIX_VERSION_WRITTEN`), headed by the `rec-appendix 1` line, built by
+    `iorec.write_rec_appendix`. It must be appended at the very end of the file: a
     trailing `#` block is invisible to every reader that predates it (both text and
     binary mode), since those readers read a count and then `np.fromfile(..., count=n)`,
     which stops exactly there. A leading block breaks both readers. See
@@ -380,53 +446,31 @@ def write_rec_appendix(metadata: dict[str, Any], *, written_by: str) -> bytes:
         bytes: the ASCII appendix block (including a trailing newline), ready to be
         concatenated onto the geometry bytes/text already written.
     """
-    lines = [f"# {_APPENDIX_MAGIC} {_APPENDIX_VERSION}", f"# written_by = {written_by}"]
-    for key, raw_value in metadata.items():
-        lines.append(f"# {key} = {_format_appendix_value(raw_value)}")
-    return ("\n".join(lines) + "\n").encode("ascii")
+    return iorec.write_rec_appendix(metadata, written_by=written_by, appendix_version=APPENDIX_VERSION_WRITTEN)
 
 
 def parse_rec_appendix(block_text: str) -> dict[str, Any]:
     """Parse a `.rec`/`.arec` metadata appendix block into a dict.
 
     Args:
-        block_text: the appendix block: one `# key = value` line per line, headed by the
-            `# rec-appendix <version>` line.
+        block_text: the appendix block, headed by the `# rec-appendix <version>` line: version 1
+            (`# key = value` lines) or version 2 (`# key: <JSON>` lines).
 
     Raises:
-        ValueError: if `block_text` does not start with a `rec-appendix <version>` header.
+        ValueError: if `block_text` does not start with a `rec-appendix <version>` header, if the
+            version is not 1 or 2, or if a value cannot be read as its key's type.
 
     Returns:
         dict[str, Any]: parsed fields, plus `"_version"` (the schema version, an int).
             Sequence-valued fields known to the schema are parsed into tuples (`spacing` and
             `enclosed_media_inscribed_radius` of `float`; `source_shape`, `crop_offset`, `crop_faces`, `media`,
             `enclosed_media_voxels`, `unresolved_regions` and `unresolved_regions_voxels` of `int`), and
-            `resampled_spacing` into a `float`; every other key is kept as a raw string, never
-            dropped, so a future rewrite can carry it forward.
+            `resampled_spacing` into a `float` (`APPENDIX_KEY_TYPES`); every other key is kept as a
+            raw string, never dropped, so a future rewrite can carry it forward. A version-2 block
+            gives each value the type its JSON holds, sequences as tuples.
     """
-    lines = [ln.strip() for ln in block_text.splitlines() if ln.strip()]
-    header = lines[0] if lines else ""
-    header_body = header[1:].strip() if header.startswith("#") else ""
-    header_parts = header_body.split()
-    if len(header_parts) != 2 or header_parts[0] != _APPENDIX_MAGIC:
-        error = f"Not a rec-appendix block, expected a header line, got: {header!r}"
-        raise ValueError(error)
-
-    metadata: dict[str, Any] = {"_version": int(header_parts[1])}
-    for line in lines[1:]:
-        content = line[1:].strip() if line.startswith("#") else line
-        key, _, raw_value = content.partition("=")
-        key = key.strip()
-        raw_value = raw_value.strip()
-        if key in _APPENDIX_SEQUENCE_INT_KEYS:
-            metadata[key] = tuple(int(v) for v in raw_value.split())
-        elif key in _APPENDIX_SEQUENCE_FLOAT_KEYS:
-            metadata[key] = tuple(float(v) for v in raw_value.split())
-        elif key in _APPENDIX_SCALAR_FLOAT_KEYS:
-            metadata[key] = float(raw_value)
-        else:
-            metadata[key] = raw_value
-    return metadata
+    # iorec's parser, which has no public name for a block already in memory; pinned by tests/test_rec_appendix.py.
+    return iorec.rec_appendix._parse_rec_appendix(block_text, APPENDIX_KEY_TYPES)
 
 
 def load_rec_appendix(filename: str | Path) -> dict[str, Any] | None:
@@ -447,22 +491,7 @@ def load_rec_appendix(filename: str | Path) -> dict[str, Any] | None:
             as `coordinate_frame == "unknown"`, never as isotropic spacing -- a legacy file's
             absent appendix carries no information about spacing at all.
     """
-    filename = Path(filename).resolve()
-    raw = filename.read_bytes()
-    marker = f"# {_APPENDIX_MAGIC} ".encode("ascii")
-    idx = raw.rfind(marker)
-    if idx == -1:
-        return None
-    return parse_rec_appendix(raw[idx:].decode("ascii"))
-
-
-def _is_binary(file_name: Path) -> bool:
-    try:
-        with Path.open(file_name, encoding="utf-8") as f:
-            f.read()
-            return False
-    except UnicodeDecodeError:
-        return True
+    return iorec.load_rec_appendix(filename, metadata_types=APPENDIX_KEY_TYPES)
 
 
 def save_rec(
@@ -476,13 +505,15 @@ def save_rec(
 ) -> None:
     """Save a rec mesh file at filename. Binary or text mode are available.
 
-    Binary mode is more compact but might not be universally understood. Its layout, in the machine's
-    byte order (little-endian on x86 and ARM), is: the number of points (uint64); the points, 3 float64
+    Binary mode is more compact but might not be universally understood. Its layout, little-endian
+    on every machine (iorec's), is: the number of points (uint64); the points, 3 float64
     each; the number of triangles (uint64); per triangle, its 3 vertex indices (int64) then its 2 labels
     (int32). The points are always written as float64, the dtype `load_rec` reads, whatever their dtype
     in memory (before 0.7.0 they were written in their own dtype, so float32 points did not read back).
-    The text layout is the point count, one `x y z` line per point, the triangle count, and one
-    `v0 v1 v2 label1 label2` line per triangle. Either layout may be followed by the metadata appendix.
+    The text layout is the point count, one line of 3 coordinates per point (each the shortest text
+    that reads back to the same float64), the triangle count, and one `v0 v1 v2 label1 label2` line per
+    triangle. Either layout may be followed by the metadata appendix (version 1, `APPENDIX_VERSION_WRITTEN`).
+    The file is written by `iorec.save_rec`.
 
     Args:
         filename (str | Path): where to save the mesh file.
@@ -515,67 +546,14 @@ def save_rec(
         n_crop = int(np.count_nonzero(crop_faces))
         metadata = {**(metadata or {}), "crop_faces": (len(order) - n_crop, n_crop)}
 
-    if binary_mode:
-        _save_rec_binary(filename, points, triangles, labels)
-    else:
-        _save_rec_text(filename, points, triangles, labels)
-
-    if metadata is not None:
-        appendix_bytes = write_rec_appendix(metadata, written_by=_dw3d_version())
-        with Path(filename).open("ab") as file:
-            file.write(appendix_bytes)
-
-
-def _save_rec_binary(
-    filename: str | Path,
-    points: NDArray[np.float64],
-    triangles: NDArray[np.int64],
-    labels: NDArray[np.int64],
-) -> None:
-    """Save a rec file at filename. Binary only; the layout is in `save_rec`'s docstring."""
-    # float64 whatever the points' own dtype: the reader reads float64, so float32 points written as they were
-    # did not read back. For float64 points (dw3d's own) the bytes are what they always were.
-    bytes_content = struct.pack("Q", len(points))
-    bytes_content += np.ascontiguousarray(points, dtype=np.float64).tobytes()
-    bytes_content += struct.pack("Q", len(triangles))
-    dt = np.dtype([("triangles", np.int64, (3,)), ("labels", np.int32, (2,))])
-
-    def map_tri_labels_func(
-        i: int,
-    ) -> tuple[Any, Any]:
-        # -> tuple[np.int64, np.int64, np.int64, np.int64, np.int64]:
-        return triangles[i], labels[i]
-
-    triangles_and_labels = np.fromiter(
-        (map_tri_labels_func(xi) for xi in np.arange(len(triangles))),
-        dtype=dt,
-        count=len(triangles),
+    # iorec stamps dw3d's version on `written_by` and its own on `writer_library`.
+    iorec.save_rec(
+        filename,
+        points,
+        triangles,
+        labels,
+        binary_mode,
+        metadata=metadata,
+        written_by=_dw3d_version(),
+        appendix_version=APPENDIX_VERSION_WRITTEN,
     )
-
-    bytes_content += triangles_and_labels.tobytes()
-    with Path(filename).open("wb") as file:
-        file.write(bytes_content)
-
-
-def _save_rec_text(
-    filename: str | Path,
-    points: NDArray[np.float64],
-    triangles: NDArray[np.int64],
-    labels: NDArray[np.int64],
-) -> None:
-    """Save a rec file at filename. Text only."""
-    content = ""
-    content += str(len(points)) + "\n"
-
-    for i in range(len(points)):
-        # content += f"{points[i][0]:.5f} {points[i][1]:.5f} {points[i][2]:.5f}\n"
-        content += f"{points[i][0]} {points[i][1]} {points[i][2]}\n"
-
-    content += str(len(triangles)) + "\n"
-
-    for i in range(len(triangles)):
-        content += f"{triangles[i][0]} {triangles[i][1]} {triangles[i][2]} "
-        content += f"{labels[i][0]} {labels[i][1]}\n"
-
-    with Path(filename).open("w") as file:
-        file.write(content)

@@ -15,4 +15,18 @@ Generated from the docstrings.
 | [Files](io.md) | `dw3d.io` |
 | [Mesh utilities](mesh-utilities.md) | `dw3d.mesh_utilities` |
 | [Masks from meshes](mask-reconstruction.md) | `dw3d.mask_reconstruction` |
-| [The Polyscope viewer](viewing.md) | `dw3d.viewing` |
+| [Thin margins of medium](thin-medium-margins.md) | `dw3d.thin_medium_margins` |
+| [The Polyscope viewer](viewing.md) | `dw3d.viewing` (2-D and 3-D meshes) |
+
+Two dimensions (`dw2d`):
+
+| page | modules |
+|---|---|
+| [The `dw2d` package](dw2d.md) | `dw2d` |
+| [Reconstruction algorithms (2D)](dw2d-reconstruction.md) | `dw2d.reconstruction_algorithm_factory`, `dw2d.reconstruction_algorithm` |
+| [Reports and warnings (2D)](dw2d-reports.md) | `dw2d.reports` |
+| [The half-edge structure (2D)](dw2d-half-edge-structure.md) | `dw2d.Dcel.DCEL_Data` |
+| [Junction relocation and interface projection (2D)](dw2d-junction-relocation.md) | `dw2d.junction_relocation`, `dw2d.locus_projection` |
+| [Thin margins of medium (2D)](dw2d-thin-medium-margins.md) | `dw2d.thin_medium_margins` |
+| [Files (2D)](dw2d-io.md) | `dw2d.io` |
+| [Masks from meshes (2D)](dw2d-mask-reconstruction.md) | `dw2d.Mask_reconstruction` |

@@ -34,6 +34,7 @@ from dw3d.cell_volume_agreement import (
 )
 from dw3d.io import load_rec_appendix
 from dw3d.reconstruction_algorithm import _seeds_inside_their_labels
+from tests.conftest import assert_every_mask_cell_is_meshed
 
 BALL_RADIUS = 30.0
 
@@ -175,7 +176,8 @@ def test_every_piece_of_exterior_is_seeded() -> None:
     mask = np.zeros((40, 40, 40), dtype=np.uint8)
     mask[:, :, 17:23] = 1
     mask[:20, :, 17:23] = 2
-    algorithm, _, _ = reconstruct(mask)
+    algorithm, mesh, _ = reconstruct(mask)
+    assert_every_mask_cell_is_meshed(algorithm, mesh[2], "wall of two cells")
     assert algorithm.enclosed_medium_report.exterior_pieces == 2
     centroids = np.clip(np.rint(algorithm._tesselation_graph.compute_nodes_centroids()).astype(int), 0, 39)
     labels = algorithm._map_node_id_to_label
