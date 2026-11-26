@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Multimaterial meshes of cell aggregates from their segmentation">
+        <meta name="description" content="Multimaterial meshes of cell aggregates from their 3-D or 2-D segmentation">
       
       
       
@@ -21,18 +21,18 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
     
     
       
-        <title>Cropped tissues - Delaunay-Watershed 3D</title>
+        <title>Cropped tissues - Delaunay-Watershed (3D and 2D)</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -94,7 +94,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Delaunay-Watershed 3D" class="md-header__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-header__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -108,7 +108,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Delaunay-Watershed 3D
+            Delaunay-Watershed (3D and 2D)
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -230,13 +230,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Delaunay-Watershed 3D" class="md-nav__button md-logo" aria-label="Delaunay-Watershed 3D" data-md-component="logo">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-nav__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Delaunay-Watershed 3D
+    Delaunay-Watershed (3D and 2D)
   </label>
   
     <div class="md-nav__source">
@@ -433,6 +433,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cropped tissues
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -449,6 +467,47 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-cell-a-few-voxels-from-the-image-box" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A cell a few voxels from the image box
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-cell-the-watershed-loses-known-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A cell the watershed loses (known issue)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -539,6 +598,62 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orientation-in-two-and-three-dimensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orientation in 2D and 3D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -576,7 +691,7 @@
   <span class="md-ellipsis">
     
   
-    Examples
+    Two dimensions
   
 
     
@@ -589,6 +704,149 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Two dimensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction in 2D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/migration-from-0.1.5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating from dw2d 0.1.5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -794,6 +1052,90 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-geometrical-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: geometrical analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-a-tissue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing a tissue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-separated-cells/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing separated cells
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -821,10 +1163,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -842,8 +1184,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1112,6 +1454,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api/thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api/triangle-intersection/" class="md-nav__link">
         
   
@@ -1245,6 +1615,230 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw2d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports and warnings (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-half-edge-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The half-edge structure (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation and interface projection (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1326,6 +1920,36 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#a-cell-a-few-voxels-from-the-image-box" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A cell a few voxels from the image box
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-cell-the-watershed-loses-known-issue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A cell the watershed loses (known issue)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1356,6 +1980,12 @@
 </code></pre></div>
 <p>The image faces are named <code>"axis0_low"</code>, <code>"axis0_high"</code>, ... <code>"axis2_high"</code> (<code>dw3d.IMAGE_FACES</code>). <code>save_to_rec_mesh</code> writes the crop faces as the last block of triangles and records them in the appendix below; <code>dw3d.io.load_rec_with_crop_faces</code> reads them back.</p>
 <p>Example: the notebook <em>Anisotropic voxels and crop faces</em> (<code>Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb</code>).</p>
+<h2 id="a-cell-a-few-voxels-from-the-image-box">A cell a few voxels from the image box<a class="headerlink" href="#a-cell-a-few-voxels-from-the-image-box" title="Permanent link">&para;</a></h2>
+<p>A face of the image box that no cell reaches is not a crop: the medium goes on beyond it. Before 0.8.0 a cell a few voxels from such a face could take the medium between them (at <code>min_distance</code> 3 a 12-voxel cube 4 voxels from every face meshed to 2.98 times its voxel count). Since 0.8.0 such thin margins are padded with medium before meshing (masks of cubic voxels; a mask resampled from longer voxels is not padded unless asked), a face a cell reaches is never padded, and <code>ThinMediumMarginWarning</code> names a cell left on a face it does not reach; <code>algorithm.medium_margin_padding</code> says which faces were padded, and <code>algorithm.pad_thin_medium_margins = False</code> gives the previous meshes. On a padded face a cell's surface may pass the image box, by at most the padding. The rule, its measurements and its known issues, in 3D and in 2D: <a href="../thin-medium-margins/">thin margins of medium</a>.</p>
+<h2 id="a-cell-the-watershed-loses-known-issue">A cell the watershed loses (known issue)<a class="headerlink" href="#a-cell-the-watershed-loses-known-issue" title="Permanent link">&para;</a></h2>
+<p>The seeded watershed can lose a cell, most often a cell cut by the image box. A cell's seed is the tetrahedron whose centroid is nearest to the cell's deepest voxel. Against the image box this can be a thin tetrahedron whose faces all score below a face through which the rest of the cell, grouped without its seed, reaches a seeded neighbour; the neighbour then takes the whole group, the cell keeps only its seed, and mesh surgery relabels that tetrahedron. The cell is absent from the mesh, the neighbour comes out larger than its voxels, and <code>cut_cells</code> names the neighbour, which now holds the crop faces that were the lost cell's; <code>crop_face_report.cells_reaching_a_crop_without_a_crop_face</code> names the lost cell.</p>
+<p>Since 0.8.0 such a cell is named: <code>UnresolvedCellWarning</code> lists it with the cause <code>"removed by mesh surgery"</code> (see <a href="../enclosed-media/">Enclosed media</a>, <em>Regions too small for the mesh</em>), and foambryo gives it no pressure. A smaller <code>min_distance</code> may mesh it. Measured on a test mask of four cells filling a ball that a 36³ image box cuts (cells 1, 3 and 4 have voxels on the box), at the default <code>min_distance</code> 3 on cubic voxels and without the padding of thin margins: cell 1 (1 648 voxels, 262 on the cut face) is absent from the mesh and cell 2 comes out at 1.37 times its voxels; at <code>min_distance</code> 1 and 2, and with z twice as long as x and y, every cell is meshed. On the same ball at 36 positions along z and <code>min_distance</code> 2 to 5, 16 cells are absent in 144 reconstructions; on 433 plane crops of the benchmark masks, <code>cut_cells</code> misses a cell on the box in 5, each lost or nearly lost by the watershed. With the padding of thin margins, the default, the ball's four faces that no cell reaches are padded and cell 1 is left only as a fragment of 4 triangles (0.010 of its voxel volume inside the box of voxel centres); the watershed's defect is unchanged, and <code>pad_thin_medium_margins = False</code> reproduces the loss above.</p>
+<p>Compare a cut cell's mesh volume with its voxels inside the box of voxel centres, not with its voxel count: the mesh stops at the centres of the outermost voxels, so a cell cut by the box can reach at most about that volume (0.92 of the voxel count for cell 1 of the test mask above).</p>
 
 
 
@@ -1415,10 +2045,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
       

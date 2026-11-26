@@ -1,0 +1,2280 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multimaterial meshes of cell aggregates from their 3-D or 2-D segmentation">
+      
+      
+      
+      
+        <link rel="prev" href="../reconstruction/">
+      
+      
+        <link rel="next" href="../../examples/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Migrating from dw2d 0.1.5 - Delaunay-Watershed (3D and 2D)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#migrating-from-dw2d-015" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-header__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delaunay-Watershed (3D and 2D)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Migrating from dw2d 0.1.5
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-nav__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Delaunay-Watershed (3D and 2D)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/reconstruction-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/cropped-tissues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cropped tissues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/anisotropic-voxels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/rec-metadata-appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The .rec metadata appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/orientation-in-two-and-three-dimensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orientation in 2D and 3D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Two dimensions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Two dimensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction in 2D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating from dw2d 0.1.5
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating from dw2d 0.1.5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation-and-licence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation and licence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The new names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-that-change-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults that change results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixes-that-change-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes that change numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-orientation-of-the-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The orientation of the edges
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mesh-reconstruction-and-visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh reconstruction and visualisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mask-compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mask compression and reconstruction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/advanced-use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced use: custom reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves read from the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/default-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Default junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/anisotropic-voxels-and-crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels and crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-geometrical-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: geometrical analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-a-tissue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing a tissue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-separated-cells/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing separated cells
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/package/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw3d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/mask-preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic masks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/cell-volume-agreement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cell volumes against the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/triangle-intersection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-intersections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/mesh-utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/viewing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Polyscope viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw2d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports and warnings (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-half-edge-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The half-edge structure (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation and interface projection (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dw2d-mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installation-and-licence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Installation and licence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The new names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#defaults-that-change-results" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defaults that change results
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixes-that-change-numbers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixes that change numbers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-orientation-of-the-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The orientation of the edges
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="migrating-from-dw2d-015">Migrating from dw2d 0.1.5<a class="headerlink" href="#migrating-from-dw2d-015" title="Permanent link">&para;</a></h1>
+<p>delaunay-watershed-2d 0.1.5 was the last release of dw2d from its own repository. From 0.8.0 dw2d is developed and released with dw3d, under one version. Code written for 0.1.5 still runs through 0.8.x, with deprecation warnings, but its meshes and some of its numbers change: this page lists what changes and how to get the former behaviour back.</p>
+<p>If you use dw2d, please cite: Yamamoto K., Ichbiah S., Perez M., Borrego-Pinto J., Delbary F., Goehring N. W., Northrop P., Turlier H., Charras G. <em>Spatiotemporal mapping of the contractile and adhesive forces sculpting early C. elegans embryos.</em> Developmental Cell <strong>61</strong>(6), 1273–1288.e4 (2026), <a href="https://doi.org/10.1016/j.devcel.2026.04.013">doi:10.1016/j.devcel.2026.04.013</a>.</p>
+<h2 id="installation-and-licence">Installation and licence<a class="headerlink" href="#installation-and-licence" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>delaunay-watershed<span class="w">            </span><span class="c1"># dw3d and dw2d</span>
+pip<span class="w"> </span>install<span class="w"> </span>delaunay-watershed-2d<span class="w">         </span><span class="c1"># dw2d alone, as before</span>
+</code></pre></div>
+<p><code>pip install --upgrade delaunay-watershed-2d</code> replaces 0.1.5 in place. The import is unchanged (<code>import dw2d</code>). dw2d 0.8.0 needs Python 3.12 or later, NumPy 2.0, SciPy 1.13 (it runs on SciPy 1.14 and later, which removed <code>interp2d</code>), scikit-image 0.23.1, networkx 2.8 and iorec 1.4.1; matplotlib only for figures (<code>pip install "delaunay-watershed-2d[viewing]"</code>), and no longer Polyscope. dw2d is licensed under GPL-3.0-or-later from 0.8.0, like dw3d; 0.1.5 and earlier keep the licence they were published under.</p>
+<h2 id="the-new-names">The new names<a class="headerlink" href="#the-new-names" title="Permanent link">&para;</a></h2>
+<p>The 0.1.5 call and its 0.8.0 equivalent:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 0.1.5 (still works through 0.8.x, with a DeprecationWarning)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dw2d</span><span class="w"> </span><span class="kn">import</span> <span class="n">geometry_reconstruction_2d</span>
+<span class="n">DW</span> <span class="o">=</span> <span class="n">geometry_reconstruction_2d</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">min_dist</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">expansion_labels</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">verts</span><span class="p">,</span> <span class="n">edges</span> <span class="o">=</span> <span class="n">DW</span><span class="o">.</span><span class="n">return_mesh</span><span class="p">()</span>           <span class="c1"># edges: (m, 4) [v1, v2, m1, m2]</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">DW</span><span class="o">.</span><span class="n">return_dcel</span><span class="p">()</span>
+<span class="n">DW</span><span class="o">.</span><span class="n">export_mesh</span><span class="p">(</span><span class="s2">"mesh.rec"</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"txt"</span><span class="p">)</span>
+<span class="n">DW</span><span class="o">.</span><span class="n">export_segmentation</span><span class="p">(</span><span class="s2">"compressed.npy"</span><span class="p">)</span>
+
+<span class="c1"># 0.8.0</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dw2d</span>
+<span class="n">algorithm</span> <span class="o">=</span> <span class="n">dw2d</span><span class="o">.</span><span class="n">get_default_mesh_reconstruction_algorithm</span><span class="p">(</span><span class="n">min_distance</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">points</span><span class="p">,</span> <span class="n">segments</span><span class="p">,</span> <span class="n">labels</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">construct_mesh_from_segmentation_mask</span><span class="p">(</span><span class="n">labels_image</span><span class="p">)</span>
+<span class="n">mesh</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">last_constructed_dcel</span>
+<span class="n">algorithm</span><span class="o">.</span><span class="n">save_to_rec_mesh</span><span class="p">(</span><span class="s2">"mesh.rec"</span><span class="p">)</span>
+<span class="n">dw2d</span><span class="o">.</span><span class="n">save_compressed_segmentation</span><span class="p">(</span><span class="s2">"compressed.npy"</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">last_compressed_segmentation</span><span class="p">)</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>0.1.5</th>
+<th>0.8.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>geometry_reconstruction_2d(labels, min_dist=…, expansion_labels=…, interpolation_points=…)</code></td>
+<td><code>get_default_mesh_reconstruction_algorithm(min_distance=…)</code>, or the factory's <code>set_peak_local_points_placement_method</code>, <code>set_label_expansion</code>, <code>set_score_samples</code></td>
+</tr>
+<tr>
+<td><code>deterministic=</code> (development versions only)</td>
+<td><code>set_canonical_triangle_order</code> / <code>canonical_triangle_order</code></td>
+</tr>
+<tr>
+<td><code>relocate_junctions=</code>, <code>project_interface_vertices=</code>, <code>repair_pinch_vertices=</code>, <code>relabel_near_tie_slivers=</code> (development versions only)</td>
+<td><code>set_junction_relocation</code>, <code>set_interface_projection</code>, <code>set_pinch_vertex_repair</code>, <code>set_near_tie_sliver_relabelling</code></td>
+</tr>
+<tr>
+<td><code>DW.return_mesh()</code> → <code>(verts, edges)</code>, <code>edges</code> <code>(m, 4)</code></td>
+<td><code>construct_mesh_from_segmentation_mask(mask)</code> → <code>(points, segments, labels)</code>, as dw3d</td>
+</tr>
+<tr>
+<td><code>DW.return_dcel()</code></td>
+<td><code>algorithm.last_constructed_dcel</code></td>
+</tr>
+<tr>
+<td><code>DW.export_mesh(filename, mode)</code></td>
+<td><code>algorithm.save_to_rec_mesh(filename, binary_mode=False)</code></td>
+</tr>
+<tr>
+<td><code>DW.export_segmentation(filename)</code></td>
+<td><code>algorithm.last_compressed_segmentation</code>, <code>dw2d.save_compressed_segmentation</code></td>
+</tr>
+<tr>
+<td><code>reconstruct_mask_from_dict(filename)</code></td>
+<td><code>reconstruct_mask_from_dict(dictionary)</code>, <code>reconstruct_mask_from_saved_file_dict(filename)</code></td>
+</tr>
+<tr>
+<td><code>read_rec_file_bin</code>, <code>read_rec_file_num</code>, <code>open_mesh_multitracker</code> (in <code>dw2d.Dcel</code>)</td>
+<td><code>dw2d.io.load_rec(filename)</code> → <code>(points, segments, labels)</code></td>
+</tr>
+<tr>
+<td><code>write_mesh_bin</code>, <code>write_mesh_text</code> (in <code>dw2d.Dcel</code>)</td>
+<td><code>dw2d.io.save_rec(filename, points, segments, labels, binary_mode=False)</code></td>
+</tr>
+<tr>
+<td><code>DW.simple_plot()</code>, <code>DW.plot_polylines_and_seeds()</code></td>
+<td>the same methods on the algorithm, or <code>dw3d.viewing.plot_cells_polyscope(algorithm, image=mask)</code></td>
+</tr>
+<tr>
+<td>relocation and projection functions returning a dictionary</td>
+<td><code>relocate_junction_vertices(mask, points, segments, labels, ...)</code>, <code>project_interface_vertices(mask, points, segments, labels, ...)</code>, returning <code>JunctionRelocationReport</code> and <code>InterfaceProjectionReport</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Deprecated names, kept through 0.8.x and removed in 0.9.</strong> <code>geometry_reconstruction_2d</code> (with <code>min_dist</code>, <code>return_mesh</code>, <code>return_dcel</code>, <code>export_mesh</code>, <code>export_segmentation</code> and its plotting methods) warns once, when constructed, and computes exactly as before. The <code>.rec</code> readers and writers of 0.1.5 call the new functions, return what they returned before and warn. Every other name 0.1.5 exported from its top level (the half-edge and plotting helpers of <code>dw2d.Dcel</code>, <code>trace_line</code>, <code>Delaunay_Graph</code>, <code>seeded_watershed_map</code>, the helpers of <code>dw2d.Plotting_tools</code>, …) still resolves, with a <code>DeprecationWarning</code> naming its module. <code>reconstruct_mask_from_dict</code> given a file name warns and reads the file. The third-party names that 0.1.5's star imports leaked (<code>dw2d.np</code>, <code>dw2d.plt</code>, <code>dw2d.pickle</code>, …) are gone; import them yourself. <code>open_mesh_multitracker</code> no longer has a default file name and detects the layout itself. <code>export_mesh</code> with a mode other than <code>'bin'</code> or <code>'txt'</code> raises <code>ValueError</code> (it printed a message and wrote nothing).</p>
+<h2 id="defaults-that-change-results">Defaults that change results<a class="headerlink" href="#defaults-that-change-results" title="Permanent link">&para;</a></h2>
+<p>Every one of these changes the mesh of some masks; each is on in 0.8.0, and each can be turned off. Their measured effects are in the <a href="../reconstruction/">2D user guide</a>.</p>
+<table>
+<thead>
+<tr>
+<th>default</th>
+<th>what changes</th>
+<th>how to turn it off</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a machine-independent route (canonical triangle order)</td>
+<td>cells of four or more cocircular points are triangulated by a fixed rule: 2 of the 18 golden cases change, by about 0.05 % of one interface length</td>
+<td><code>set_canonical_triangle_order(False)</code></td>
+</tr>
+<tr>
+<td>junction relocation</td>
+<td>every junction vertex moves onto the mask's own junction, by a fraction of a pixel</td>
+<td><code>set_junction_relocation(False)</code></td>
+</tr>
+<tr>
+<td>pinch-vertex repair</td>
+<td>a few triangles are relabelled where a cell or a material was split around one vertex; meshes whose half-edge structure 0.1.5 could not build now build</td>
+<td><code>set_pinch_vertex_repair(False)</code></td>
+</tr>
+<tr>
+<td>near-tie sliver relabelling</td>
+<td>on the route without relocation, Z-shaped folds along membranes are removed; off with relocation, so off by default</td>
+<td><code>set_near_tie_sliver_relabelling(False)</code></td>
+</tr>
+<tr>
+<td>image-border vertices marked</td>
+<td>the vertices on the image border are never moved by the relocation or the projection; 7 of 972 border junctions on 82 test meshes stay on the border instead of moving inside the image</td>
+<td>(always on)</td>
+</tr>
+<tr>
+<td>thin margins of medium padded</td>
+<td>a cell a few pixels from a side no cell reaches no longer takes the margin; none of the shipped masks is padded</td>
+<td><code>pad_thin_medium_margins = False</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>0.1.5's mesh, as nearly as it can be had:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">algorithm</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">dw2d</span><span class="o">.</span><span class="n">MeshReconstructionAlgorithmFactory</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">set_canonical_triangle_order</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">set_junction_relocation</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">set_pinch_vertex_repair</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">set_near_tie_sliver_relabelling</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">make_algorithm</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="n">algorithm</span><span class="o">.</span><span class="n">pad_thin_medium_margins</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+<p>Its vertices are 0.1.5's on the same machine (the legacy triangulation of cocircular points depends on the machine, as it did), and its edges are stored in the 0.8.0 orientation (below).</p>
+<p><img alt="0.1.5's route and the 0.8.0 defaults on one mask" src="../figures/route_of_0_1_5_against_the_0_8_0_defaults.png" /></p>
+<p><em>One shipped mask, <code>data/two_dimensional/Masks/mask_Cells_2.tif</code> (157 × 173 pixels, 50 cells), its labels expanded by 6 pixels (<code>set_label_expansion(6)</code>) so that the cells touch, at <code>min_distance</code> 4 pixels: the route of 0.1.5 (left, grey) and the 0.8.0 defaults (right, black), each drawn over the mask (cells grey, medium white), with the junction vertices (red) and the image-border vertices (blue). Both meshes have 431 vertices and 480 edges; the 0.8.0 defaults move 63 of the 95 junction vertices onto the mask's own junctions (median move 0.71 px), and the 368 other vertices are at the same positions. Made with delaunay-watershed 0.8.0 by <code>docs/two_dimensional/figures/make_the_two_dimensional_figures.py</code>.</em></p>
+<h2 id="fixes-that-change-numbers">Fixes that change numbers<a class="headerlink" href="#fixes-that-change-numbers" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><code>compute_lengths</code> and <code>compute_curvatures</code> were wrong on most interfaces.</strong> Where the half-edge structure reversed a material's boundary loop, it reversed the order of the loop's half-edges but not their endpoints, so walking such a face cut every interface one edge off its junctions, and a closed loop without junction lost its last edge. Over the shipped masks (2 080 interfaces that change) the former lengths were off by a median 7.4 %, and by more than a factor 2 on 50 short interfaces (2 to 17 px). <code>compute_lengths</code> is now the sum of each interface's edge lengths; <code>compute_curvatures</code> changes on the cell–cell interfaces, whose ends are now the junctions, and on closed loops without junction it now reads every vertex (228 of 228 such interfaces were off, by a median 3.5 %, at most 20 %). The mesh, <code>compute_angles</code> and <code>compute_area_faces</code> are unchanged. <strong>Recompute any length or curvature, and anything derived from them, obtained with 0.1.5.</strong></li>
+<li><strong>The edges along the image border are oriented like every other edge</strong> (they came in an arbitrary order); the lengths of the medium interfaces of meshes with a cut cell change accordingly.</li>
+<li>The mask rebuild (<code>reconstruct_mask_from_dict</code>) no longer loops for ever on a mesh whose vertices are off the pixel lattice, as they are after junction relocation.</li>
+<li>A mask whose mesh has no edge returns an empty mesh and names its cells (<code>UnresolvedCellWarning</code>) instead of raising <code>IndexError</code>.</li>
+</ul>
+<h2 id="the-orientation-of-the-edges">The orientation of the edges<a class="headerlink" href="#the-orientation-of-the-edges" title="Permanent link">&para;</a></h2>
+<p>0.8.0 stores every edge the other way round: in <code>[v1, v2, m1, m2]</code> (or <code>segments[k]</code>, <code>labels[k]</code>), <code>m1</code> now lies on the <strong>left</strong> of <code>v1 -&gt; v2</code> in the mask's <code>(row, column)</code> frame; it lay on the right (on the left in <code>(x, y) = (column, row)</code>) in 0.1.5. Each edge is thus the positively oriented boundary of its first label, which is dw3d's rule for triangles: one rule in both dimensions (<a href="../../user-guide/orientation-in-two-and-three-dimensions/">orientation</a>). Only the order of the two vertices within each edge changes; no vertex, edge, label or edge order does, and the half-edge quantities (angles, lengths, curvatures, areas) are not affected by it. Code that reads an edge's direction changes sign: <code>dw2d.Dcel.compute_areas</code>, the signed area of each material from its oriented edges, now gives each cell a positive area (negative before). A <code>.rec</code> file written by 0.8.0 records the rule (<code>orientation = boundary_of_first_label</code>); files written by 0.1.5 do not. foambryo 0.8.0 measures each 2-D mesh's orientation and gives the same tensions and pressures from a mesh in either orientation.</p>
+<h2 id="files">Files<a class="headerlink" href="#files" title="Permanent link">&para;</a></h2>
+<p><code>.rec</code> files written by 0.1.5 read to the same arrays with <code>dw2d.io.load_rec</code> (and with the deprecated readers). Text files written by 0.8.0 hold every coordinate exactly (the shortest text that reads back to the same float64), where 0.1.5 rounded them to 5 decimals; the binary layout is unchanged, byte for byte. Every file written by <code>save_to_rec_mesh</code> (dw2d's algorithm, or dw3d's given a 2-D mask) carries an appendix that records <code>dimension = 2</code> and the orientation rule; <code>dw2d.io.save_rec</code> writes one only when given <code>metadata</code>, and the deprecated <code>export_mesh</code> writes none, so <code>dw3d.io.rec_dimension</code> then tells the dimension from the file's layout.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      GPL-3.0-or-later, Turlier lab
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

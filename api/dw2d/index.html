@@ -1,0 +1,5781 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Multimaterial meshes of cell aggregates from their 3-D or 2-D segmentation">
+      
+      
+      
+      
+        <link rel="prev" href="../viewing/">
+      
+      
+        <link rel="next" href="../dw2d-reconstruction/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>The dw2d package - Delaunay-Watershed (3D and 2D)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-dw2d-package" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-header__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Delaunay-Watershed (3D and 2D)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              The dw2d package
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Delaunay-Watershed (3D and 2D)" class="md-nav__button md-logo" aria-label="Delaunay-Watershed (3D and 2D)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Delaunay-Watershed (3D and 2D)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/VirtualEmbryo/delaunay-watershed" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/reconstruction-variants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction variants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/cropped-tissues/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cropped tissues
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/anisotropic-voxels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/rec-metadata-appendix/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The .rec metadata appendix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed pockets of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/orientation-in-two-and-three-dimensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Orientation in 2D and 3D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Two dimensions
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Two dimensions
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction in 2D
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../two_dimensional/migration-from-0.1.5/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating from dw2d 0.1.5
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mesh-reconstruction-and-visualisation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh reconstruction and visualisation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/mask-compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mask compression and reconstruction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/advanced-use/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced use: custom reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves read from the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/default-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Default junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/anisotropic-voxels-and-crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic voxels and crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-geometrical-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: geometrical analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-a-tissue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing a tissue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/two-dimensional-mask-compression-of-separated-cells/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2D: compressing separated cells
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../package/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw3d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mask-preprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Anisotropic masks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../crop-faces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Crop faces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../junction-curves/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction curves
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cell-volume-agreement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cell volumes against the mask
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../enclosed-media/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enclosed media
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../triangle-intersection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-intersections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mesh-utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mesh utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../viewing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Polyscope viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw2d package
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The dw2d package
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.get_default_mesh_reconstruction_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_default_mesh_reconstruction_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.DCEL_Data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DCEL_Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MeshReconstructionAlgorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MeshReconstructionAlgorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.medium_margin_padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_margin_padding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_constructed_mesh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.image_border_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        image_border_vertices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.cut_cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cut_cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.medium_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.unresolved_cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unresolved_cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.enclosed_medium_pockets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enclosed_medium_pockets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.relocation_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        relocation_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.interface_projection_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interface_projection_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_dcel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_constructed_dcel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_from_segmentation_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        construct_mesh_from_segmentation_mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_in_physical_units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        construct_mesh_in_physical_units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.compress_segmentation_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compress_segmentation_mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.both_construct_mesh_and_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        both_construct_mesh_and_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.rec_metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rec_metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.save_to_rec_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_to_rec_mesh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.simple_plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        simple_plot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.plot_polylines_and_seeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_polylines_and_seeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MeshReconstructionAlgorithmFactory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MeshReconstructionAlgorithmFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_peak_local_points_placement_method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_peak_local_points_placement_method
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_junction_relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_junction_relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_canonical_triangle_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_canonical_triangle_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_interface_projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_interface_projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_pinch_vertex_repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_pinch_vertex_repair
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_near_tie_sliver_relabelling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_near_tie_sliver_relabelling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_label_expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_label_expansion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_score_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_score_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.make_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.get_default_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_default_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.EnclosedMediumPocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EnclosedMediumPocket
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.EnclosedMediumWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EnclosedMediumWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.InterfaceProjectionReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InterfaceProjectionReport
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="InterfaceProjectionReport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.InterfaceProjectionReport.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.JunctionRelocationReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionRelocationReport
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JunctionRelocationReport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.JunctionRelocationReport.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.ThinMediumMarginWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ThinMediumMarginWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.UnresolvedCellWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UnresolvedCellWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.relocate_junction_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        relocate_junction_vertices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.project_interface_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        project_interface_vertices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.reconstruct_mask_from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconstruct_mask_from_dict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.reconstruct_mask_from_saved_file_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconstruct_mask_from_saved_file_dict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.save_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.save_mesh_to_rec_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_mesh_to_rec_mesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reconstruction algorithms (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-reports/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports and warnings (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-half-edge-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The half-edge structure (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-junction-relocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Junction relocation and interface projection (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-thin-medium-margins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Thin margins of medium (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-io/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Files (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dw2d-mask-reconstruction/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Masks from meshes (2D)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.get_default_mesh_reconstruction_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_default_mesh_reconstruction_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.DCEL_Data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DCEL_Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MeshReconstructionAlgorithm
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MeshReconstructionAlgorithm">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.medium_margin_padding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_margin_padding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_constructed_mesh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.image_border_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        image_border_vertices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.cut_cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cut_cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.medium_labels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        medium_labels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.unresolved_cells" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        unresolved_cells
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.enclosed_medium_pockets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enclosed_medium_pockets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.relocation_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        relocation_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.interface_projection_report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interface_projection_report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_dcel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_constructed_dcel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.last_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_from_segmentation_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        construct_mesh_from_segmentation_mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_in_physical_units" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        construct_mesh_in_physical_units
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.compress_segmentation_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        compress_segmentation_mask
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.both_construct_mesh_and_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        both_construct_mesh_and_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.rec_metadata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        rec_metadata
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.save_to_rec_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_to_rec_mesh
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.simple_plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        simple_plot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithm.plot_polylines_and_seeds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_polylines_and_seeds
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MeshReconstructionAlgorithmFactory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="MeshReconstructionAlgorithmFactory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_peak_local_points_placement_method" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_peak_local_points_placement_method
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_junction_relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_junction_relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_canonical_triangle_order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_canonical_triangle_order
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_interface_projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_interface_projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_pinch_vertex_repair" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_pinch_vertex_repair
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_near_tie_sliver_relabelling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_near_tie_sliver_relabelling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_label_expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_label_expansion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.set_score_samples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        set_score_samples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.make_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        make_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.MeshReconstructionAlgorithmFactory.get_default_algorithm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        get_default_algorithm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.EnclosedMediumPocket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EnclosedMediumPocket
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.EnclosedMediumWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EnclosedMediumWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.InterfaceProjectionReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        InterfaceProjectionReport
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="InterfaceProjectionReport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.InterfaceProjectionReport.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.JunctionRelocationReport" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JunctionRelocationReport
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JunctionRelocationReport">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dw2d.JunctionRelocationReport.as_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        as_dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.ThinMediumMarginWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ThinMediumMarginWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.UnresolvedCellWarning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UnresolvedCellWarning
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.relocate_junction_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        relocate_junction_vertices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.project_interface_vertices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        project_interface_vertices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.reconstruct_mask_from_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconstruct_mask_from_dict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.reconstruct_mask_from_saved_file_dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        reconstruct_mask_from_saved_file_dict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.save_compressed_segmentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_compressed_segmentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dw2d.save_mesh_to_rec_mesh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        save_mesh_to_rec_mesh
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="the-dw2d-package">The <code>dw2d</code> package<a class="headerlink" href="#the-dw2d-package" title="Permanent link">&para;</a></h1>
+<p>The names <code>dw2d</code> exports (<code>dw2d.__all__</code>). The names of dw2d 0.1.5 that are not listed here still resolve through 0.8.x, with a <code>DeprecationWarning</code> (see <a href="../../two_dimensional/migration-from-0.1.5/">migrating from dw2d 0.1.5</a>).</p>
+<p>If you use dw2d, please cite: Yamamoto K., Ichbiah S., Perez M., Borrego-Pinto J., Delbary F., Goehring N. W., Northrop P., Turlier H., Charras G. <em>Spatiotemporal mapping of the contractile and adhesive forces sculpting early C. elegans embryos.</em> Developmental Cell <strong>61</strong>(6), 1273–1288.e4 (2026), <a href="https://doi.org/10.1016/j.devcel.2026.04.013">doi:10.1016/j.devcel.2026.04.013</a>.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+
+    <div class="doc doc-contents first">
+
+        <p>Delaunay-Watershed 2D (<code>dw2d</code>): build a multimaterial polyline mesh from a 2-D segmentation mask.</p>
+<p>The top-level names mirror dw3d's (<code>get_default_mesh_reconstruction_algorithm</code>, <code>MeshReconstructionAlgorithmFactory</code>,
+<code>MeshReconstructionAlgorithm.construct_mesh_from_segmentation_mask</code>, <code>save_to_rec_mesh</code>, the compressed segmentation,
+<code>reconstruct_mask_from_dict</code>), so that dw2d is used exactly like dw3d; dw3d's algorithm also hands a 2-D mask to dw2d.</p>
+<p>Conventions used everywhere in the package:</p>
+<ul>
+<li>The mask is a 2-D integer array; label <code>0</code> is the medium, every other label a cell.</li>
+<li>A mesh is <code>(points, segments, labels)</code>: <code>points</code> <code>(n, 2)</code> float64 in the mask's index order <code>(row, column)</code>, in
+  pixels (the centre of pixel <code>(i, j)</code> is the point <code>(i, j)</code>); <code>segments</code> <code>(m, 2)</code> int64 vertex indices; <code>labels</code>
+  <code>(m, 2)</code> int64, the two materials each edge separates, smaller first.</li>
+<li>Orientation, one rule with dw3d's (since 0.8.0): each edge is the positively oriented boundary of its first label in
+  the index frame. Material <code>labels[n, 0]</code> lies on the left of <code>segments[n, 0] -&gt; segments[n, 1]</code> in <code>(row, column)</code>,
+  so the normal <code>(dc, -dr)</code> of the edge (its tangent <code>(dr, dc)</code> turned clockwise) points out of <code>labels[n, 0]</code> and
+  into <code>labels[n, 1]</code>, as a dw3d triangle's right-hand normal does. A cell alone in the medium therefore has a
+  negative signed area, as it has a negative signed volume in 3D (the user guide's page on orientation). Until 0.8.0
+  each edge was stored the other way round.</li>
+<li><code>min_distance</code> counts pixels and defaults to 4 (dw3d: 3 voxels).</li>
+</ul>
+<p>Names that dw2d 0.1.5 exported and that are not listed in <code>__all__</code> (<code>geometry_reconstruction_2d</code>, the <code>.rec</code>
+functions <code>write_mesh_bin</code>, <code>read_rec_file_bin</code>, ..., the half-edge and plotting helpers of <code>dw2d.Dcel</code>) still work
+through 0.8.x with a <code>DeprecationWarning</code> naming their replacement or their module, and will be removed in 0.9. The
+third-party names 0.1.5 leaked by its star imports (<code>dw2d.np</code>, <code>dw2d.plt</code>, <code>dw2d.pickle</code>, ...) are gone.</p>
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="dw2d.get_default_mesh_reconstruction_algorithm" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">get_default_mesh_reconstruction_algorithm</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#dw2d.get_default_mesh_reconstruction_algorithm" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default_mesh_reconstruction_algorithm</span> <span class="o">=</span> <span class="n">MeshReconstructionAlgorithmFactory</span><span class="o">.</span><span class="n">get_default_algorithm</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>dw2d's default mesh reconstruction algorithm, named as in dw3d.</p>
+<p>The same function as <code>MeshReconstructionAlgorithmFactory.get_default_algorithm</code>, which gives its arguments
+(<code>min_distance</code>, <code>print_info</code>) and what it returns.</p>
+
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.DCEL_Data" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">DCEL_Data</span>
+
+
+<a href="#dw2d.DCEL_Data" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">DCEL_Data</span><span class="p">(</span><span class="n">Verts</span><span class="p">,</span> <span class="n">Edges</span><span class="p">,</span> <span class="n">allow_several_loops</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">image_border_vertices</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>DCEL Graph containing faces, half-edges and vertices.</p>
+
+        <p>Half-edge structure of a 2D multimaterial mesh.</p>
+<p><code>allow_several_loops</code> (default False): see <code>create_halfedges_from_edges</code>; when True, a
+material may have several boundary loops (one <code>Face</code> per loop, same key).</p>
+<p><code>image_border_vertices</code> (default None): the indices of the vertices on the image border, kept as
+<code>self.image_border_vertices</code> (a sorted int64 array, or None when not given). <code>return_dcel</code> passes
+the mark <code>geometry_reconstruction_2d</code> takes from the triangulation's structure
+(<code>image_border_vertices</code>), before any vertex moves; foambryo's 2D inference reads it to exclude
+the junctions on the border.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.MeshReconstructionAlgorithm" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">MeshReconstructionAlgorithm</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MeshReconstructionAlgorithm</span><span class="p">(</span><span class="n">print_info</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_MIN_DISTANCE</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">relocate_junctions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">canonical_triangle_order</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">interface_projection</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">pinch_vertex_repair</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">near_tie_sliver_relabelling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">label_expansion</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">score_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">pad_thin_medium_margins</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Algorithm that builds a 2-D multimaterial polyline mesh from a 2-D segmentation mask.</p>
+<p>Build one with <code>dw2d.get_default_mesh_reconstruction_algorithm</code> or <code>dw2d.MeshReconstructionAlgorithmFactory</code>. The
+mesh is <code>(points, segments, labels)</code>: <code>points</code> <code>(n, 2)</code> float64 in the mask's <code>(row, column)</code> order, in pixels unless
+built by <code>construct_mesh_in_physical_units</code>; <code>segments</code> <code>(m, 2)</code> int64 vertex indices; <code>labels</code> <code>(m, 2)</code> int64, the
+two materials each edge separates, smaller first (orientation: the module docstring).</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.print_info">print_info</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>whether to print the size of the triangulation's dual graph.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.min_distance">min_distance</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the point placement's minimum distance between points, in pixels.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.relocate_junctions">relocate_junctions</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>move junction vertices onto the mask's own junctions after meshing (default True).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.canonical_triangle_order">canonical_triangle_order</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>a machine-independent triangulation and tie order (default True; dw3d's
+analogue is <code>canonical_tetrahedron_order</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.interface_projection">interface_projection</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>project interface vertices onto the mask's interface locus (default False;
+requires <code>relocate_junctions</code>).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.pinch_vertex_repair">pinch_vertex_repair</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>absorb label fragments and repair pinch vertices after the watershed (default True).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.near_tie_sliver_relabelling">near_tie_sliver_relabelling</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>relabel near-tie slivers (default None: on without relocation, off
+with it).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.label_expansion">label_expansion</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>grow the labels by this many pixels before meshing (<code>skimage.segmentation.expand_labels</code>;
+default 0), for masks whose cells do not touch.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.score_samples">score_samples</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>points sampled along each triangle edge to score it (default 10).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.MeshReconstructionAlgorithm.pad_thin_medium_margins">pad_thin_medium_margins</span></code></td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>mesh the mask padded with label 0 on every side of the image that no cell
+reaches and whose margin is below <code>2 * min_distance + 2</code> pixels, up to that margin, and return the mesh in
+the mask's frame (default True since 0.8.0; <code>False</code> gives the meshes of earlier versions). A mask whose
+cells reach every side or stay that far from it is meshed as before, bit for bit. See
+<code>dw2d.thin_medium_margins</code>; <code>medium_margin_padding</code> says which sides were padded.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+        <p>Set the options; see the class docstring. Every option is also an attribute that can be set before a run.</p>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.medium_margin_padding" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">medium_margin_padding</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.medium_margin_padding" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">medium_margin_padding</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The label-0 padding the last reconstruction added to the mask's sides, in pixels, by side name.</p>
+<p>Empty when the mask was meshed as given (the common case); <code>None</code> before any reconstruction. See
+<code>pad_thin_medium_margins</code> and <code>dw2d.thin_medium_margins</code>.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.last_constructed_mesh" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">last_constructed_mesh</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_mesh" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">last_constructed_mesh</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The last mesh built, <code>(points, segments, labels)</code>. The algorithm's own arrays, not copies.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.image_border_vertices" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">image_border_vertices</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.image_border_vertices" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">image_border_vertices</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The indices of the mesh vertices on the image border, sorted.</p>
+<p>Taken from the triangulation's structure (the endpoints of its hull edges) before any vertex moves; the
+junction relocation and the projection never move them. foambryo's 2D inference excludes the junctions there,
+where a cell-cell interface meets the image border at a straight 180-degree wedge that is not a contact angle.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.cut_cells" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">cut_cells</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.cut_cells" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">cut_cells</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The cells (non-zero labels) with a vertex on the image border: cells the image cuts, ascending.</p>
+<p>dw3d's <code>cut_cells</code> names the cells with a crop face; in 2D a cell is cut where its boundary reaches the image
+border. Their pressures are not withheld by foambryo in 2D: Laplace's law reads them from the interfaces
+inside the image.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.medium_labels" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">medium_labels</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.medium_labels" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">medium_labels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The labels that are a medium: <code>(0,)</code> (dw2d has no enclosed-medium region).</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.unresolved_cells" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">unresolved_cells</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.unresolved_cells" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">unresolved_cells</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The labels of the last mask that are absent from its mesh, ascending (see <code>UnresolvedCellWarning</code>).</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.enclosed_medium_pockets" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">enclosed_medium_pockets</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.enclosed_medium_pockets" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">enclosed_medium_pockets</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">EnclosedMediumPocket</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The pieces of label 0 of the last mask that touch no side of the image (see <code>EnclosedMediumWarning</code>).</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.relocation_report" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">relocation_report</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.relocation_report" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">relocation_report</span><span class="p">:</span> <span class="n">JunctionRelocationReport</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>What the junction relocation did on the last mesh, or <code>None</code> when it was off.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.interface_projection_report" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">interface_projection_report</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.interface_projection_report" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">interface_projection_report</span><span class="p">:</span> <span class="n">InterfaceProjectionReport</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>What the interface projection did on the last mesh, or <code>None</code> when it was off.</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.last_constructed_dcel" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">last_constructed_dcel</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.last_constructed_dcel" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">last_constructed_dcel</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The last mesh as dw2d's half-edge structure, <code>dw2d.DCEL_Data</code>, which measures angles, lengths, areas and
+curvatures; it carries <code>image_border_vertices</code>. Built from the points as they are now (physical if scaled).</p>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.last_compressed_segmentation" class="doc doc-heading">
+            <span class="doc doc-object-name doc-attribute-name">last_compressed_segmentation</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithm.last_compressed_segmentation" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">last_compressed_segmentation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The last mesh, the watershed seeds and the mask's shape, as a dictionary.</p>
+<p>Keys: <code>points</code>, <code>segments</code>, <code>labels</code>, <code>seeds</code> (one pixel index per label of the mask, in ascending label
+order), <code>image_shape</code> and <code>image_border_vertices</code>. <code>dw2d.reconstruct_mask_from_dict</code> turns it back into an
+approximate mask; it expects the points in pixels, so read this before any scaling (after
+<code>construct_mesh_in_physical_units</code>, divide the points by the pixel size first).</p>
+
+    </div>
+
+</div>
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.construct_mesh_from_segmentation_mask" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">construct_mesh_from_segmentation_mask</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_from_segmentation_mask" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">construct_mesh_from_segmentation_mask</span><span class="p">(</span><span class="n">segmented_image</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Build a 2-D mesh from a segmentation mask.</p>
+<p>After the call, <code>last_constructed_mesh</code>, <code>image_border_vertices</code>, <code>cut_cells</code>, <code>relocation_report</code>,
+<code>interface_projection_report</code>, <code>unresolved_cells</code> and <code>enclosed_medium_pockets</code> describe this mesh, and
+<code>save_to_rec_mesh</code> writes no physical frame.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>segmented_image</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.integer">integer</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the 2-D integer label mask; label 0 is the medium, every other label a cell.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>tuple</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>], <span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>], <span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(points, segments, labels)</code>: <code>(n, 2)</code> float64 in pixels, <code>(row, column)</code>; <code>(m, 2)</code> int64;
+<code>(m, 2)</code> int64 (smaller label first).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>for a mask that is not 2-D (see <code>checked_two_dimensional_mask</code>), or for
+<code>interface_projection</code> without <code>relocate_junctions</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Warns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code>UserWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>for a mask whose dtype is not an integer type.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>EnclosedMediumWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>once, when a piece of label 0 touches no side of the image (it is meshed as the
+outer medium), naming each such pocket.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>UnresolvedCellWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>once, when a label of the mask is absent from the mesh, naming each. Since 0.8.0
+this includes a mask whose mesh has no edge at all (returned empty, <code>(0, 2)</code> segments); before, it
+raised IndexError.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code>ThinMediumMarginWarning</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>once, when a cell's edges lie on a side of the image its pixels do not reach and
+that could not be padded (see <code>pad_thin_medium_margins</code>), naming each such cell, the side and its
+margin.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+        <p>A mask with a side that no cell reaches and whose margin is below <code>2 * min_distance + 2</code> pixels is meshed padded
+with label 0 on such sides (<code>pad_thin_medium_margins</code>, <code>medium_margin_padding</code>); the mesh and the compressed
+segmentation are in the mask's frame either way.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.construct_mesh_in_physical_units" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">construct_mesh_in_physical_units</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.construct_mesh_in_physical_units" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">construct_mesh_in_physical_units</span><span class="p">(</span><span class="n">segmented_image</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">],</span> <span class="n">spacing</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">spacing_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">axis_order</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'yx'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Build a mesh in physical units from a mask of square pixels.</p>
+<p>The mask is meshed on its own pixel grid (<code>construct_mesh_from_segmentation_mask</code>, <code>min_distance</code> in pixels),
+and the points are multiplied by the pixel size: a point at pixel index <code>i</code> is at <code>i * h</code>, so the centre of the
+first pixel is the origin. Only square pixels are accepted in 0.8.0 (dw3d resamples anisotropic voxels to cubic
+ones; the accuracy of the same route in 2D has not been measured).</p>
+<p>After this call <code>save_to_rec_mesh</code> records <code>coordinate_frame = physical</code>, <code>axis_order</code>, <code>spacing</code>,
+<code>spacing_unit</code> (when given) and <code>source_shape</code> in the file's appendix. Any later reconstruction clears them.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>segmented_image</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.integer">integer</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the 2-D integer label mask.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>spacing</code>
+            </td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="float">float</span>, <span title="float">float</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the pixel size along the mask's axes 0 and 1, <code>(dy, dx)</code>; the two must be equal (relative
+tolerance 1e-6).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>spacing_unit</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the unit of <code>spacing</code> (e.g. <code>"um"</code>), recorded, not used.</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>axis_order</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>what the mask's axes are, recorded, not used. Defaults to <code>"yx"</code>.</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;yx&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>tuple</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>], <span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>], <span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(points, segments, labels)</code> as <code>construct_mesh_from_segmentation_mask</code> returns them, the points in
+the unit of <code>spacing</code>. For a spacing of <code>(1, 1)</code> they are bitwise the pixel ones.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>for a spacing that is not two positive finite numbers, or whose two values differ.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.compress_segmentation_mask" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">compress_segmentation_mask</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.compress_segmentation_mask" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compress_segmentation_mask</span><span class="p">(</span><span class="n">segmented_image</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Mesh a mask and return its compressed segmentation (see <code>last_compressed_segmentation</code>).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.both_construct_mesh_and_compressed_segmentation" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">both_construct_mesh_and_compressed_segmentation</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.both_construct_mesh_and_compressed_segmentation" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">both_construct_mesh_and_compressed_segmentation</span><span class="p">(</span><span class="n">segmented_image</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">integer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Mesh a mask; return <code>(points, segments, labels, compressed_segmentation)</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.rec_metadata" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">rec_metadata</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.rec_metadata" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">rec_metadata</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The appendix fields <code>save_to_rec_mesh</code> writes: <code>dimension = 2</code>, <code>axis_order</code>, <code>orientation</code> (the rule the
+edges follow, <code>dw2d.io.ORIENTATION_RECORDED</code>), <code>source_shape</code> (the label image's shape), the image border
+vertices, the unresolved cells (when any) and, after <code>construct_mesh_in_physical_units</code>, the physical frame.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.save_to_rec_mesh" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">save_to_rec_mesh</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.save_to_rec_mesh" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">save_to_rec_mesh</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">binary_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Save the last mesh in the 2-D <code>.rec</code> format, with its current points and a metadata appendix.</p>
+<p>The appendix (version 1, as dw3d writes it) records <code>dimension = 2</code>, so that every reader can tell the file
+from a 3-D one, the orientation rule of the edges (<code>orientation</code>), and the other fields of <code>rec_metadata</code>. A
+reader that ignores the appendix reads the mesh unchanged.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>where to write the file (<code>.rec</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>binary_mode</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>write the binary variant of the format. Defaults to False (text), as dw3d.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.simple_plot" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">simple_plot</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.simple_plot" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">simple_plot</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Draw the labels, the polylines over the distance map, and the labelled triangles (matplotlib).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithm.plot_polylines_and_seeds" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">plot_polylines_and_seeds</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithm.plot_polylines_and_seeds" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">plot_polylines_and_seeds</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Draw the polylines and the watershed seeds (matplotlib).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.MeshReconstructionAlgorithmFactory" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">MeshReconstructionAlgorithmFactory</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">MeshReconstructionAlgorithmFactory</span><span class="p">(</span><span class="n">print_info</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>Factory of 2-D mesh reconstruction algorithms. Each <code>set_*</code> method returns the factory, so calls chain;
+<code>make_algorithm</code> builds the algorithm. A new factory builds the default algorithm.</p>
+
+        <p>Start from the default configuration (<code>get_default_algorithm</code>).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>print_info</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>print the size of the triangulation's dual graph. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_peak_local_points_placement_method" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_peak_local_points_placement_method</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_peak_local_points_placement_method" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_peak_local_points_placement_method</span><span class="p">(</span><span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_MIN_DISTANCE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Place the triangulation's points at the maxima of the distance map, at least <code>min_distance</code> pixels apart.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>min_distance</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>in pixels. Defaults to 4 (dw3d's default is 3 voxels).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dw2d.reconstruction_algorithm.DEFAULT_MIN_DISTANCE">DEFAULT_MIN_DISTANCE</span></code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_junction_relocation" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_junction_relocation</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_junction_relocation" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_junction_relocation</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Move the junction vertices onto the mask's own junctions after meshing (on by default since 0.8.0;
+<code>dw2d.junction_relocation</code> says what it was measured to buy).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_canonical_triangle_order" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_canonical_triangle_order</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_canonical_triangle_order" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_canonical_triangle_order</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Make the triangulation and the watershed's tie order independent of the machine (on by default).</p>
+<p>Qhull's triangulation of the integer points is not unique where four or more are cocircular, and Qhull
+resolves those cells differently on different machines; with this option such cells are re-triangulated by a
+fixed rule and triangles, dual-graph edges and equal scores are taken in canonical order. <code>False</code> is dw2d
+0.1.5's route (named <code>deterministic=False</code> before 0.8.0). dw3d's analogue is <code>canonical_tetrahedron_order</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_interface_projection" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_interface_projection</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_interface_projection" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_interface_projection</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>After the junction relocation, move interface vertices onto the mask's interface locus (opt-in; requires
+the relocation, because alone it made junction angles worse: <code>dw2d.locus_projection</code>).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_pinch_vertex_repair" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_pinch_vertex_repair</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_pinch_vertex_repair" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_pinch_vertex_repair</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Absorb label fragments and repair pinch vertices after the watershed (on by default; <code>dw2d.mesh_surgery</code>).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_near_tie_sliver_relabelling" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_near_tie_sliver_relabelling</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_near_tie_sliver_relabelling" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_near_tie_sliver_relabelling</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Relabel near-tie slivers after the watershed (<code>dw2d.sliver_relabelling</code>): <code>None</code> (default) turns it on
+without junction relocation and off with it, <code>True</code> or <code>False</code> force it.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_label_expansion" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_label_expansion</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_label_expansion" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_label_expansion</span><span class="p">(</span><span class="n">pixels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Grow every label by <code>pixels</code> before meshing (<code>skimage.segmentation.expand_labels</code>), for masks whose cells
+are separated by background and never meet. Defaults to 0 (dw2d 0.1.5's <code>expansion_labels</code>).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.set_score_samples" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">set_score_samples</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.set_score_samples" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">set_score_samples</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Sample <code>n</code> points along each triangle edge to score it (dw2d 0.1.5's <code>interpolation_points</code>).</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.make_algorithm" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">make_algorithm</span>
+
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.make_algorithm" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">make_algorithm</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">MeshReconstructionAlgorithm</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Build a new algorithm with the options set so far.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>for the interface projection without the junction relocation.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.MeshReconstructionAlgorithmFactory.get_default_algorithm" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">get_default_algorithm</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#dw2d.MeshReconstructionAlgorithmFactory.get_default_algorithm" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">get_default_algorithm</span><span class="p">(</span><span class="n">min_distance</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DEFAULT_MIN_DISTANCE</span><span class="p">,</span> <span class="n">print_info</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeshReconstructionAlgorithm</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The default 2-D algorithm: points at least <code>min_distance</code> pixels apart, canonical triangle order, pinch-vertex
+repair and junction relocation on, interface projection off.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>min_distance</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>in pixels. Defaults to 4.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dw2d.reconstruction_algorithm.DEFAULT_MIN_DISTANCE">DEFAULT_MIN_DISTANCE</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>print_info</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>print the size of the triangulation's dual graph. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.EnclosedMediumPocket" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">EnclosedMediumPocket</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dw2d.EnclosedMediumPocket" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">EnclosedMediumPocket</span><span class="p">(</span><span class="n">pixels</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">first_pixel</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">lining_labels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>One 4-connected piece of label 0 that touches no side of the image.</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.EnclosedMediumPocket.pixels">pixels</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>its number of pixels.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.EnclosedMediumPocket.first_pixel">first_pixel</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>its first pixel in raster order, <code>(row, column)</code>.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.EnclosedMediumPocket.lining_labels">lining_labels</span></code></td>
+            <td>
+                  <code><span title="tuple">tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the labels 4-adjacent to it, ascending.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.EnclosedMediumWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">EnclosedMediumWarning</span>
+
+
+<a href="#dw2d.EnclosedMediumWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="UserWarning">UserWarning</span></code></p>
+
+
+
+        <p>A pocket of label 0 enclosed by cells (it touches no side of the image) is meshed as the outer medium.</p>
+<p>dw2d has no enclosed-medium region yet (dw3d labels such a pocket as its own medium region): the pocket's
+triangles take label 0, so the mesh treats it as contact with the outer medium. The warning names each pocket.</p>
+
+
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.InterfaceProjectionReport" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">InterfaceProjectionReport</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dw2d.InterfaceProjectionReport" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">InterfaceProjectionReport</span><span class="p">(</span><span class="n">candidates</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">moved</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">not_converged</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">refused</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span> <span class="n">crossings_before</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">crossings_after</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contacts_before</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contacts_after</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">median_displacement_px</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>What one 2D interface projection did (<code>dw2d.project_interface_vertices</code>).</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.candidates">candidates</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>interface vertices eligible for a move (one interface, not a junction, not on the image border).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.moved">moved</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>moves applied.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.not_converged">not_converged</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>candidates whose Newton iteration did not converge (left in place).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.refused">refused</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>guard name -&gt; number of moves that guard refused.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.crossings_before,">crossings_before,</span></code></td>
+            <td>
+                  <code><span title="dw2d.reports.InterfaceProjectionReport.crossings_after">crossings_after</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>proper crossings between edges before and after.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.contacts_before,">contacts_before,</span></code></td>
+            <td>
+                  <code><span title="dw2d.reports.InterfaceProjectionReport.contacts_after">contacts_after</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>edge contacts before and after.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.InterfaceProjectionReport.median_displacement_px">median_displacement_px</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>median distance travelled by the applied moves, in pixels, or <code>None</code> if none moved.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.InterfaceProjectionReport.as_dict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">as_dict</span>
+
+
+<a href="#dw2d.InterfaceProjectionReport.as_dict" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">as_dict</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The report as a plain dictionary (for JSON records).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.JunctionRelocationReport" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">JunctionRelocationReport</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#dw2d.JunctionRelocationReport" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">JunctionRelocationReport</span><span class="p">(</span><span class="n">mask_junctions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mesh_junctions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">planned</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">fixed</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">moved</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">refused</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span> <span class="n">unmatched_triples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">crossings_before</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">crossings_after</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contacts_before</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">contacts_after</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">median_displacement_px</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+
+
+        <p>What one 2D junction relocation did (<code>dw2d.relocate_junction_vertices</code>).</p>
+
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.mask_junctions">mask_junctions</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>junctions the mask gives (connected groups of pixel corners where three labels meet).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.mesh_junctions">mesh_junctions</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>mesh vertices where exactly three materials meet.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.planned">planned</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>mesh junctions paired with a mask junction within the gate.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.fixed">fixed</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>planned moves dropped because the vertex is fixed (on the image border).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.moved">moved</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>moves applied.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.refused">refused</span></code></td>
+            <td>
+                  <code><span title="dict">dict</span>[<span title="str">str</span>, <span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>guard name -&gt; number of moves that guard refused.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.unmatched_triples">unmatched_triples</span></code></td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>material triples whose mesh and mask junction counts differ (left untouched).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.crossings_before,">crossings_before,</span></code></td>
+            <td>
+                  <code><span title="dw2d.reports.JunctionRelocationReport.crossings_after">crossings_after</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>proper crossings between edges before and after (never more after).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.contacts_before,">contacts_before,</span></code></td>
+            <td>
+                  <code><span title="dw2d.reports.JunctionRelocationReport.contacts_after">contacts_after</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>edge contacts before and after (never more after).</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><span title="dw2d.JunctionRelocationReport.median_displacement_px">median_displacement_px</span></code></td>
+            <td>
+                  <code><span title="float">float</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>median distance travelled by the applied moves, in pixels, or <code>None</code> if none moved.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="dw2d.JunctionRelocationReport.as_dict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">as_dict</span>
+
+
+<a href="#dw2d.JunctionRelocationReport.as_dict" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">as_dict</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>The report as a plain dictionary (for JSON records).</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.ThinMediumMarginWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">ThinMediumMarginWarning</span>
+
+
+<a href="#dw2d.ThinMediumMarginWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="UserWarning">UserWarning</span></code></p>
+
+
+
+        <p>A cell's edges lie on a side of the image that its pixels do not reach, and padding could not prevent it.</p>
+<p>Emitted once per reconstruction, naming each such cell, the side, the cell's medium margin to it and why the side
+was not padded: a cell reaches it (it is a crop), padding is switched off, or the margin is already
+<code>thin_margin_bound(min_distance)</code> or more. The cell may have taken some of the medium between it and the side.
+The same name and meaning as dw3d's warning; see <code>dw2d.thin_medium_margins</code>.</p>
+
+
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="dw2d.UnresolvedCellWarning" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">UnresolvedCellWarning</span>
+
+
+<a href="#dw2d.UnresolvedCellWarning" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="UserWarning">UserWarning</span></code></p>
+
+
+
+        <p>A label of the mask is absent from the finished mesh: the reconstruction did not resolve that cell.</p>
+<p>Usually a cell narrower than the point placement's <code>min_distance</code>, which no triangle of the watershed reached.
+The warning names each such label; <code>MeshReconstructionAlgorithm.unresolved_cells</code> lists them.</p>
+
+
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.relocate_junction_vertices" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">relocate_junction_vertices</span>
+
+
+<a href="#dw2d.relocate_junction_vertices" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">relocate_junction_vertices</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">segments</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">GATE_PX</span><span class="p">,</span> <span class="n">fixed_vertices</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">JunctionRelocationReport</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Move the matched junction vertices of a 2D mesh onto the mask's own junctions (connectivity frozen).</p>
+<p>The 2D counterpart of <code>dw3d.relocate_junction_vertices</code>, with the same argument order: the mask first, then the
+mesh. This module's docstring says what it does, under which guards, and what it was measured to buy.
+<code>dw2d.MeshReconstructionAlgorithm</code> runs it by default (<code>set_junction_relocation</code>).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mask</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the 2-D label image the mesh was built from (after any label expansion).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>points</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(n, 2)</code> float vertex positions in pixels, <code>(row, column)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>segments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> int vertex indices of each edge.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>labels</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> int, the two materials each edge separates (smaller first; the orientation contract of
+<code>dw2d.MeshReconstructionAlgorithm</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>gate</code>
+            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>largest distance, in pixels, between a mesh junction and the mask junction it is paired with.</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="dw2d.junction_relocation.GATE_PX">GATE_PX</span></code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fixed_vertices</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>vertices never moved (the algorithm passes its <code>image_border_vertices</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>tuple</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<span title="numpy.ndarray">ndarray</span>, <a class="autorefs autorefs-internal" title="JunctionRelocationReport
+
+
+  
+      dataclass
+   (dw2d.reports.JunctionRelocationReport)" href="../dw2d-reports/#dw2d.reports.JunctionRelocationReport">JunctionRelocationReport</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(points, report)</code>: a moved copy of <code>points</code> (float64) and a <code>dw2d.JunctionRelocationReport</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="RuntimeError">RuntimeError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if the whole-mesh crossing or contact count rose, which the guards make impossible.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.project_interface_vertices" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">project_interface_vertices</span>
+
+
+<a href="#dw2d.project_interface_vertices" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">project_interface_vertices</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">points</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">segments</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">ndarray</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fixed_vertices</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">())</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">InterfaceProjectionReport</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Move every eligible interface vertex of a 2D mesh onto its pair's mask locus (connectivity frozen).</p>
+<p>This module's docstring says what it does, under which guards, and why it is offered only after the junction
+relocation. <code>dw2d.MeshReconstructionAlgorithm</code> runs it when asked (<code>set_interface_projection</code>).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>mask</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the 2-D label image the mesh was built from (after any label expansion).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>points</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(n, 2)</code> float vertex positions in pixels, <code>(row, column)</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>segments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> int vertex indices of each edge.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>labels</code>
+            </td>
+            <td>
+                  <code><span title="numpy.ndarray">ndarray</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> int, the two materials each edge separates.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fixed_vertices</code>
+            </td>
+            <td>
+                  <code><span title="collections.abc.Iterable">Iterable</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>vertices never moved (the algorithm passes its <code>image_border_vertices</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code>()</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>tuple</code></td>            <td>
+                  <code><span title="tuple">tuple</span>[<span title="numpy.ndarray">ndarray</span>, <a class="autorefs autorefs-internal" title="InterfaceProjectionReport
+
+
+  
+      dataclass
+   (dw2d.reports.InterfaceProjectionReport)" href="../dw2d-reports/#dw2d.reports.InterfaceProjectionReport">InterfaceProjectionReport</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(points, report)</code>: a moved copy of <code>points</code> (float64) and a <code>dw2d.InterfaceProjectionReport</code>.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="RuntimeError">RuntimeError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>if the whole-mesh crossing or contact count rose.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.reconstruct_mask_from_dict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">reconstruct_mask_from_dict</span>
+
+
+<a href="#dw2d.reconstruct_mask_from_dict" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reconstruct_mask_from_dict</span><span class="p">(</span><span class="n">dict_mask</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Rebuild an approximate label image from a compressed segmentation dictionary.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>dict_mask</code>
+            </td>
+            <td>
+                  <code><span title="dict">dict</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the dictionary <code>MeshReconstructionAlgorithm.last_compressed_segmentation</code> returns (keys
+<code>points</code>, <code>segments</code>, <code>labels</code>, <code>seeds</code>, <code>image_shape</code>), or one saved by dw2d 0.1.5's
+<code>export_segmentation</code> (keys <code>Verts</code>, <code>Edges</code>, <code>seeds</code>, <code>image_shape</code>). The points must be in pixels of
+the image (read the dictionary before any scaling). Deprecated, through 0.8.x: a file name, read with
+<code>numpy.load</code>; use <code>reconstruct_mask_from_saved_file_dict</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>plot</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>draw the result with matplotlib. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>NDArray[np.int64]: the label image; the seed at row <code>k</code> of <code>seeds</code> fills label <code>k</code> (seeds are stored one per
+label, in ascending label order, label 0 first).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.reconstruct_mask_from_saved_file_dict" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">reconstruct_mask_from_saved_file_dict</span>
+
+
+<a href="#dw2d.reconstruct_mask_from_saved_file_dict" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">reconstruct_mask_from_saved_file_dict</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Rebuild an approximate label image from a compressed segmentation saved with <code>dw2d.save_compressed_segmentation</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the <code>.npy</code> file (a pickled dictionary; see <code>reconstruct_mask_from_dict</code>).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>NDArray[np.int64]: the label image, as <code>reconstruct_mask_from_dict</code> returns it.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.save_compressed_segmentation" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">save_compressed_segmentation</span>
+
+
+<a href="#dw2d.save_compressed_segmentation" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">save_compressed_segmentation</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">compressed_segmentation</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Save a compressed segmentation with <code>numpy.save</code> (a pickled dictionary; numpy adds <code>.npy</code>). Read it back with
+<code>dw2d.reconstruct_mask_from_saved_file_dict</code>.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="dw2d.save_mesh_to_rec_mesh" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">save_mesh_to_rec_mesh</span>
+
+
+<a href="#dw2d.save_mesh_to_rec_mesh" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">save_mesh_to_rec_mesh</span><span class="p">(</span><span class="n">points</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">float64</span><span class="p">],</span> <span class="n">segments</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">int64</span><span class="p">],</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">binary_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Save a 2-D mesh in the <code>.rec</code> format, with an appendix recording <code>dimension = 2</code> (as dw3d's function of this name).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>points</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.float64">float64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(n, 2)</code> points, written as given.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>segments</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> vertex indices.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>labels</code>
+            </td>
+            <td>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.int64">int64</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p><code>(m, 2)</code> the two materials each edge separates.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>filename</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span> | <span title="pathlib.Path">Path</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>where to write the file.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>binary_mode</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>write the binary variant. Defaults to False.</p>
+              </div>
+            </td>
+            <td>
+                  <code>False</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      GPL-3.0-or-later, Turlier lab
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
