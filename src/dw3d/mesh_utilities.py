@@ -172,11 +172,14 @@ def _retrieve_mesh_multimaterial_multitracker_format(
     # Note that the extraction might lead to a mesh that is non-manifold where it is not expected to,
     # if the labeling of nodes is not perfect. Some kind of "mesh surgery" might be necessary to improve
     # extracted mesh quality.
+    # The reshapes keep the column count when no triangle is found (every tetrahedron carries one label: a mask of
+    # one region, or cells too small to hold a tetrahedron's centroid), so that an empty mesh is `(0, 3)` and not
+    # `(0,)`; before 0.8.0 the latter made `np.cross` raise `AxisError` in `_reorient_triangles`.
     return (
         tesselation_graph.vertices,
-        np.array(triangles, dtype=np.uint),
-        np.array(labels, dtype=np.uint),
-        np.array(tetrahedron_on_each_label_side, dtype=np.int64),
+        np.array(triangles, dtype=np.uint).reshape(-1, 3),
+        np.array(labels, dtype=np.uint).reshape(-1, 2),
+        np.array(tetrahedron_on_each_label_side, dtype=np.int64).reshape(-1, 2),
     )
 
 

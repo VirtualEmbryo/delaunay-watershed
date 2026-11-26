@@ -1,11 +1,15 @@
 # The documentation website. Build it with mkdocs-material and mkdocstrings[python] installed:
 #     mkdocs build -d <an output folder outside the repository>
-site_name: Delaunay-Watershed 3D
-site_description: Multimaterial meshes of cell aggregates from their segmentation
+site_name: Delaunay-Watershed (3D and 2D)
+site_description: Multimaterial meshes of cell aggregates from their 3-D or 2-D segmentation
 repo_url: https://github.com/VirtualEmbryo/delaunay-watershed
 copyright: GPL-3.0-or-later, Turlier lab
 site_dir: site
 strict: false
+# dw2d's README is a page of the repository, not of this site (its images lie outside docs/).
+exclude_docs: |
+  two_dimensional/README.md
+  two_dimensional/figures/*.py
 
 theme:
   name: material
@@ -60,6 +64,12 @@ nav:
       - Anisotropic voxels: user-guide/anisotropic-voxels.md
       - The .rec metadata appendix: user-guide/rec-metadata-appendix.md
       - Enclosed pockets of medium: user-guide/enclosed-media.md
+      - Thin margins of medium: user-guide/thin-medium-margins.md
+      - Orientation in 2D and 3D: user-guide/orientation-in-two-and-three-dimensions.md
+  - Two dimensions:
+      - Overview: two_dimensional/overview.md
+      - Reconstruction in 2D: two_dimensional/reconstruction.md
+      - Migrating from dw2d 0.1.5: two_dimensional/migration-from-0.1.5.md
   - Examples:
       - examples/index.md
       - examples/mesh-reconstruction-and-visualisation.md
@@ -68,6 +78,9 @@ nav:
       - examples/junction-curves.md
       - examples/default-junction-relocation.md
       - examples/anisotropic-voxels-and-crop-faces.md
+      - examples/two-dimensional-geometrical-analysis.md
+      - examples/two-dimensional-mask-compression-of-a-tissue.md
+      - examples/two-dimensional-mask-compression-of-separated-cells.md
   - API reference:
       - api/index.md
       - api/package.md
@@ -78,10 +91,19 @@ nav:
       - api/junction-curves.md
       - api/cell-volume-agreement.md
       - api/enclosed-media.md
+      - api/thin-medium-margins.md
       - api/triangle-intersection.md
       - api/io.md
       - api/mesh-utilities.md
       - api/mask-reconstruction.md
       - api/viewing.md
+      - api/dw2d.md
+      - api/dw2d-reconstruction.md
+      - api/dw2d-reports.md
+      - api/dw2d-half-edge-structure.md
+      - api/dw2d-junction-relocation.md
+      - api/dw2d-thin-medium-margins.md
+      - api/dw2d-io.md
+      - api/dw2d-mask-reconstruction.md
   - Changelog: changelog.md
   - Release notes: release-notes.md

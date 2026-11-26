@@ -2,30 +2,40 @@
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
+# The repository builds three distributions, all at one version (the release scripts check it):
+# * "delaunay-watershed-3d", from this file: the package `dw3d` (3-D masks);
+# * "delaunay-watershed-2d", from distributions/delaunay-watershed-2d: the package `dw2d` (2-D masks);
+# * "delaunay-watershed", from distributions/delaunay-watershed: a metapackage without code that requires both.
+# Each package stays in the distribution that has always installed it, so that no file changes owner on an upgrade.
 [project]
 name = "delaunay-watershed-3d"
-version = "0.7.1"
-description = "Geometrical reconstruction of cell assemblies from instance segmentations"
+version = "0.8.0"
+description = "Geometrical reconstruction of cell assemblies from 3-D instance segmentations (package dw3d)"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["License"]
 authors = [{ name = "Turlier lab", email = "virtualembryo@gmail.com" }]
 maintainers = [{ name = "Matthieu Perez", email = "matthieu.perez@cnrs.fr" }]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: POSIX :: Linux",
   "Operating System :: MacOS",
   "Intended Audience :: Science/Research",
 ]
+# dw3d's run-time imports (iorec reads and writes the .rec format), and delaunay-watershed-2d at the same version, so
+# that installing dw3d installs dw2d too (it adds no third-party package; each package keeps its own distribution).
+# Polyscope, for dw3d's viewer, is in the `viewing` extra. Python 3.12 or later: iorec 1.4.1 requires it, and the CI
+# tests 3.12 to 3.14.
 dependencies = [
+  "delaunay-watershed-2d==0.8.0",
   "edt>=2.4.1",
+  "iorec>=1.4.1",
   "meshio>=5.3.5",
   "networkx>=2.8.0",
   "numpy>=2.0.0",
   "scikit-image>=0.23.1",
   "scipy>=1.13.0",
-  "trimesh>=4.0.0",
 ]
 
 [project.urls]
@@ -33,7 +43,8 @@ Homepage = "https://github.com/VirtualEmbryo/delaunay-watershed"
 "Team website" = "https://www.turlierlab.com/"
 
 [project.optional-dependencies]
-viewing = ["polyscope>=2.2.0", "matplotlib>=3.8.4"]
+# dw3d's Polyscope viewer (matplotlib, as in 0.7.1 and earlier, for the figures of the examples).
+viewing = ["polyscope>=2.5.0", "matplotlib>=3.8.4"]
 # For the figure scripts only (dw3d_benchmarks/mesh_quality_comparison/figures/), so plotting
 # a benchmark does not require the Polyscope viewer (`viewing`). These scripts also import
 # foambryo, which this extra does not install: `pip install foambryo`. `src/dw3d` itself must never depend on foambryo -- only the benchmarks package
@@ -46,6 +57,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["dw3d*"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "ty", "pytest-cov>=4.0.0"]
@@ -128,7 +140,7 @@ exclude = [
 ]
 line-length = 120
 
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -145,7 +157,7 @@ convention = "google"
 "tests/**" = ["ANN001", "ANN201", "ANN202", "D103", "D104"]
 
 [tool.ty.environment]
-python-version = "3.11"
+python-version = "3.12"
 root = ["./src"]
 
 [tool.check-manifest]

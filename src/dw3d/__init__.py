@@ -15,7 +15,10 @@ Conventions used everywhere in the package:
 * `spacing` is the voxel size along the mask's axes 0, 1, 2, so `(dz, dy, dx)` for a `(z, y, x)`
   stack.
 * `labels[n] = (a, b)`, with `a < b`, are the two regions triangle `n` separates; its normal
-  (right-hand rule on its three vertices) points out of `a` and into `b`.
+  (right-hand rule on its three vertices) points out of `a` and into `b`: each triangle is the positively
+  oriented boundary of `a`. dw2d's edges follow the same rule in their index order `(row, column)` (since
+  0.8.0; `docs/user-guide/orientation-in-two-and-three-dimensions.md`).
+* A 2-D mask given to the reconstruction is meshed by dw2d (`MeshReconstructionAlgorithm`'s docstring).
 * `min_distance` (the point placement's minimum distance between points) counts voxels of the grid
   the mask is meshed on.
 """
@@ -37,6 +40,7 @@ from dw3d.enclosed_media import (
     find_enclosed_media,
 )
 from dw3d.io import save_rec, save_vtk
+from dw3d.thin_medium_margins import ThinMediumMarginWarning
 
 # An additional, purely additive read of the mask a mesh was reconstructed from. Nothing
 # in the reconstruction pipeline calls it and no default changes; see
@@ -71,25 +75,44 @@ from dw3d.triangle_intersection import count_self_intersections, find_self_inter
 # when mesh quality matters more than today's downstream inference accuracy; see the
 # factory's docstring and BENCHMARKS.md at the repository root.
 get_default_mesh_reconstruction_algorithm = MeshReconstructionAlgorithmFactory.get_default_algorithm
+"""The default mesh reconstruction algorithm, the dithered configuration.
+
+The same function as `MeshReconstructionAlgorithmFactory.get_default_algorithm`, which gives its arguments
+(`min_distance`, `print_info`, ...) and what it returns.
+"""
 # The historical algorithm (randomly dithered point placement); this is the default. See the
 # factory's docstring.
 get_dithered_mesh_reconstruction_algorithm = MeshReconstructionAlgorithmFactory.get_dithered_algorithm
+"""The dithered configuration, today the default: `MeshReconstructionAlgorithmFactory.get_dithered_algorithm`."""
 # The deterministic algorithm (no dither): the default before the boundary-layer and
 # junction-protection placements were added, kept as the baseline those placements are measured
 # against.
 get_deterministic_mesh_reconstruction_algorithm = MeshReconstructionAlgorithmFactory.get_deterministic_algorithm
+"""The deterministic configuration (no dither): `MeshReconstructionAlgorithmFactory.get_deterministic_algorithm`.
+
+The baseline the other point placements are measured against.
+"""
 # The boundary-layer algorithm (opt-in variant, not the default); see the factory.
 get_boundary_layer_mesh_reconstruction_algorithm = MeshReconstructionAlgorithmFactory.get_boundary_layer_algorithm
+"""The boundary-layer configuration, opt-in: `MeshReconstructionAlgorithmFactory.get_boundary_layer_algorithm`."""
 _factory = MeshReconstructionAlgorithmFactory
 # Boundary layer + junction protection, and the only way to reach the junction-protection
 # ablation switches. At its defaults it carries a measured regression (+15.7 % on every
 # interface area); see the factory.
 get_junction_protected_mesh_reconstruction_algorithm = _factory.get_junction_protected_algorithm
+"""Boundary layer and junction protection: `MeshReconstructionAlgorithmFactory.get_junction_protected_algorithm`.
+
+Opt-in: at its defaults it enlarges every interface area by about 15.7 %; see the factory.
+"""
 # The "revised meshing" variant: the same exclusion, taken as a link-condition-checked edge
 # collapse so that it cannot create non-manifold topology. Was the default for a time; now
 # the opt-in variant for when mesh quality matters more than today's downstream
 # tension-inference accuracy. See the factory's docstring.
 get_link_checked_mesh_reconstruction_algorithm = _factory.get_link_checked_algorithm
+"""The "revised meshing" configuration, opt-in: `MeshReconstructionAlgorithmFactory.get_link_checked_algorithm`.
+
+Better mesh geometry, worse tension inference than the default (BENCHMARKS.md).
+"""
 
 
 def center_points_around_zero(points: NDArray[np.float64]) -> NDArray[np.float64]:
@@ -244,6 +267,7 @@ __all__ = (
     "UnresolvedCellWarning",
     "UnresolvedRegion",
     "find_enclosed_media",
+    "ThinMediumMarginWarning",
     "AbnormalEdgeWarning",
     "CropFaceReport",
     "IMAGE_FACES",

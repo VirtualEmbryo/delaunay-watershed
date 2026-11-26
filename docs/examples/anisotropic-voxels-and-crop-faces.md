@@ -4,4 +4,4 @@ A mask with voxels twice as long along z, resampled to cubic voxels and meshed i
 
 Data: nothing: the mask is generated in the notebook.
 
-The notebook: [`Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb).
+The notebook: [`Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.8.0/Examples/example_6_anisotropic_voxels_and_crop_faces.ipynb).

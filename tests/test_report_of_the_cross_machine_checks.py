@@ -125,3 +125,24 @@ def test_the_tests_allowed_a_cospherical_skip_are_exactly_those_that_call_it():
                 if "skip_where_qhull_differs_inside_cospherical_sets" in names:
                     calling.add(node.name)
     assert calling == set(report.QHULL_LIVE_TESTS)
+
+
+def test_dw2d_modules_of_the_same_names_are_not_these_checks(tmp_path, capsys):
+    """dw2d's suite (tests/two_dimensional) has a test_golden_master too, whose skips on macOS are its own business.
+
+    Its JUnit classname is `tests.two_dimensional.test_golden_master`; read by its last component it was counted as
+    dw3d's, and its 26 Qhull skips failed this step on macOS.
+    """
+    cases = [
+        *BASE,
+        (
+            "two_dimensional.test_golden_master",
+            "test_reconstruction_is_bitwise_the_legacy_one[c_elegans__md3]",
+            "skipped",
+            "Qhull triangulates 4 cocircular polygon(s) differently from the golden on this machine",
+        ),
+    ]
+    status, _, summary = _run(tmp_path, cases, capsys)
+    assert status == 0
+    assert "test_golden_master: 1 passed" in summary
+    assert "two_dimensional" not in summary

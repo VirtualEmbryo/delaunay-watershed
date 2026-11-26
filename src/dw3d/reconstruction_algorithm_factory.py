@@ -68,6 +68,9 @@ class MeshReconstructionAlgorithmFactory:
         self.relocate_junctions = True
         self.canonical_tetrahedron_order = True
         self.physical_image_faces: tuple[str, ...] = ()
+        # The min_distance the caller gave to a placement setter, None when left at its default: a 2-D mask given to the
+        # algorithm is meshed with it, or with dw2d's own default (4 pixels) when None.
+        self._requested_min_distance: int | None = None
 
     def set_physical_image_faces(self, *faces: str) -> Self:
         """Declare faces of the image box where the tissue really ends, for example on a coverslip.
@@ -231,22 +234,23 @@ class MeshReconstructionAlgorithmFactory:
         )
         return self
 
-    def set_peak_local_points_placement_method(self, min_distance: int = 3) -> Self:
+    def set_peak_local_points_placement_method(self, min_distance: int | None = None) -> Self:
         """Place points on the EDT image using local extrema of the EDT (and corners), deterministically.
 
         This is the placement of `get_deterministic_algorithm` and of a new factory.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema, in voxels of the grid
-                the mask is meshed on. Defaults to 3.
+            min_distance (int | None, optional): Minimum distance between extrema, in voxels of the grid
+                the mask is meshed on. Defaults to None: 3 voxels, and dw2d's 4 pixels for a 2-D mask.
 
         Returns:
             Self: this factory, for chaining.
         """
-        self._point_placing_function = _point_placing_function_peak_local(min_distance, self.print_info)
+        self._requested_min_distance = min_distance
+        self._point_placing_function = _point_placing_function_peak_local(_voxels(min_distance), self.print_info)
         return self
 
-    def set_dithered_peak_local_points_placement_method(self, min_distance: int = 3, seed: int = 42) -> Self:
+    def set_dithered_peak_local_points_placement_method(self, min_distance: int | None = None, seed: int = 42) -> Self:
         """Place points using the randomly dithered EDT (dw3d <= 0.3.6 behaviour).
 
         This is the placement of `get_dithered_algorithm`, which `get_default_algorithm` returns;
@@ -254,15 +258,20 @@ class MeshReconstructionAlgorithmFactory:
         (`set_peak_local_points_placement_method`). See `dw3d.points_on_edt` for the difference.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema, in voxels of the grid
-                the mask is meshed on. Defaults to 3.
+            min_distance (int | None, optional): Minimum distance between extrema, in voxels of the grid
+                the mask is meshed on. Defaults to None: 3 voxels, and dw2d's 4 pixels for a 2-D mask.
             seed (int, optional): Seed of the `U(0, 1e-5)` dither. Defaults to 42, the
                 value that was hard-wired before point placement was made deterministic.
 
         Returns:
             Self: this factory, for chaining.
         """
-        self._point_placing_function = _point_placing_function_peak_local_dithered(min_distance, seed, self.print_info)
+        self._requested_min_distance = min_distance
+        self._point_placing_function = _point_placing_function_peak_local_dithered(
+            _voxels(min_distance),
+            seed,
+            self.print_info,
+        )
         return self
 
     def set_boundary_layer_points_placement_method(self, min_distance: int = 3, delta: float | None = None) -> Self:
@@ -396,7 +405,7 @@ class MeshReconstructionAlgorithmFactory:
         Returns:
             MeshReconstructionAlgorithm: Mesh Reconstruction Algorithm ready to be executed.
         """
-        return MeshReconstructionAlgorithm(
+        algorithm = MeshReconstructionAlgorithm(
             print_info=self.print_info,
             edt_creation_function=self._edt_creation_function,
             point_placing_function=self._point_placing_function,
@@ -407,9 +416,11 @@ class MeshReconstructionAlgorithmFactory:
             physical_image_faces=self.physical_image_faces,
             canonical_tetrahedron_order=self.canonical_tetrahedron_order,
         )
+        algorithm.requested_min_distance = self._requested_min_distance
+        return algorithm
 
     @staticmethod
-    def get_default_algorithm(min_distance: int = 3, print_info: bool = False) -> MeshReconstructionAlgorithm:
+    def get_default_algorithm(min_distance: int | None = None, print_info: bool = False) -> MeshReconstructionAlgorithm:
         """Return the default mesh reconstruction algorithm with sensible default values.
 
         **This is `get_dithered_algorithm` at its own defaults**: the published dw3d 0.3.6
@@ -470,8 +481,10 @@ class MeshReconstructionAlgorithmFactory:
         with them at 8 bytes/voxel instead of 4).
 
         Args:
-            min_distance (int, optional): Minimum distance (in voxels of the grid the mask is meshed
-                on) between extrema when placing tesselation points. Defaults to 3.
+            min_distance (int | None, optional): Minimum distance (in voxels of the grid the mask is meshed
+                on) between extrema when placing tesselation points. Defaults to None: 3 voxels; a 2-D mask
+                given to the algorithm is meshed by dw2d with 4 pixels, dw2d's default (an explicit value is
+                used in both dimensions).
             print_info (bool, optional): Print algorithm details while executing. Defaults to False.
 
         Returns:
@@ -483,7 +496,7 @@ class MeshReconstructionAlgorithmFactory:
         )
 
     @staticmethod
-    def get_deterministic_algorithm(min_distance: int = 3, print_info: bool = False) -> MeshReconstructionAlgorithm:
+    def get_deterministic_algorithm(min_distance: int | None = None, print_info: bool = False) -> MeshReconstructionAlgorithm:
         """Return the deterministic algorithm: EDT extrema only, no dither, plain Delaunay.
 
         This was `get_default_algorithm` for a time, between the dithered configuration and
@@ -495,24 +508,30 @@ class MeshReconstructionAlgorithmFactory:
         builds the same configuration.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
+            min_distance (int | None, optional): Minimum distance between extrema, in voxels. Defaults to None: 3,
+                and dw2d's 4 pixels for a 2-D mask.
             print_info (bool, optional): Print algorithm details while executing.
 
         Returns:
             MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
-        return MeshReconstructionAlgorithm(
+        algorithm = MeshReconstructionAlgorithm(
             print_info=print_info,
             edt_creation_function=_edt_creation_function_classical(print_info=print_info),
-            point_placing_function=_point_placing_function_peak_local(min_distance=min_distance, print_info=print_info),
+            point_placing_function=_point_placing_function_peak_local(
+                min_distance=_voxels(min_distance),
+                print_info=print_info,
+            ),
             tesselation_creation_function=simple_delaunay_tesselation,
             score_computation_function=compute_scores_by_max_value,
             perform_mesh_postprocess_surgery=True,
         )
+        algorithm.requested_min_distance = min_distance
+        return algorithm
 
     @staticmethod
     def get_dithered_algorithm(
-        min_distance: int = 3,
+        min_distance: int | None = None,
         print_info: bool = False,
         seed: int = 42,
     ) -> MeshReconstructionAlgorithm:
@@ -535,18 +554,19 @@ class MeshReconstructionAlgorithmFactory:
         bit-for-bit replica of published output.
 
         Args:
-            min_distance (int, optional): Minimum distance between extrema, in voxels. Defaults to 3.
+            min_distance (int | None, optional): Minimum distance between extrema, in voxels. Defaults to None: 3,
+                and dw2d's 4 pixels for a 2-D mask.
             print_info (bool, optional): Print algorithm details while executing.
             seed (int, optional): Seed of the dither. Defaults to 42, the historical value.
 
         Returns:
             MeshReconstructionAlgorithm: a new algorithm, with junction relocation on.
         """
-        return MeshReconstructionAlgorithm(
+        algorithm = MeshReconstructionAlgorithm(
             print_info=print_info,
             edt_creation_function=_edt_creation_function_classical(print_info=print_info),
             point_placing_function=_point_placing_function_peak_local_dithered(
-                min_distance=min_distance,
+                min_distance=_voxels(min_distance),
                 seed=seed,
                 print_info=print_info,
             ),
@@ -554,6 +574,8 @@ class MeshReconstructionAlgorithmFactory:
             score_computation_function=compute_scores_by_max_value,
             perform_mesh_postprocess_surgery=True,
         )
+        algorithm.requested_min_distance = min_distance
+        return algorithm
 
     @staticmethod
     def get_boundary_layer_algorithm(
@@ -768,6 +790,15 @@ class MeshReconstructionAlgorithmFactory:
             exclude_offsets_from_surface=True,
             collapse_rule=LINK_CONDITION,
         )
+
+
+#: dw3d's default point-placement distance, in voxels.
+DEFAULT_MIN_DISTANCE = 3
+
+
+def _voxels(min_distance: int | None) -> int:
+    """The placement distance in 3D: the caller's, or dw3d's default (3 voxels) when None."""
+    return DEFAULT_MIN_DISTANCE if min_distance is None else min_distance
 
 
 def _edt_creation_function_classical(

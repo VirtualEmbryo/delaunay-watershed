@@ -4,4 +4,4 @@ Extract the trijunction curves the mask itself gives (`extract_junction_curves`)
 
 Data: the repository's `data/Images/`.
 
-The notebook: [`Examples/example_4_junction_curves.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.7.0/Examples/example_4_junction_curves.ipynb).
+The notebook: [`Examples/example_4_junction_curves.ipynb`](https://github.com/VirtualEmbryo/delaunay-watershed/blob/v0.8.0/Examples/example_4_junction_curves.ipynb).

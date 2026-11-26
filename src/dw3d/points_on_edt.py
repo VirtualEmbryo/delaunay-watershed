@@ -276,6 +276,7 @@ def peak_local_points_dithered(
     min_distance: int,
     print_info: bool = False,
     seed: int = 42,
+    dither_padding: tuple[tuple[int, int], ...] | None = None,
 ) -> tuple[NDArray[np.uint], NDArray[np.uint]]:
     """Peak local min and max points (+ corner points) from a randomly dithered EDT image.
 
@@ -296,6 +297,9 @@ def peak_local_points_dithered(
         min_distance (int): Minimum distance between peaks (local min and local max)
         print_info (bool, optional): Print details about the algorithm. Defaults to False.
         seed (int, optional): Seed of the dither. Defaults to 42, the historical value.
+        dither_padding (tuple[tuple[int, int], ...] | None, optional): when `edt_image` is the field of a mask padded
+            with these `numpy.pad` widths, the mask's own voxels keep the dither they have on the unpadded mask
+            (the reconstruction passes it when it pads thin medium margins; see `_dithered`). Defaults to `None`.
 
     Returns:
         tuple[NDArray[np.uint], NDArray[np.uint]]:
@@ -307,7 +311,7 @@ def peak_local_points_dithered(
     if print_info:
         print("Searching local extremas ...")
 
-    edt = _dithered(edt_image, seed)
+    edt = _dithered(edt_image, seed, dither_padding)
 
     local_mins = peak_local_max(-edt, min_distance=min_distance, exclude_border=False).astype(np.uint)
     if print_info:
@@ -326,6 +330,7 @@ def peak_local_points_bias_boundaries(
     min_distance: int,
     print_info: bool = False,
     seed: int = 42,
+    dither_padding: tuple[tuple[int, int], ...] | None = None,
 ) -> tuple[NDArray[np.uint], NDArray[np.uint]]:
     """Peak local min and max points (+ corner points) from an EDT image, biased by boundary thickness.
 
@@ -339,6 +344,9 @@ def peak_local_points_bias_boundaries(
         min_distance (int): Minimum distance between peaks (local min and local max)
         print_info (bool, optional): Print details about the algorithm. Defaults to False.
         seed (int, optional): Seed of the dither. Defaults to 42, the historical value.
+        dither_padding (tuple[tuple[int, int], ...] | None, optional): when `edt_image` is the field of a mask padded
+            with these `numpy.pad` widths, the mask's own voxels keep the dither they have on the unpadded mask
+            (the reconstruction passes it when it pads thin medium margins; see `_dithered`). Defaults to `None`.
 
     Returns:
         tuple[NDArray[np.uint], NDArray[np.uint]]:
@@ -350,7 +358,7 @@ def peak_local_points_bias_boundaries(
     if print_info:
         print("Searching local extremas ...")
 
-    edt = _dithered(edt_image, seed)
+    edt = _dithered(edt_image, seed, dither_padding)
 
     # try Matthieu Perez add labels to peak local max
     total_boundaries = get_total_boundaries(segmented_mask)
@@ -1466,11 +1474,31 @@ def _assemble_points_boundary_layer(
     return all_points, indices_of_sorted_interior.astype(np.uint)
 
 
-def _dithered(edt_image: NDArray[np.float64], seed: int) -> NDArray[np.float64]:
-    """The historical `U(0, 1e-5)` dither, drawn from a private RNG rather than the global one."""
+def _dithered(
+    edt_image: NDArray[np.float64],
+    seed: int,
+    dither_padding: tuple[tuple[int, int], ...] | None = None,
+) -> NDArray[np.float64]:
+    """The historical `U(0, 1e-5)` dither, drawn from a private RNG rather than the global one.
+
+    `dither_padding` (the `numpy.pad` widths by which the field's mask was padded, or `None`) keeps the dither of the
+    unpadded mask on its own voxels: the generator first draws the unpadded shape, as it does on the unpadded mask,
+    and those values go on the mask's voxels; the padding takes the generator's next draw. Without it a padded field
+    would get a different dither at every voxel, so every plateau a different representative, and the whole mesh a
+    new draw (see `dw3d.thin_medium_margins`).
+    """
     # Legacy RandomState is version-stable by numpy policy; see the docstrings above.
     rng = np.random.RandomState(seed)
-    return edt_image + rng.rand(*edt_image.shape) * 1e-5
+    if not dither_padding:
+        return edt_image + rng.rand(*edt_image.shape) * 1e-5
+    inner = tuple(
+        slice(low, size - high) for (low, high), size in zip(dither_padding, edt_image.shape, strict=True)
+    )
+    inner_shape = tuple(s.stop - s.start for s in inner)
+    first = rng.rand(*inner_shape)
+    dither = rng.rand(*edt_image.shape)
+    dither[inner] = first
+    return edt_image + dither * 1e-5
 
 
 def _assemble_points(

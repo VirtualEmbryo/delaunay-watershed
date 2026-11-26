@@ -40,6 +40,7 @@ from dw3d.io import (
     load_rec_with_crop_faces,
     save_rec,
 )
+from tests.conftest import assert_every_mask_cell_is_meshed
 
 
 def _three_cells(cropped: bool, medium_below: int | None = None) -> np.ndarray:
@@ -62,12 +63,14 @@ def _three_cells(cropped: bool, medium_below: int | None = None) -> np.ndarray:
     return np.ascontiguousarray(mask[first:last])
 
 
-def _reconstruct(mask: np.ndarray, physical_image_faces=()):
+def _reconstruct(mask: np.ndarray, physical_image_faces=(), *, pad_thin_medium_margins: bool = True):
     algorithm = get_default_mesh_reconstruction_algorithm()
     algorithm.physical_image_faces = physical_image_faces
+    algorithm.pad_thin_medium_margins = pad_thin_medium_margins
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         points, triangles, labels = algorithm.construct_mesh_from_segmentation_mask(mask)
+    assert_every_mask_cell_is_meshed(algorithm, labels, "cropped three cells")
     return algorithm, np.asarray(points), np.asarray(triangles, dtype=np.int64), np.asarray(labels, dtype=np.int64)
 
 
@@ -96,8 +99,22 @@ def test_a_mask_that_touches_no_image_face_has_no_crop_face(complete, tmp_path):
 
 @pytest.fixture(scope="module")
 def one_voxel_short():
-    """Complete, with a single slice of medium between cell 3 and the image face below it."""
-    return _reconstruct(_three_cells(cropped=False, medium_below=1))
+    """Complete, with a single slice of medium between cell 3 and the image face below it.
+
+    Meshed without the padding of thin medium margins (`pad_thin_medium_margins = False`), which is what puts border
+    triangles that cell 3 does not reach on the face below it: the tests that use this fixture check how such
+    triangles are classified (they still arise on a face that a cell reaches, which is never padded). With the
+    padding, the default, the face is moved away and cell 3 gets none (`test_padding_keeps_a_cell_off_a_face_it_stops_short_of`).
+    """
+    return _reconstruct(_three_cells(cropped=False, medium_below=1), pad_thin_medium_margins=False)
+
+
+def test_padding_keeps_a_cell_off_a_face_it_stops_short_of():
+    """With the default padding, the cell one voxel short of the face below it has no border triangle there."""
+    algorithm, _points, _triangles, _labels = _reconstruct(_three_cells(cropped=False, medium_below=1))
+    assert algorithm.crop_face_report.n_border_triangles == 0
+    assert algorithm.medium_margin_padding["axis0_low"] > 0
+    assert algorithm.cut_cells == ()
 
 
 def test_a_cell_that_stops_short_of_the_image_face_is_not_cut(one_voxel_short, tmp_path):
@@ -120,7 +137,11 @@ def test_a_cell_that_stops_short_of_the_image_face_is_not_cut(one_voxel_short, t
 
 
 def test_only_the_image_face_a_cell_reaches_holds_crop_faces():
-    algorithm, _points, _triangles, labels = _reconstruct(_three_cells(cropped=True, medium_below=1))
+    # Without the padding of thin medium margins, so that cell 3 is closed on the face below it, which it does not
+    # reach (see the fixture `one_voxel_short`).
+    algorithm, _points, _triangles, labels = _reconstruct(
+        _three_cells(cropped=True, medium_below=1), pad_thin_medium_margins=False,
+    )
     report = algorithm.crop_face_report
     low, high = IMAGE_FACES.index("axis0_low"), IMAGE_FACES.index("axis0_high")
     on_low = report.image_face_of_triangle == low

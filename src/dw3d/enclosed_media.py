@@ -44,6 +44,12 @@ BELOW_THE_SIZE_BOUND = "below the size bound"
 LINED_BY_ONE_CELL = "lined by one cell"
 SWITCHED_OFF = "switched off"
 
+#: Causes of a region's absence from the mesh (`UnresolvedRegion.cause`).
+NO_TETRAHEDRON_IN_ITS_VOXELS = "no tetrahedron in its voxels"
+REMOVED_BY_MESH_SURGERY = "removed by mesh surgery"
+NO_WATERSHED_SEED = "no watershed seed"
+NO_TRIANGLE_IN_THE_MESH = "no triangle in the mesh"
+
 #: Pockets named in the text of `EnclosedMediumWarning`, largest first.
 _POCKETS_NAMED_IN_THE_WARNING = 5
 
@@ -51,14 +57,21 @@ _SIX_CONNECTED = ndimage.generate_binary_structure(3, 1)
 
 
 class UnresolvedCellWarning(UserWarning):
-    """Some regions of the mask have no tetrahedron of their own and are absent from the mesh.
+    """Some regions of the mask are absent from the mesh.
 
-    A region's watershed seed is the tetrahedron whose centroid is nearest to the region's deepest voxel. When no
-    tetrahedron centroid lies in the region's voxels (a cell a few voxels thick, or smaller than the point
-    placement's `min_distance`), that tetrahedron belongs to a neighbour; before 0.7.1 the region grew from it inside
-    the neighbour, as a phantom. Since 0.7.1 the seed is dropped and the region is absent from the mesh. Emitted once
-    per reconstruction that drops a seed, naming each region, its voxel count and the `min_distance`; the regions are
-    the reconstruction's `enclosed_medium_report.unresolved`. A smaller `min_distance` may resolve them.
+    Emitted once per reconstruction whose finished mesh lacks a label of the mask that was meshed, whatever the
+    cause, naming each such region with its voxel count, the cause and the `min_distance`; the regions are the
+    reconstruction's `enclosed_medium_report.unresolved`. A smaller `min_distance` may mesh them. The causes:
+
+    * no tetrahedron centroid lies in the region's voxels (a cell a few voxels thick, or smaller than the point
+      placement's `min_distance`). A region's watershed seed is the tetrahedron whose centroid is nearest to its
+      deepest voxel; here that tetrahedron belongs to a neighbour, and before 0.7.1 the region grew from it inside
+      the neighbour, as a phantom. Since 0.7.1 the seed is dropped.
+    * the region was seeded, but the watershed left it few tetrahedra (often only its seed: the rest of the region,
+      grouped without the seed, went to a neighbour) and mesh surgery relabelled those. Since 0.8.0 such a region is
+      named too; before, only `CellVolumeDisagreementWarning` listed it, as a cell absent from the mesh.
+    * the region had no watershed seed (label 0 when no piece of it touches the image box), or holds tetrahedra but
+      no triangle of the finished mesh.
     """
 
 
@@ -92,17 +105,25 @@ class EnclosedMedium:
 
 @dataclass(frozen=True)
 class UnresolvedRegion:
-    """A region of the mask with no tetrahedron of its own, absent from the mesh.
+    """A region of the mask that is absent from the finished mesh.
 
     Attributes:
         label: its label in the mask that was meshed.
         voxels: its voxel count.
         kind: `"cell"`, `"enclosed medium"` or `"exterior"` (a piece of label 0 touching the image box).
+        cause: `"no tetrahedron in its voxels"` (its seed was dropped), `"removed by mesh surgery"` (seeded, but
+            surgery relabelled what the watershed left it), `"no watershed seed"`, or `"no triangle in the mesh"`.
+        tetrahedra_after_the_watershed: how many tetrahedra the watershed gave it (`None` when its seed was dropped).
+        tetrahedra_in_its_voxels: how many tetrahedra have their centroid in its voxels (`numpy.rint`), that is,
+            what a labelling by centroids would give it (`None` when its seed was dropped: 0).
     """
 
     label: int
     voxels: int
     kind: str
+    cause: str = NO_TETRAHEDRON_IN_ITS_VOXELS
+    tetrahedra_after_the_watershed: int | None = None
+    tetrahedra_in_its_voxels: int | None = None
 
 
 @dataclass(frozen=True)
@@ -137,8 +158,8 @@ class EnclosedMediumReport:
         pockets_left_to_cells: the enclosed pockets left to the cells, in the order of their lowest raster index.
         exterior_pieces: the pieces of label 0 that touch a face of the array, each of which gets a seed.
         min_inscribed_radius: the size bound used, in voxels.
-        unresolved: the regions whose seed had no tetrahedron centroid in their own voxels, so that they are absent
-            from the mesh (filled by the reconstruction; `UnresolvedCellWarning`).
+        unresolved: the regions of the meshed mask absent from the finished mesh, by label, each with its cause
+            (filled by the reconstruction; `UnresolvedCellWarning`).
         min_distance: the point placement's `min_distance` the reconstruction used (`None` when unknown).
         moved_seeds: labels whose seed's nearest tetrahedron lay outside their own voxels and was replaced by the
             nearest one inside (filled by the reconstruction).
@@ -174,7 +195,8 @@ class EnclosedMediumReport:
         `False` means: no enclosed medium made, label 0 seeded as before, every seed already inside its label. The
         reconstruction is then bitwise what it was (pockets left to the cells are left as before).
         """
-        return bool(self.media or self.dropped_seeds or self.moved_seeds or self.exterior_seeds_changed)
+        dropped = any(region.cause == NO_TETRAHEDRON_IN_ITS_VOXELS for region in self.unresolved)
+        return bool(self.media or dropped or self.moved_seeds or self.exterior_seeds_changed)
 
     @property
     def medium_labels(self) -> tuple[int, ...]:
@@ -198,7 +220,12 @@ class EnclosedMediumReport:
             ],
             "exterior_pieces": self.exterior_pieces,
             "min_inscribed_radius": self.min_inscribed_radius,
-            "unresolved": [{"label": u.label, "voxels": u.voxels, "kind": u.kind} for u in self.unresolved],
+            "unresolved": [
+                {"label": u.label, "voxels": u.voxels, "kind": u.kind, "cause": u.cause,
+                 "tetrahedra_after_the_watershed": u.tetrahedra_after_the_watershed,
+                 "tetrahedra_in_its_voxels": u.tetrahedra_in_its_voxels}
+                for u in self.unresolved
+            ],
             "min_distance": self.min_distance,
             "moved_seeds": list(self.moved_seeds),
             "exterior_seeds_changed": self.exterior_seeds_changed,
@@ -369,16 +396,41 @@ def _describe_pocket(mask: NDArray, components: NDArray[np.int32], piece: int, b
 
 
 def unresolved_message(report: EnclosedMediumReport) -> str:
-    """The text of `UnresolvedCellWarning` for one report."""
+    """The text of `UnresolvedCellWarning` for one report: one sentence per cause, the regions by label."""
     md = "unknown" if report.min_distance is None else str(report.min_distance)
-    named = [f"{u.kind} {u.label} ({u.voxels} voxels)" for u in sorted(report.unresolved, key=lambda u: u.label)]
-    n = len(named)
-    return (
-        f"{n} region{'s' if n != 1 else ''} of the mask {'have' if n != 1 else 'has'} no tetrahedron whose centroid "
-        f"lies in {'their' if n != 1 else 'its'} voxels at min_distance {md}, so {'they are' if n != 1 else 'it is'} "
-        f"absent from the mesh: " + ", ".join(named)
-        + ". Before 0.7.1 such a region grew inside a neighbour; a smaller min_distance may mesh it."
-    )
+    regions = sorted(report.unresolved, key=lambda u: u.label)
+    dropped = [u for u in regions if u.cause == NO_TETRAHEDRON_IN_ITS_VOXELS]
+    others = [u for u in regions if u.cause != NO_TETRAHEDRON_IN_ITS_VOXELS]
+    sentences = []
+    if dropped:
+        n = len(dropped)
+        named = [f"{u.kind} {u.label} ({u.voxels} voxels)" for u in dropped]
+        sentences.append(
+            f"{n} region{'s' if n != 1 else ''} of the mask {'have' if n != 1 else 'has'} no tetrahedron whose "
+            f"centroid lies in {'their' if n != 1 else 'its'} voxels at min_distance {md}, so "
+            f"{'they are' if n != 1 else 'it is'} absent from the mesh: " + ", ".join(named)
+            + ". Before 0.7.1 such a region grew inside a neighbour; a smaller min_distance may mesh it.",
+        )
+    if others:
+        n = len(others)
+        named = [f"{u.kind} {u.label} ({u.voxels} voxels; {_why(u)})" for u in others]
+        sentences.append(
+            f"{n} region{'s' if n != 1 else ''} of the mask {'are' if n != 1 else 'is'} absent from the mesh at "
+            f"min_distance {md}: " + ", ".join(named) + ". A smaller min_distance may mesh "
+            + ("them." if n != 1 else "it."),
+        )
+    return " ".join(sentences)
+
+
+def _why(region: UnresolvedRegion) -> str:
+    """The cause of one region's absence, in words, for `unresolved_message`."""
+    if region.cause == REMOVED_BY_MESH_SURGERY:
+        after, own = region.tetrahedra_after_the_watershed, region.tetrahedra_in_its_voxels
+        return (f"the watershed left it {after} of the {own} tetrahedra centred in its voxels, the others going to "
+                f"neighbouring regions, and mesh surgery relabelled {'it' if after == 1 else 'them'}")
+    if region.cause == NO_WATERSHED_SEED:
+        return "it had no watershed seed"
+    return "it holds tetrahedra but no triangle of the finished mesh carries it"
 
 
 def warning_message(report: EnclosedMediumReport) -> str:

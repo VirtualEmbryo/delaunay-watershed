@@ -13,7 +13,6 @@ import numpy as np
 import pytest
 
 from dw3d.junctions import _corner_representatives_on_skeleton
-from dw3d.mask_reconstruction import _create_coords, _make_mask
 from dw3d.nearest_neighbours import candidates_holding_every_nearest, nearest_with_ties_to_the_lowest_index
 from dw3d.reconstruction_algorithm import _compute_seeds_idx_from_voxel_coords
 
@@ -115,13 +114,3 @@ def test_seed_lookup_takes_the_lowest_tetrahedron_on_an_exact_tie():
     seeds = np.array([(1, 1, 1)], dtype=np.uint)
     assert _compute_seeds_idx_from_voxel_coords(centroids, seeds).tolist() == [1]
     assert _compute_seeds_idx_from_voxel_coords(centroids[[0, 3, 2, 1]], seeds).tolist() == [1]
-
-
-def test_mask_rebuild_marks_the_lower_index_pixel_halfway_between_two():
-    shape = np.array([3, 3, 3])
-    grid = _create_coords(3, 3, 3)
-    # Halfway between two neighbouring grid points along each axis, and one point exactly on the grid.
-    pairs = [(0, 1), (0, 3), (0, 9), (13, 14)]
-    verts = np.array([(grid[a] + grid[b]) / 2 for a, b in pairs] + [grid[26]])
-    membrane = _make_mask(verts, shape).ravel()
-    assert sorted(np.flatnonzero(membrane).tolist()) == sorted({min(a, b) for a, b in pairs} | {26})

@@ -1,8 +1,10 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the article in preferred-citation."
+message: "If you use this software, please cite both the article in preferred-citation (Nature Methods 2023) and the Developmental Cell 2026 article in references."
 type: software
-title: "delaunay-watershed-3d"
-abstract: "Geometrical reconstruction of cell assemblies from instance segmentations."
+title: "delaunay-watershed"
+abstract: "Geometrical reconstruction of cell assemblies from 3-D and 2-D instance segmentations (packages dw3d and dw2d)."
+# The authors of both packages: dw3d's, and dw2d's (its author, Sacha Ichbiah, in its 0.1.5 package metadata; its
+# maintainers, Sacha Ichbiah, Matthieu Perez and Hervé Turlier, in its 0.1.5 README).
 authors:
   - given-names: Sacha
     family-names: Ichbiah
@@ -10,11 +12,11 @@ authors:
     family-names: Perez
   - given-names: Hervé
     family-names: Turlier
-version: 0.7.1
-date-released: 2026-10-26
+version: 0.8.0
+date-released: 2026-11-26
 license: GPL-3.0-or-later
 repository-code: "https://github.com/VirtualEmbryo/delaunay-watershed"
-url: "https://pypi.org/project/delaunay-watershed-3d/"
+url: "https://pypi.org/project/delaunay-watershed/"
 preferred-citation:
   type: article
   title: "Embryo mechanics cartography: inference of 3D force atlases from fluorescence microscopy"
@@ -38,3 +40,33 @@ preferred-citation:
   month: 12
   doi: "10.1038/s41592-023-02084-7"
   issn: "1548-7105"
+references:
+  - type: article
+    title: "Spatiotemporal mapping of the contractile and adhesive forces sculpting early C. elegans embryos"
+    notes: "Please cite it with the preferred citation; it is the reference of dw2d and of the 2-D inference."
+    authors:
+      - given-names: Kazunori
+        family-names: Yamamoto
+      - given-names: Sacha
+        family-names: Ichbiah
+      - given-names: Matthieu
+        family-names: Perez
+      - given-names: Joana
+        family-names: Borrego-Pinto
+      - given-names: Fabrice
+        family-names: Delbary
+      - given-names: Nathan W.
+        family-names: Goehring
+      - given-names: Paul
+        family-names: Northrop
+      - given-names: Hervé
+        family-names: Turlier
+      - given-names: Guillaume
+        family-names: Charras
+    journal: "Developmental Cell"
+    volume: 61
+    issue: 6
+    start: "1273"
+    end: "1288.e4"
+    year: 2026
+    doi: "10.1016/j.devcel.2026.04.013"

@@ -26,10 +26,14 @@ from scipy.spatial import Delaunay
 from dw3d import get_default_mesh_reconstruction_algorithm
 from dw3d.mesh_utilities import NO_TETRAHEDRON, _reorient_triangles, labeled_mesh_from_labeled_graph
 from dw3d.tesselation_graph import TesselationGraph
-from tests.conftest import IMAGE_NAMES, dataset_masks, load_image_or_skip
+from tests.conftest import IMAGE_NAMES, assert_every_mask_cell_is_meshed, dataset_masks, load_image_or_skip
 
 # The ten benchmark cases the defect was measured on, each cut at its mid-plane.
 CUT_BENCHMARK_CASES = [f"{i:03d}" for i in range(0, 47, 5)]
+# Cells the mid-plane cut leaves as a sliver with no tetrahedron in its voxels at `min_distance` 3, named unresolved:
+# case 000 keeps 65 of cell 2's 248 529 voxels (59 on the cut face), case 030 806 of cell 5's 92 147 (632 on it),
+# both with an inscribed radius of 1 voxel, the image box counted as a boundary.
+SUB_RESOLUTION_CELLS_OF_THE_CUT = {"000": (2,), "030": (5,)}
 
 
 def _zero_scores(edt_image, vertices, faces):  # noqa: ARG001 -- the score function's signature
@@ -157,7 +161,9 @@ def _border_triangles_not_into_their_cell(algorithm, triangles, labels) -> tuple
     return bad, total
 
 
-def _assert_cut_mask_is_wound_and_positive(points, triangles, labels, algorithm, mask, name: str) -> None:
+def _assert_cut_mask_is_wound_and_positive(points, triangles, labels, algorithm, mask, name: str,
+                                           sub_resolution=()) -> None:
+    assert_every_mask_cell_is_meshed(algorithm, labels, name, sub_resolution)
     bad, total = _border_triangles_not_into_their_cell(algorithm, triangles, labels)
     assert total > 0, f"{name}: no border triangle, so the cut is not under test"
     assert bad == 0, f"{name}: {bad} of {total} border triangles point out of their cell"
@@ -294,4 +300,5 @@ def test_every_closed_cell_is_positive_on_a_cut_benchmark_mask(case):
     if case not in found:
         pytest.skip("benchmarking-dataset not found (set BENCHMARKING_DATASET)")
     mask = _cut_at_mid_plane(tifffile.imread(found[case]))
-    _assert_cut_mask_is_wound_and_positive(*_reconstruct(mask), mask, f"benchmark {case} cut")
+    _assert_cut_mask_is_wound_and_positive(*_reconstruct(mask), mask, f"benchmark {case} cut",
+                                           SUB_RESOLUTION_CELLS_OF_THE_CUT.get(case, ()))

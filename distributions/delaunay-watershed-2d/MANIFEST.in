@@ -1,0 +1,5 @@
+# The source distribution carries dw2d's test suite whole: its tests, their reference data and the five masks
+# (data/two_dimensional/Masks, 0.5 MB) its golden master reads. Each is a symbolic link to the repository's copy.
+graft tests/two_dimensional
+graft data/two_dimensional/Masks
+global-exclude __pycache__/* *.py[cod] .DS_Store

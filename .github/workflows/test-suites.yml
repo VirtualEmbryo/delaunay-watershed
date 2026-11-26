@@ -1,13 +1,20 @@
+# The test suites of dw3d and dw2d, the packages of the distributions delaunay-watershed-3d and delaunay-watershed-2d,
+# which the metapackage delaunay-watershed installs together (all three built from this repository): both run in the
+# same jobs, installed through the metapackage (`pytest tests` collects dw2d's suite under tests/two_dimensional).
+# dw2d's suite also runs alone on Python 3.14, with delaunay-watershed-2d installed alone (jobs tests-two-dimensional-*,
+# at the end of this file), which checks that dw2d needs nothing of dw3d.
+#
 # The test suite on Linux, Python 3.12 and 3.13, with the newest releases of the dependencies
 # ("current", resolved when the job runs) and with the declared lower bounds pinned exactly
 # ("floor"). Python 3.13 has no wheel for some lower bounds (numpy 2.0.0, scipy 1.13.0,
-# scikit-image 0.23.1, edt 2.4.1, polyscope 2.2.0, matplotlib 3.8.4): its floor job pins the
+# scikit-image 0.23.1, edt 2.4.1, matplotlib 3.8.4): its floor job pins the
 # oldest release of each that has a CPython 3.13 wheel, and networkx 3.0, the lowest that
 # scikit-image 0.25.0 accepts.
 #
 # Four test modules import dw3d_benchmarks.mesh_quality_comparison, which imports foambryo. It
 # comes from PyPI (the newest release; 0.7.0 in the floor jobs) without its dependencies, after
-# the dependency check, so that it does not lift networkx above dw3d's own lower bound.
+# the dependency check, so that it does not lift networkx above dw3d's own lower bound; trimesh,
+# which foambryo imports and dw3d no longer needs, is installed with it (4.0.0 in the floor jobs).
 #
 # The suite runs without the datasets that live beside the repository in the development
 # workspace (benchmarking-dataset/, companion/, converged-meshes/), so the tests that need them
@@ -59,16 +66,18 @@ jobs:
           - python: "3.12"
             dependencies: floor
             pins: >-
+              iorec==1.4.1
               numpy==2.0.0 scipy==1.13.0 scikit-image==0.23.1 edt==2.4.1 meshio==5.3.5
-              trimesh==4.0.0 networkx==2.8 polyscope==2.2.0 matplotlib==3.8.4 foambryo==0.7.0
+              trimesh==4.0.0 networkx==2.8 polyscope==2.5.0 matplotlib==3.8.4 foambryo==0.7.0
           - python: "3.13"
             dependencies: current
             pins: ""
           - python: "3.13"
             dependencies: floor
             pins: >-
+              iorec==1.4.1
               numpy==2.1.0 scipy==1.14.1 scikit-image==0.25.0 edt==3.0.0 meshio==5.3.5
-              trimesh==4.0.0 networkx==3.0 polyscope==2.4.0 matplotlib==3.9.2 foambryo==0.7.0
+              trimesh==4.0.0 networkx==3.0 polyscope==2.5.0 matplotlib==3.9.2 foambryo==0.7.0
     env:
       PINS: ${{ matrix.pins }}
       JOB_LABEL: Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
@@ -87,9 +96,9 @@ jobs:
           set -euo pipefail
           printf '%s\n' ${PINS} > "${RUNNER_TEMP}/constraints.txt"
           python -m pip install --upgrade pip
-          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" ".[viewing]" pytest
+          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" . ./distributions/delaunay-watershed-2d "./distributions/delaunay-watershed[viewing]" pytest
           python -m pip check
-          python -m pip install --only-binary=:all: --no-deps --constraint "${RUNNER_TEMP}/constraints.txt" foambryo
+          python -m pip install --only-binary=:all: --no-deps --constraint "${RUNNER_TEMP}/constraints.txt" foambryo trimesh
           python -m pip freeze --all
       - name: Run the test suite
         run: |
@@ -101,6 +110,8 @@ jobs:
             python -c 'import importlib.metadata as m; print(", ".join(f"{p} {m.version(p)}" for p in ["numpy", "scipy", "scikit-image", "networkx", "foambryo"]))'
             echo
             tail -n 1 "${RUNNER_TEMP}/pytest-output.txt"
+            echo
+            python tests/count_the_results_per_package.py "${RUNNER_TEMP}/junit.xml"
           } >> "${GITHUB_STEP_SUMMARY}"
           exit "${status}"
       - name: The cross-machine checks ran; Qhull's cospherical choices are reported, any other skip fails
@@ -132,16 +143,18 @@ jobs:
           - python: "3.12"
             dependencies: floor
             pins: >-
+              iorec==1.4.1
               numpy==2.0.0 scipy==1.13.0 scikit-image==0.23.1 edt==2.4.1 meshio==5.3.5
-              trimesh==4.0.0 networkx==2.8 polyscope==2.2.0 matplotlib==3.8.4 foambryo==0.7.0
+              trimesh==4.0.0 networkx==2.8 polyscope==2.5.0 matplotlib==3.8.4 foambryo==0.7.0
           - python: "3.13"
             dependencies: current
             pins: ""
           - python: "3.13"
             dependencies: floor
             pins: >-
+              iorec==1.4.1
               numpy==2.1.0 scipy==1.14.1 scikit-image==0.25.0 edt==3.0.0 meshio==5.3.5
-              trimesh==4.0.0 networkx==3.0 polyscope==2.4.0 matplotlib==3.9.2 foambryo==0.7.0
+              trimesh==4.0.0 networkx==3.0 polyscope==2.5.0 matplotlib==3.9.2 foambryo==0.7.0
     env:
       PINS: ${{ matrix.pins }}
       JOB_LABEL: macOS arm64, Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
@@ -158,9 +171,9 @@ jobs:
           set -euo pipefail
           printf '%s\n' ${PINS} > "${RUNNER_TEMP}/constraints.txt"
           python -m pip install --upgrade pip
-          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" ".[viewing]" pytest
+          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" . ./distributions/delaunay-watershed-2d "./distributions/delaunay-watershed[viewing]" pytest
           python -m pip check
-          python -m pip install --only-binary=:all: --no-deps --constraint "${RUNNER_TEMP}/constraints.txt" foambryo
+          python -m pip install --only-binary=:all: --no-deps --constraint "${RUNNER_TEMP}/constraints.txt" foambryo trimesh
           python -m pip freeze --all
       - name: Run the test suite
         run: |
@@ -172,6 +185,8 @@ jobs:
             python -c 'import importlib.metadata as m; print(", ".join(f"{p} {m.version(p)}" for p in ["numpy", "scipy", "scikit-image", "networkx", "foambryo"]))'
             echo
             tail -n 1 "${RUNNER_TEMP}/pytest-output.txt"
+            echo
+            python tests/count_the_results_per_package.py "${RUNNER_TEMP}/junit.xml"
           } >> "${GITHUB_STEP_SUMMARY}"
           exit "${status}"
       - name: The cross-machine checks ran; Qhull's cospherical choices are reported, any other skip fails
@@ -185,3 +200,114 @@ jobs:
           # the tests on the stored tetrahedralisation included, or a module where no test ran, fails the job.
           python tests/report_cross_machine_checks.py "${RUNNER_TEMP}/junit.xml" "${GITHUB_STEP_SUMMARY}" \
             tests/test_canonical_tetrahedron_order.py tests/test_golden_master.py
+
+
+  # dw2d's suite alone on Python 3.14, which dw3d's suite is not run on: Linux here, macOS arm64 in the public
+  # repositories only (next job; see the header). Floor: the oldest release of each dependency that has a CPython
+  # 3.14 wheel on both platforms (checked on PyPI: numpy 2.3.2, scipy 1.16.1, scikit-image 0.26.0, edt 3.1.0,
+  # polyscope 2.6.0, matplotlib 3.10.5), and networkx 3.0, the lowest that scikit-image 0.26.0 accepts.
+  tests-two-dimensional:
+    name: dw2d, Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.14"
+            dependencies: current
+            pins: ""
+          - python: "3.14"
+            dependencies: floor
+            pins: >-
+              iorec==1.4.1
+              numpy==2.3.2 scipy==1.16.1 scikit-image==0.26.0 edt==3.1.0 meshio==5.3.5
+              networkx==3.0 polyscope==2.6.0 matplotlib==3.10.5
+    env:
+      PINS: ${{ matrix.pins }}
+      JOB_LABEL: dw2d, Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
+      MPLBACKEND: Agg
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_NO_INPUT: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: System libraries that Polyscope loads
+        run: sudo apt-get update -q && sudo apt-get install -y -q --no-install-recommends libgl1 libegl1
+      - name: Install the package and pytest
+        run: |
+          set -euo pipefail
+          printf '%s\n' ${PINS} > "${RUNNER_TEMP}/constraints.txt"
+          python -m pip install --upgrade pip
+          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" "./distributions/delaunay-watershed-2d[viewing]" pytest
+          python -m pip check
+          python -m pip freeze --all
+      - name: Run dw2d's test suite
+        run: |
+          set -uo pipefail
+          python -m pytest -q -rs -p no:cacheprovider --junitxml "${RUNNER_TEMP}/junit.xml" tests/two_dimensional 2>&1 | tee "${RUNNER_TEMP}/pytest-output.txt"
+          status=${PIPESTATUS[0]}
+          {
+            echo "### ${JOB_LABEL}"
+            python -c 'import importlib.metadata as m; print(", ".join(f"{p} {m.version(p)}" for p in ["numpy", "scipy", "scikit-image", "networkx", "matplotlib"]))'
+            echo
+            tail -n 1 "${RUNNER_TEMP}/pytest-output.txt"
+            echo
+            python tests/count_the_results_per_package.py "${RUNNER_TEMP}/junit.xml"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
+
+  tests-two-dimensional-macos:
+    name: dw2d, macOS arm64, Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
+    # Public repositories only (see the header); the steps and pins are tests-two-dimensional's, without the apt step.
+    if: ${{ !github.event.repository.private }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python: "3.14"
+            dependencies: current
+            pins: ""
+          - python: "3.14"
+            dependencies: floor
+            pins: >-
+              iorec==1.4.1
+              numpy==2.3.2 scipy==1.16.1 scikit-image==0.26.0 edt==3.1.0 meshio==5.3.5
+              networkx==3.0 polyscope==2.6.0 matplotlib==3.10.5
+    env:
+      PINS: ${{ matrix.pins }}
+      JOB_LABEL: dw2d, macOS arm64, Python ${{ matrix.python }}, ${{ matrix.dependencies }} dependencies
+      MPLBACKEND: Agg
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PIP_NO_INPUT: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the package and pytest
+        run: |
+          set -euo pipefail
+          printf '%s\n' ${PINS} > "${RUNNER_TEMP}/constraints.txt"
+          python -m pip install --upgrade pip
+          python -m pip install --only-binary=:all: --constraint "${RUNNER_TEMP}/constraints.txt" "./distributions/delaunay-watershed-2d[viewing]" pytest
+          python -m pip check
+          python -m pip freeze --all
+      - name: Run dw2d's test suite
+        run: |
+          set -uo pipefail
+          python -m pytest -q -rs -p no:cacheprovider --junitxml "${RUNNER_TEMP}/junit.xml" tests/two_dimensional 2>&1 | tee "${RUNNER_TEMP}/pytest-output.txt"
+          status=${PIPESTATUS[0]}
+          {
+            echo "### ${JOB_LABEL}"
+            python -c 'import importlib.metadata as m; print(", ".join(f"{p} {m.version(p)}" for p in ["numpy", "scipy", "scikit-image", "networkx", "matplotlib"]))'
+            echo
+            tail -n 1 "${RUNNER_TEMP}/pytest-output.txt"
+            echo
+            python tests/count_the_results_per_package.py "${RUNNER_TEMP}/junit.xml"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"

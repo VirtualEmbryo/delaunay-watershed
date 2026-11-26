@@ -9,18 +9,29 @@ Sacha Ichbiah 2021
 Matthieu Perez 2024
 """
 
+import inspect
 import warnings
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy.typing import NDArray
 
-from dw3d.crop_faces import CropFaceReport, classify_crop_faces, normalise_physical_image_faces
+from dw3d.crop_faces import (
+    IMAGE_FACES,
+    CropFaceReport,
+    cells_on_each_image_face,
+    classify_crop_faces,
+    normalise_physical_image_faces,
+)
 from dw3d.enclosed_media import (
+    NO_TETRAHEDRON_IN_ITS_VOXELS,
+    NO_TRIANGLE_IN_THE_MESH,
+    NO_WATERSHED_SEED,
+    REMOVED_BY_MESH_SURGERY,
     EnclosedMediumReport,
     EnclosedMediumWarning,
     MediumPieces,
@@ -45,7 +56,22 @@ from dw3d.nearest_neighbours import nearest_with_ties_to_the_lowest_index
 from dw3d.segmentation import extract_seed_coords_and_indices
 from dw3d.tesselation import canonical_tetrahedron_order
 from dw3d.tesselation_graph import TesselationGraph
+from dw3d.thin_medium_margins import (
+    ThinMediumMarginWarning,
+    cell_margin_to_face,
+    face_margins,
+    needs_padding,
+    padding_of_thin_margins,
+    thin_margin_bound,
+    unsupported_border_triangles,
+)
+from dw3d.thin_medium_margins import warning_message as thin_margin_message
 from dw3d.watershed import seeded_watershed_map
+
+if TYPE_CHECKING:  # imported lazily at run time
+    from dw2d.reports import JunctionRelocationReport as PlanarJunctionRelocationReport
+    from dw3d.cell_volume_agreement import CellVolumeReport
+    from dw3d.junction_relocation import JunctionRelocationReport
 
 # segmentation mask -> EDT image
 EdtCreationFunction = Callable[[NDArray[np.uint]], NDArray[np.float64]]
@@ -93,7 +119,19 @@ ScoreComputationFunction = Callable[[NDArray[np.float64], NDArray[np.float64], N
 
 
 class MeshReconstructionAlgorithm:
-    """Algorithm that builds a multimaterial surface mesh from a 3-D segmentation mask.
+    """Algorithm that builds a multimaterial surface mesh from a 3-D segmentation mask (and a 2-D mesh from a 2-D one).
+
+    **A 2-D mask** given to `construct_mesh_from_segmentation_mask` or `construct_mesh_in_physical_units` is meshed by
+    dw2d (imported then, on first use): the algorithm builds a `dw2d.MeshReconstructionAlgorithm` from its settings
+    that have a 2-D meaning (`min_distance`, junction relocation, canonical order, `print_info`) and returns dw2d's
+    `(points (n, 2), segments (m, 2), labels (m, 2))`. Until the object meets a 3-D mask again, `last_constructed_mesh`,
+    `last_compressed_segmentation`, `save_to_rec_mesh`, `relocation_report`, `cut_cells` and `medium_labels` are dw2d's,
+    `two_dimensional_algorithm` is that object, and the 3-D-only reports (`crop_faces`, `crop_face_report`,
+    `cell_volume_report`, `enclosed_medium_report`) are `None`. `min_distance` is the one given to the factory, or
+    dw2d's default (4 pixels) when none was given (`requested_min_distance`). A configuration with no 2-D meaning
+    (boundary-layer, junction-protected or link-checked placement, another EDT, tesselation or face score, physical
+    image faces, mesh surgery off) raises `ValueError` naming it; the default (dithered) and the deterministic
+    placements are both meshed by dw2d's placement, which has no dither. See `_mask_dimension` for the input checks.
 
     Build one with `dw3d.MeshReconstructionAlgorithmFactory` (or one of its `get_*_algorithm`
     methods) rather than by calling the constructor. The same object can reconstruct several
@@ -124,6 +162,7 @@ class MeshReconstructionAlgorithm:
         physical_image_faces: tuple[str, ...] = (),
         canonical_tetrahedron_order: bool = True,
         label_enclosed_media: bool = True,
+        pad_thin_medium_margins: bool = True,
     ) -> None:
         """Set the methods used by this algorithm to reconstruct a mesh from a segmentation mask.
 
@@ -188,6 +227,17 @@ class MeshReconstructionAlgorithm:
                 region is seeded in a neighbour. A mask with no pocket at or above the bound, one exterior piece
                 and every seed already inside its label is reconstructed bitwise as before. See
                 `dw3d.enclosed_media`.
+            pad_thin_medium_margins (bool): Whether a mask whose first mesh has a vertex on a face of the image box
+                that no cell reaches is meshed again, padded with label 0 on every such face whose margin is below
+                `2 * min_distance + 2` voxels, up to that margin; the mesh is returned in the mask's frame and
+                `medium_margin_padding` says which faces were padded. **Defaults to `True` since 0.8.0.**
+                Before, a cell a few voxels from the image box could take the medium between them (a 12-voxel cube
+                with a margin of 4 voxels meshed to 2.98 times its voxel count, at `min_distance` 3). A mask whose
+                first mesh has no such vertex is meshed bitwise as before. `False` reproduces 0.7's meshes. A cell
+                left with triangles on a face its voxels do not reach (a face a cell reaches is never padded) is named
+                by `ThinMediumMarginWarning`. See `dw3d.thin_medium_margins`. `construct_mesh_in_physical_units`
+                does not pad a mask it resamples (voxels longer along one axis) unless asked to: see its
+                `pad_thin_medium_margins`.
         """
         self.print_info = print_info
         self.edt_creation_function = edt_creation_function
@@ -198,6 +248,10 @@ class MeshReconstructionAlgorithm:
         self.relocate_junctions = relocate_junctions
         self.canonical_tetrahedron_order = canonical_tetrahedron_order
         self.label_enclosed_media = label_enclosed_media
+        self.pad_thin_medium_margins = pad_thin_medium_margins
+        self._padding_off_on_the_resampled_route = False
+        self._medium_margin_padding: dict[str, int] | None = None
+        self._mask_shape: tuple[int, ...] | None = None
         self._enclosed_medium_report: EnclosedMediumReport | None = None
         self._medium_pieces: MediumPieces | None = None
         self._relocation_report = None
@@ -212,6 +266,10 @@ class MeshReconstructionAlgorithm:
         self._physical_frame: dict | None = None
 
         self._first_computation_done = False
+        # Set by the factory: the min_distance the caller gave, None when left at the default (used for a 2-D mask).
+        self.requested_min_distance: int | None = None
+        # The dw2d algorithm that meshed the last mask, when it was 2-D; None after a 3-D mask.
+        self._two_dimensional = None
 
     def construct_mesh_from_segmentation_mask(
         self,
@@ -247,8 +305,58 @@ class MeshReconstructionAlgorithm:
                 voxel count (see `cell_volume_report`).
             AbnormalEdgeWarning: once, when the finished mesh has abnormal non-manifold edges, with
                 their number and the configuration.
+            UnresolvedCellWarning: once, when a label of the mask is absent from the finished mesh,
+                whatever the cause, naming each such region (see `enclosed_medium_report.unresolved`). Since 0.8.0
+                this includes a cell too small to hold a tetrahedron, and a mask whose mesh has no triangle at all
+                (it is returned empty, `(0, 3)` triangles); before, both raised `AxisError`.
+            ThinMediumMarginWarning: once, when a cell's mesh lies on a face of the image box that its voxels do
+                not reach and that could not be padded (see `pad_thin_medium_margins`), naming each such cell, the
+                face and its margin.
+
+        A mask whose first mesh has a vertex on an image face that no cell reaches is meshed a second time, padded
+        with label 0 on the faces no cell reaches (`pad_thin_medium_margins`, `medium_margin_padding`); the mesh, the
+        reports and `last_compressed_segmentation` are in the mask's frame either way.
+
+        Raises:
+            ValueError: for a mask that is neither 2-D nor 3-D, or a 3-D mask with an axis of length 1 (pass
+                `mask[0]`); for a 2-D mask, a configuration with no 2-D meaning (see the class docstring).
+            ImportError: for a 2-D mask when dw2d is not installed (`pip install delaunay-watershed`).
         """
+        if _mask_dimension(segmented_image) == 2:
+            return self._mesh_in_two_dimensions(segmented_image)
+        self._two_dimensional = None
         self._physical_frame = None
+        self._medium_margin_padding = {}
+        self._mask_shape = tuple(int(n) for n in np.shape(segmented_image))
+        self._mesh_up_to_surgery(segmented_image)
+        widths = self._padding_of_thin_medium_margins(segmented_image)
+        if widths is not None:
+            # The first mesh is discarded before anything about it was reported or warned.
+            self._mesh_up_to_surgery(np.pad(np.asarray(segmented_image), widths, constant_values=0), widths)
+        self._report_enclosed_media()
+        self._check_for_abnormal_edges()
+        self._classify_crop_faces()
+        self._relocate_junctions()
+        self._compare_cell_volumes_with_mask()
+        self._name_the_regions_absent_from_the_mesh()
+        if widths is not None:
+            self._return_to_the_frame_of_the_mask(widths)
+        self._name_the_cells_left_on_the_image_box(segmented_image)
+
+        self._first_computation_done = True
+        return self.last_constructed_mesh
+
+    def _mesh_up_to_surgery(
+        self,
+        segmented_image: NDArray[np.uint],
+        padding: tuple[tuple[int, int], ...] | None = None,
+    ) -> None:
+        """Run the reconstruction from the mask to the mesh after surgery, which nothing has reported on yet.
+
+        `padding`: the `numpy.pad` widths when `segmented_image` is the mask padded with medium (thin margins), passed
+        to a point placement that takes `dither_padding`, so that the mask's voxels keep the dither they have unpadded
+        and the mesh changes only near the padded faces (`dw3d.points_on_edt._dithered`).
+        """
         min_distance = self.placement_min_distance
         self._segmented_image, self._enclosed_medium_report, self._medium_pieces = label_enclosed_media(
             segmented_image,
@@ -258,7 +366,10 @@ class MeshReconstructionAlgorithm:
 
         self._edt_image = self.edt_creation_function(self._segmented_image)
 
-        placed = self.point_placing_function(self._segmented_image, self._edt_image)
+        if padding is not None and "dither_padding" in inspect.signature(self.point_placing_function).parameters:
+            placed = self.point_placing_function(self._segmented_image, self._edt_image, **{"dither_padding": padding})
+        else:
+            placed = self.point_placing_function(self._segmented_image, self._edt_image)
         # A point-placing scheme may return a third element, the per-point weights for a
         # regular (weighted) triangulation (junction protection), and a fourth, the
         # point metadata that keeps scaffolding points out of the extracted surface (the
@@ -312,6 +423,10 @@ class MeshReconstructionAlgorithm:
         if self._enclosed_medium_report is not None:
             self._enclosed_medium_report.exterior_seeds_changed = self._seeds_coords is not library_seeds
         self._watershed_seeded()
+        # Before surgery relabels anything: `_name_the_regions_absent_from_the_mesh` reports these counts.
+        self._tetrahedra_after_the_watershed = {
+            int(label): len(nodes) for label, nodes in self._map_label_to_nodes_ids.items()
+        }
 
         self._points, self._triangles, self._labels = labeled_mesh_from_labeled_graph(
             self._tesselation_graph,
@@ -319,14 +434,106 @@ class MeshReconstructionAlgorithm:
         )
 
         self._mesh_surgery()
-        self._report_enclosed_media()
-        self._check_for_abnormal_edges()
-        self._classify_crop_faces()
-        self._relocate_junctions()
-        self._compare_cell_volumes_with_mask()
 
-        self._first_computation_done = True
-        return self.last_constructed_mesh
+    def _padding_of_thin_medium_margins(self, segmented_image: NDArray[np.uint]) -> tuple[tuple[int, int], ...] | None:
+        """The label-0 padding that keeps the cells off image faces they do not reach, or `None` when none is needed.
+
+        Reads the mesh after surgery (before junction relocation, so its vertices are still on the voxel lattice).
+        See `dw3d.thin_medium_margins.needs_padding` and `padding_of_thin_margins`; `None` too when
+        `pad_thin_medium_margins` is off.
+        """
+        if not self.pad_thin_medium_margins:
+            return None
+        cells_on_faces = cells_on_each_image_face(segmented_image)
+        if not needs_padding(self._points, self._triangles, cells_on_faces, self._mask_shape):
+            return None
+        return padding_of_thin_margins(
+            face_margins(segmented_image),
+            cells_on_faces,
+            thin_margin_bound(self.placement_min_distance),
+        )
+
+    def _return_to_the_frame_of_the_mask(self, widths: tuple[tuple[int, int], ...]) -> None:
+        """Translate a mesh built on the padded mask, and what refers to that frame, back into the mask's frame.
+
+        The points move by minus the low padding of each axis. The watershed seeds kept for the compressed
+        segmentation move too; a seed of label 0 that lay in the padding is put on the nearest voxel of the mask,
+        which is label 0 (a padded face is one no cell reaches). The crop-face report gets the mask's shape; its
+        image faces keep their names. `medium_margin_padding` records the padding.
+        """
+        low = np.array([pair[0] for pair in widths], dtype=np.int64)
+        self._points = self._points - low.astype(self._points.dtype)
+        seeds = np.asarray(self._compressed_seeds, dtype=np.int64) - low
+        seeds = np.clip(seeds, 0, np.array(self._mask_shape, dtype=np.int64) - 1)
+        self._compressed_seeds = seeds.astype(np.asarray(self._compressed_seeds).dtype)
+        if self._crop_face_report is not None:
+            self._crop_face_report = replace(self._crop_face_report, image_shape=self._mask_shape)
+        self._medium_margin_padding = {
+            IMAGE_FACES[2 * axis + side]: int(width)
+            for axis, pair in enumerate(widths)
+            for side, width in enumerate(pair)
+            if width
+        }
+        if self.print_info:
+            print(f"Thin medium margins: the mask was padded with medium on {self._medium_margin_padding} (voxels)")
+
+    def _name_the_cells_left_on_the_image_box(self, segmented_image: NDArray[np.uint]) -> None:
+        """Warn once, naming each cell whose mesh lies on an image face its voxels do not reach (after any padding).
+
+        Reads the crop-face report of the finished mesh. See `dw3d.thin_medium_margins.ThinMediumMarginWarning`.
+        """
+        report = self._crop_face_report
+        if report is None:
+            return
+        unsupported = unsupported_border_triangles(report)
+        if not unsupported.any():
+            return
+        from dw3d.cell_volume_agreement import mesh_cell_volumes
+
+        bound = thin_margin_bound(self.placement_min_distance)
+        named = []
+        # Each named cell's mesh volume over its voxel count, on the same arrays as `cell_volume_report`.
+        volumes = mesh_cell_volumes(self._points, self._triangles, self._labels)
+        voxels: dict[int, int] = {}
+        pairs = {
+            (int(cell), int(face))
+            for cell, face in zip(
+                np.asarray(self._labels)[unsupported].max(axis=1),
+                report.image_face_of_triangle[unsupported],
+                strict=True,
+            )
+        }
+        for cell, face_index in sorted(pairs):
+            face = IMAGE_FACES[face_index]
+            margin = cell_margin_to_face(segmented_image, cell, face)
+            if report.cells_on_image_faces[face_index]:
+                why = "not padded: cells reach that face, which is a crop"
+            elif getattr(self, "_padding_off_on_the_resampled_route", False):
+                why = ("not padded: off by default on a resampled mask, pass pad_thin_medium_margins=True to "
+                       "construct_mesh_in_physical_units")
+            elif not self.pad_thin_medium_margins:
+                why = "not padded: pad_thin_medium_margins is off"
+            elif face in self._medium_margin_padding:
+                why = f"after padding that face by {self._medium_margin_padding[face]} voxels"
+            else:
+                why = f"not padded: the face's margin is already {bound} voxels or more"
+            if cell not in voxels:
+                voxels[cell] = int(np.count_nonzero(np.asarray(self._segmented_image) == cell))
+            ratio = volumes.get(cell, 0.0) / voxels[cell] if voxels[cell] else float("nan")
+            named.append((cell, face, margin, why, ratio))
+        warnings.warn(thin_margin_message(named), ThinMediumMarginWarning, stacklevel=3)
+
+    @property
+    def medium_margin_padding(self) -> dict[str, int] | None:
+        """The label-0 padding the last reconstruction added to the mask's image faces, in voxels, by face name.
+
+        Empty when the mask was meshed as given (the common case); `None` before any reconstruction. After a 2-D mask,
+        dw2d's (sides, in pixels). Faces are padded only when the first mesh had a vertex on an image face no cell
+        reaches; see `dw3d.thin_medium_margins` and `pad_thin_medium_margins`.
+        """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.medium_margin_padding
+        return getattr(self, "_medium_margin_padding", None)
 
     def construct_mesh_in_physical_units(
         self,
@@ -336,6 +543,7 @@ class MeshReconstructionAlgorithm:
         resampling: str = "shape",
         spacing_unit: str | None = None,
         axis_order: str = "zyx",
+        pad_thin_medium_margins: bool | None = None,
     ) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
         """Build a mesh, in physical units, from a mask whose voxels may be longer along one axis.
 
@@ -350,8 +558,8 @@ class MeshReconstructionAlgorithm:
         cells at a real cell size, down-sampled along z, against the same tissues meshed at full resolution,
         meshing the native grid costs +1.38, +1.97 and +4.10 degrees of contact-angle error at `k = 5/3`, 2 and 3
         (`k` = long spacing / short spacing), and resampling first +0.83, +0.71 and +1.17 (on dw3d 0.7.0's meshes,
-        not measured again for 0.7.1); see `dw3d.mask_preprocessing`. The cost is that
-        of a mask acquired at the short spacing: `k` times the voxels.
+        before 0.8.0 pads thin margins of medium on the native grid; not measured again); see
+        `dw3d.mask_preprocessing`. The cost is that of a mask acquired at the short spacing: `k` times the voxels.
 
         The reports (`crop_faces`, `cut_cells`, `crop_face_report`, `cell_volume_report`, `relocation_report`)
         describe the mesh on the resampled cubic grid, in its voxel units, before the scaling.
@@ -373,6 +581,15 @@ class MeshReconstructionAlgorithm:
             resampling (str, optional): `"shape"` (default) or `"nearest"`; see `dw3d.mask_preprocessing`.
             spacing_unit (str | None, optional): the unit of `spacing` (e.g. `"um"`), recorded, not used.
             axis_order (str, optional): what the mask's axes are, recorded, not used. Defaults to `"zyx"`.
+            pad_thin_medium_margins (bool | None, optional): whether thin medium margins are padded (see the class's
+                option of that name), for this call only. `None` (default): this algorithm's setting for cubic
+                voxels, and **off for a mask that is resampled** (voxels longer along one axis). Measured on a
+                four-cell ball with voxels twice as long along z, over dither seeds 42-141: with the padding a cell
+                kept less than half its voxel volume on 20 of 100 seeds, without it on 3 of 100 (McNemar exact
+                p = 1.5e-5; on cubic voxels 13 against 10, p = 0.51); the cell is lost in the watershed, by a
+                mechanism not yet found. Unpadded, a cell a few voxels from a face of the image box may take the
+                medium between them, and `ThinMediumMarginWarning` names it. For a 2-D mask, `None` keeps this
+                algorithm's setting.
 
         Returns:
             tuple: `(points, triangles, labels)` as `construct_mesh_from_segmentation_mask` returns them, the points in
@@ -390,6 +607,33 @@ class MeshReconstructionAlgorithm:
             CellVolumeDisagreementWarning: as in `construct_mesh_from_segmentation_mask`.
             AbnormalEdgeWarning: as in `construct_mesh_from_segmentation_mask`.
         """
+        configured = self.pad_thin_medium_margins
+        try:
+            if _mask_dimension(segmented_image) == 2:
+                if pad_thin_medium_margins is not None:
+                    self.pad_thin_medium_margins = bool(pad_thin_medium_margins)
+                return self._mesh_in_two_dimensions(
+                    segmented_image,
+                    spacing=spacing,
+                    spacing_unit=spacing_unit,
+                    axis_order="yx" if axis_order == "zyx" else axis_order,
+                )
+            return self._mesh_in_physical_units(segmented_image, spacing, resampling, spacing_unit, axis_order,
+                                                pad_thin_medium_margins)
+        finally:
+            self.pad_thin_medium_margins = configured
+            self._padding_off_on_the_resampled_route = False
+
+    def _mesh_in_physical_units(
+        self,
+        segmented_image: NDArray[np.uint],
+        spacing: tuple[float, float, float],
+        resampling: str,
+        spacing_unit: str | None,
+        axis_order: str,
+        pad_thin_medium_margins: bool | None,
+    ) -> tuple[NDArray[np.float64], NDArray[np.uint], NDArray[np.uint]]:
+        """`construct_mesh_in_physical_units` for a 3-D mask; the caller restores `pad_thin_medium_margins`."""
         from dw3d.mask_preprocessing import (
             MEASURED_ANISOTROPY_RATIO_MAX,
             SPACING_RELATIVE_TOLERANCE,
@@ -400,13 +644,18 @@ class MeshReconstructionAlgorithm:
         )
 
         found = coarse_axis_and_factor(spacing)
+        if pad_thin_medium_margins is not None:
+            self.pad_thin_medium_margins = bool(pad_thin_medium_margins)
+        elif found is not None and self.pad_thin_medium_margins:
+            self.pad_thin_medium_margins = False
+            self._padding_off_on_the_resampled_route = True
         if found is not None and found[1] > MEASURED_ANISOTROPY_RATIO_MAX * (1 + SPACING_RELATIVE_TOLERANCE):
             warnings.warn(
                 f"voxels {found[1]:.3g} times longer along axis {found[0]} than along the other two: the accuracy of "
                 f"meshing after resampling was measured up to a ratio of {MEASURED_ANISOTROPY_RATIO_MAX:g} only "
                 "(on larger cells the contact-angle error kept growing above it). The mesh is built anyway.",
                 UnmeasuredAnisotropyWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
         cubic = resample_to_isotropic(segmented_image, spacing, method=resampling)
         h = isotropic_spacing(spacing)
@@ -467,6 +716,8 @@ class MeshReconstructionAlgorithm:
             `construct_mesh_from_segmentation_mask` returned; all `False` when no cell of the
             mask reaches a crop image face. `None` before the first reconstruction.
         """
+        if self._two_dimensional is not None:
+            return None
         return None if self._crop_face_report is None else self._crop_face_report.crop_faces
 
     @property
@@ -480,11 +731,15 @@ class MeshReconstructionAlgorithm:
             tuple[int, ...] | None: sorted labels; empty when nothing is cut; `None` before the
             first reconstruction.
         """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.cut_cells
         return None if self._crop_face_report is None else self._crop_face_report.cut_cells
 
     @property
     def crop_face_report(self) -> CropFaceReport | None:
         """The crop faces, the image face of each border triangle and the cut cells; `None` before a reconstruction."""
+        if self._two_dimensional is not None:
+            return None
         return self._crop_face_report
 
     def _rec_crop_metadata(self) -> dict | None:
@@ -499,9 +754,9 @@ class MeshReconstructionAlgorithm:
 
         `media` lists every medium label, 0 first; `enclosed_media_voxels` and `enclosed_media_inscribed_radius`
         are aligned with the enclosed ones (the labels after 0). `unresolved_regions` lists the labels of the mask
-        absent from the mesh because no tetrahedron lies in their voxels, `unresolved_regions_voxels` their voxel
-        counts. Each is written only when it has an entry, so a file with neither is byte for byte what it was
-        before 0.7.1.
+        absent from the mesh, whatever the cause (`enclosed_medium_report.unresolved`; before 0.8.0 only those with
+        no tetrahedron in their voxels), `unresolved_regions_voxels` their voxel counts. Each is written only when it
+        has an entry, so a file with neither is byte for byte what it was before 0.7.1.
         """
         report = self._enclosed_medium_report
         if report is None or not (report.media or report.unresolved):
@@ -525,6 +780,8 @@ class MeshReconstructionAlgorithm:
                 the cells (`pockets_left_to_cells`, each with the cell that took it), the exterior pieces seeded,
                 the size bound, and the labels whose seed had no tetrahedron in their own voxels.
         """
+        if self._two_dimensional is not None:
+            return None
         return self._enclosed_medium_report
 
     @property
@@ -534,6 +791,8 @@ class MeshReconstructionAlgorithm:
         Returns:
             tuple[int, ...]: ascending after 0. A mask without label 0 has no 0 here.
         """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.medium_labels
         report = self._enclosed_medium_report
         return (0,) if report is None else report.medium_labels
 
@@ -648,7 +907,7 @@ class MeshReconstructionAlgorithm:
             warnings.warn(disagreement_message(self._cell_volume_report), CellVolumeDisagreementWarning, stacklevel=3)
 
     @property
-    def cell_volume_report(self):  # noqa: ANN201 -- CellVolumeReport | None, imported lazily
+    def cell_volume_report(self) -> "CellVolumeReport | None":
         """The cells of the last constructed mesh whose volume disagrees with their voxel count.
 
         A cell is listed when its mesh volume over its voxel count is outside `[0.5, 1.5]`, when its
@@ -660,6 +919,8 @@ class MeshReconstructionAlgorithm:
             dw3d.cell_volume_agreement.CellVolumeReport | None: the listed cells with their voxel
                 count, mesh volume, ratio and reason, or `None` before the first reconstruction.
         """
+        if self._two_dimensional is not None:
+            return None
         return self._cell_volume_report
 
     @property
@@ -702,14 +963,16 @@ class MeshReconstructionAlgorithm:
         }
 
     @property
-    def relocation_report(self):  # noqa: ANN201 -- JunctionRelocationReport | None, imported lazily
+    def relocation_report(self) -> "JunctionRelocationReport | PlanarJunctionRelocationReport | None":
         """What the junction relocation did on the last constructed mesh, or `None` if it was off.
 
         Returns:
-            dw3d.junction_relocation.JunctionRelocationReport | None: the accepted and refused move
-                counts, the displacement distribution, and the whole-mesh self-intersection count
-                before and after.
+            dw3d.junction_relocation.JunctionRelocationReport | dw2d.JunctionRelocationReport | None: the
+                accepted and refused move counts, the displacement distribution, and the whole-mesh
+                self-intersection count before and after (for a 2-D mask, the 2-D algorithm's report).
         """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.relocation_report
         return self._relocation_report
 
     def _watershed_seeded(self) -> None:
@@ -728,13 +991,12 @@ class MeshReconstructionAlgorithm:
         if report is not None:
             report.moved_seeds = moved
             report.min_distance = self.placement_min_distance
-            if dropped:
-                report.unresolved = tuple(
-                    UnresolvedRegion(label, int(np.count_nonzero(self._segmented_image == label)),
-                                     _region_kind(label, report))
-                    for label in dropped
-                )
-                warnings.warn(unresolved_message(report), UnresolvedCellWarning, stacklevel=3)
+            # Named here, warned once with every other absent region by `_name_the_regions_absent_from_the_mesh`.
+            report.unresolved = tuple(
+                UnresolvedRegion(label, int(np.count_nonzero(self._segmented_image == label)),
+                                 _region_kind(label, report), NO_TETRAHEDRON_IN_ITS_VOXELS)
+                for label in dropped
+            )
 
         nx_graph = self._tesselation_graph.to_networkx_graph()
         self._map_label_to_nodes_ids, self._map_node_id_to_label = seeded_watershed_map(
@@ -745,6 +1007,51 @@ class MeshReconstructionAlgorithm:
 
         if self.print_info:
             print(f"Watershed done in {perf_counter() - t1:.3} seconds.")
+
+    def _name_the_regions_absent_from_the_mesh(self) -> None:
+        """Name every label of the meshed mask that no triangle of the finished mesh carries, and warn once.
+
+        Runs last, after the cell-volume comparison, whose report already lists the absent cells; the media
+        (label 0 and the enclosed media) are checked against the mesh's labels. A region whose seed was dropped is
+        in `enclosed_medium_report.unresolved` already; every other absent region is added with its cause:
+        `"removed by mesh surgery"` when the watershed gave it tetrahedra and surgery relabelled them all (the
+        watershed's whole-group hand-over can leave a region only its seed tetrahedron: the rest of it, grouped
+        without the seed, goes to the first seeded neighbour it reaches), `"no watershed seed"`, or
+        `"no triangle in the mesh"`. Changes nothing in the mesh.
+        """
+        from dw3d.cell_volume_agreement import ABSENT
+
+        report = self._enclosed_medium_report
+        if report is None:
+            return
+        named = set(report.dropped_seeds)
+        cells = () if self._cell_volume_report is None else self._cell_volume_report.cells
+        absent = {int(cell["label"]): int(cell["voxels"]) for cell in cells
+                  if cell["reason"] == ABSENT and int(cell["label"]) not in named}
+        in_mesh = {int(label) for label in np.unique(self._labels)}
+        for medium in report.medium_labels:
+            if medium not in in_mesh and medium not in named:
+                absent[int(medium)] = int(np.count_nonzero(self._segmented_image == medium))
+        if absent:
+            centroids = self._tesselation_graph.compute_nodes_centroids()
+            shape = np.array(self._segmented_image.shape)
+            voxel = np.clip(np.rint(centroids).astype(np.int64), 0, shape - 1)
+            centred = self._segmented_image[tuple(voxel.T)]
+            added = []
+            for label in sorted(absent):
+                after = int(self._tetrahedra_after_the_watershed.get(label, 0))
+                now = len(self._map_label_to_nodes_ids.get(label, ()))
+                if now:
+                    cause = NO_TRIANGLE_IN_THE_MESH
+                elif after:
+                    cause = REMOVED_BY_MESH_SURGERY
+                else:
+                    cause = NO_WATERSHED_SEED
+                added.append(UnresolvedRegion(label, absent[label], _region_kind(label, report), cause, after,
+                                              int(np.count_nonzero(centred == label))))
+            report.unresolved = tuple(sorted((*report.unresolved, *added), key=lambda region: region.label))
+        if report.unresolved:
+            warnings.warn(unresolved_message(report), UnresolvedCellWarning, stacklevel=3)
 
     def _mesh_surgery(self) -> None:
         """Try to detect and fix mesh problems while we have all the Watershed data."""
@@ -837,9 +1144,75 @@ class MeshReconstructionAlgorithm:
         """The last mesh built, `(points, triangles, labels)`, after any later scaling or centring.
 
         These are the algorithm's own arrays, not copies: modifying them modifies the mesh that
-        `save_to_rec_mesh` and `save_to_vtk_mesh` write.
+        `save_to_rec_mesh` and `save_to_vtk_mesh` write. After a 2-D mask, dw2d's `(points, segments, labels)`.
         """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.last_constructed_mesh
         return self._points, self._triangles, self._labels
+
+    @property
+    def two_dimensional_algorithm(self):  # noqa: ANN201 -- dw2d.MeshReconstructionAlgorithm | None, imported lazily
+        """The `dw2d.MeshReconstructionAlgorithm` that meshed the last mask when it was 2-D, else `None`."""
+        return self._two_dimensional
+
+    def _mesh_in_two_dimensions(self, mask: NDArray, **physical: Any) -> tuple[NDArray, NDArray, NDArray]:
+        """Mesh a 2-D mask with dw2d, configured from this algorithm's settings that have a 2-D meaning."""
+        refused = self._settings_without_a_two_dimensional_meaning()
+        if refused:
+            error = (
+                "a 2-D mask is meshed by dw2d, which has no counterpart of this algorithm's "
+                f"{'; '.join(refused)}. Use dw3d.get_default_mesh_reconstruction_algorithm() or dw2d's own factory "
+                "(dw2d.MeshReconstructionAlgorithmFactory) for a 2-D mask."
+            )
+            raise ValueError(error)
+        try:
+            import dw2d
+        except ImportError as missing:
+            error = "a 2-D mask is meshed by dw2d, which is not installed: pip install delaunay-watershed"
+            raise ImportError(error) from missing
+        factory = dw2d.MeshReconstructionAlgorithmFactory(print_info=self.print_info)
+        if self.requested_min_distance is not None:
+            factory.set_peak_local_points_placement_method(self.requested_min_distance)
+        factory.set_junction_relocation(self.relocate_junctions).set_canonical_triangle_order(
+            self.canonical_tetrahedron_order,
+        )
+        algorithm = factory.make_algorithm()
+        algorithm.pad_thin_medium_margins = self.pad_thin_medium_margins
+        if physical:
+            mesh = algorithm.construct_mesh_in_physical_units(mask, **physical)
+        else:
+            mesh = algorithm.construct_mesh_from_segmentation_mask(mask)
+        self._two_dimensional = algorithm
+        return mesh
+
+    def _settings_without_a_two_dimensional_meaning(self) -> list[str]:
+        """The settings of this algorithm that dw2d cannot honour, described for an error message."""
+        from dw3d.edt import compute_edt_classical
+        from dw3d.points_on_edt import peak_local_points, peak_local_points_dithered
+        from dw3d.score_computation import compute_scores_by_max_value
+        from dw3d.tesselation import simple_delaunay_tesselation
+
+        refused = []
+        placement = getattr(self.point_placing_function, "func", self.point_placing_function)
+        if placement not in (peak_local_points, peak_local_points_dithered):
+            refused.append(f"point placement {getattr(placement, '__name__', placement)!r}")
+        edt = getattr(self.edt_creation_function, "func", self.edt_creation_function)
+        if edt is not compute_edt_classical:
+            refused.append(f"EDT {getattr(edt, '__name__', edt)!r}")
+        if self.tesselation_creation_function is not simple_delaunay_tesselation:
+            refused.append(f"tesselation {getattr(self.tesselation_creation_function, '__name__', '?')!r}")
+        if self.score_computation_function is not compute_scores_by_max_value:
+            refused.append(f"face score {getattr(self.score_computation_function, '__name__', '?')!r}")
+        if self.physical_image_faces:
+            refused.append(f"physical image faces {self.physical_image_faces}")
+        if not self.perform_mesh_postprocess_surgery:
+            refused.append("mesh surgery off")
+        return refused
+
+    def _refuse_in_two_dimensions(self, what: str) -> None:
+        if self._two_dimensional is not None:
+            error = f"{what} has no 2-D counterpart: the last mask was 2-D (meshed by dw2d)"
+            raise ValueError(error)
 
     def compress_segmentation_mask(self, segmented_image: NDArray[np.uint]) -> dict[str]:
         """Compress a segmentation mask using a 3D mesh reconstruction.
@@ -878,11 +1251,13 @@ class MeshReconstructionAlgorithm:
         mask. Passed as they are, the mesh is rasterised at the wrong scale (measured on a two-cell mask with
         spacing `(0.6, 0.3, 0.3)`: 7 % of voxels agree with the resampled mask, against 96 % after the division).
         """
+        if self._two_dimensional is not None:
+            return self._two_dimensional.last_compressed_segmentation
         return {
             "points": self._points,
             "triangles": self._triangles,
             "seeds": self._compressed_seeds,
-            "image_shape": self._segmented_image.shape,
+            "image_shape": self._mask_shape,
         }
 
     def both_construct_mesh_and_compressed_segmentation(
@@ -904,6 +1279,7 @@ class MeshReconstructionAlgorithm:
 
     def center_around_zero(self) -> None:
         """Translate the mesh, in place, so that the centre of its bounding box is the origin."""
+        self._refuse_in_two_dimensions("center_around_zero")
         self._points = center_around_origin(self._points)
 
     def set_pixel_size(self, xy_pixel_size: float, z_pixel_size: float) -> None:
@@ -919,6 +1295,7 @@ class MeshReconstructionAlgorithm:
             xy_pixel_size (float): the pixel size in the image plane, which multiplies columns 1 and 2.
             z_pixel_size (float): the z step, which multiplies column 0.
         """
+        self._refuse_in_two_dimensions("set_pixel_size (use construct_mesh_in_physical_units)")
         self._points = set_pixel_size(self._points, xy_pixel_size, z_pixel_size)
 
     def set_global_min_max(self, global_min: float, global_max: float) -> None:
@@ -931,6 +1308,7 @@ class MeshReconstructionAlgorithm:
             global_min (float): the new smallest coordinate.
             global_max (float): the new largest coordinate.
         """
+        self._refuse_in_two_dimensions("set_global_min_max")
         self._points = set_points_min_max(self._points, global_min, global_max)
 
     def save_to_rec_mesh(self, filename: str | Path, binary_mode: bool = False) -> None:
@@ -945,19 +1323,29 @@ class MeshReconstructionAlgorithm:
         of the file differ in order from `last_constructed_mesh`. Read them back with
         `dw3d.io.load_rec_with_crop_faces`. Otherwise (in particular for every mask none of whose
         cells reaches the image box) the file is byte for byte what it was before crop faces were
-        recorded.
+        recorded. Whenever an appendix is written it records `dimension = 3` (since 0.8.0), so that
+        readers can tell the file from a 2-D one without probing its layout (`dw3d.io.rec_dimension`).
+        After a 2-D mask, dw2d's `save_to_rec_mesh` writes the file (with `dimension = 2`).
 
         Args:
             filename (str | Path): where to write the file (`.rec`).
             binary_mode (bool, optional): write the binary variant of the format. Defaults to False.
         """
+        if self._two_dimensional is not None:
+            self._two_dimensional.save_to_rec_mesh(filename, binary_mode)
+            return
         report = self._crop_face_report
         crop = report is not None and report.meets_the_image_box
         media = self._rec_media_metadata()
         if not crop and self._physical_frame is None and media is None:
             save_rec(filename, self._points, self._triangles, self._labels, binary_mode)
             return
-        metadata = {**(self._physical_frame or {}), **(self._rec_crop_metadata() or {}), **(media or {})}
+        metadata = {
+            "dimension": 3,
+            **(self._physical_frame or {}),
+            **(self._rec_crop_metadata() or {}),
+            **(media or {}),
+        }
         save_rec(
             filename,
             self._points,
@@ -978,7 +1366,12 @@ class MeshReconstructionAlgorithm:
         Args:
             filename (str | Path): where to write the file; meshio picks the format from its extension.
             binary_mode (bool, optional): write a binary file. Defaults to False.
+
+        Raises:
+            ValueError: when the mesh has no triangle (nothing is written; `save_to_rec_mesh` writes an empty `.rec`
+                file). Before 0.8.0 meshio raised `IndexError` there.
         """
+        self._refuse_in_two_dimensions("save_to_vtk_mesh")
         report = self._crop_face_report
         crop = None if report is None or not report.meets_the_image_box else report.crop_faces
         save_vtk(filename, self._points, self._triangles, self._labels, binary_mode, crop_faces=crop)
@@ -1118,3 +1511,40 @@ def _region_kind(label: int, report: EnclosedMediumReport) -> str:
     if label == 0:
         return "exterior"
     return "enclosed medium" if label in report.medium_labels else "cell"
+
+
+def _mask_dimension(segmented_image: object) -> int:
+    """2 or 3: the dimension of a mask given to the algorithm, after the input checks every entry point runs.
+
+    A 2-D mask is meshed by dw2d (which checks it again, and warns there for a non-integer dtype); a 3-D one by dw3d.
+
+    Raises:
+        ValueError: for a mask that is neither 2-D nor 3-D, or a 3-D mask with an axis of length 1, which is refused
+            with a message suggesting `mask[0]` or `numpy.squeeze` (never squeezed silently: a single plane may be a
+            2-D image or a 3-D stack cut to one slice, and the two are meshed differently).
+
+    Warns:
+        UserWarning: for a 3-D mask whose dtype is not an integer (or boolean) type. The mask is meshed anyway, as
+            before: refusing it would break callers.
+    """
+    shape = np.shape(segmented_image)
+    if len(shape) == 2:
+        return 2
+    if len(shape) != 3:
+        error = f"a segmentation mask must be 2-D or 3-D, got an array of shape {shape}"
+        raise ValueError(error)
+    if 1 in shape:
+        error = (
+            f"the mask has shape {shape}, a 3-D array with an axis of length 1, which is not meshed: pass the "
+            "plane itself as a 2-D mask (for example mask[0] or numpy.squeeze(mask)), or the full stack."
+        )
+        raise ValueError(error)
+    dtype = np.asarray(segmented_image).dtype
+    if not (np.issubdtype(dtype, np.integer) or np.issubdtype(dtype, np.bool_)):
+        warnings.warn(
+            f"the mask's dtype is {dtype}, not an integer type: its values are read as labels as they are. "
+            "Convert it (mask.astype(int)) if its values are whole numbers.",
+            UserWarning,
+            stacklevel=3,
+        )
+    return 3
